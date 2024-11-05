@@ -1,0 +1,70 @@
+org: jobmeerkat
+service: jobmeerkat
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  profile: ${env:PROFILE}
+  region: ${env:REGION}
+  environment:
+    DYNAMODB_COMPANY_TABLE_NAME: ${sls:stage}-company
+    DYNAMODB_JOB_POST_TABLE_NAME: ${sls:stage}-job-post
+    PROCESS_COMPANY_QUEUE_NAME: ${sls:stage}-process-company-sqs-queue.fifo
+
+resources:
+  Resources:
+    companyTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_COMPANY_TABLE_NAME}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    jobPostTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_JOB_POST_TABLE_NAME}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: companyId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+          - AttributeName: companyId
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    processCompanyQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${self:provider.environment.PROCESS_COMPANY_QUEUE_NAME}
+        FifoQueue: true
+
+functions:
+  company:
+    handler: src/company/infrastructure/api/handler.index
+    events:
+      - httpApi:
+          path: /company
+          method: any
+  processCompanyScheduler:
+    handler: src/company/infrastructure/api/enqueue/handler.index
+    events:
+      - schedule: cron(0 0/6 ? * * *)
+  processCompanyConsumer:
+    handler: src/company/infrastructure/queue/sqs/consumer/handler.index
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - processCompanyQueue
+              - Arn

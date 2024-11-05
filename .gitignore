@@ -1,0 +1,23 @@
+# package directories
+node_modules
+jspm_packages
+
+# Serverless directories
+.serverless
+
+# Webpack directories
+.webpack
+
+# dev
+.vscode
+.eslintcache
+.DS_store
+.idea
+
+# test event files
+*.event.json
+
+# environment
+.env
+.env.development
+.env.production

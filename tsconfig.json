@@ -1,0 +1,38 @@
+{
+    "compilerOptions": {
+        "lib": [
+            "es2023",
+            "dom"
+        ],
+        "module": "Node16",
+        "removeComments": true,
+        "moduleResolution": "Node16",
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "sourceMap": true,
+        "target": "es2022",
+        "esModuleInterop": true,
+        "outDir": ".build",
+        "baseUrl": "src/",
+        "paths": {
+            "company/*": [
+                "company/*"
+            ],
+            "jobPost/*": [
+                "jobPost/*"
+            ],
+            "shared/*": [
+                "shared/*"
+            ]
+        }
+    },
+    "include": [
+        "./**/*.ts"
+    ],
+    "exclude": [
+        "node_modules/**/*",
+        ".serverless/**/*",
+        ".webpack/**/*",
+        ".vscode/**/*"
+    ]
+}
