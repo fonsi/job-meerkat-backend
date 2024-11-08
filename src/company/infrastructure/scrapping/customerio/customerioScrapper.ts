@@ -41,7 +41,7 @@ export const customerioScrapper: CompanyScrapperFn = async ({ companyId }) => {
     return {
       id: url.split('/').pop(),
       url,
-      title: $(jobPost, 'p').first().text()
+      title: $('p', jobPost).first().text()
     };
   });
 
