@@ -5,6 +5,7 @@
         "typecheck": "tsc --noEmit",
         "local": "npm run lint && sls invoke local --function",
         "deploy": "npm run lint && serverless deploy -v",
+        "deploy-prod": "npm run lint && serverless deploy -v --stage=production",
         "test": "jest",
         "test:watch": "jest --watch"
     },

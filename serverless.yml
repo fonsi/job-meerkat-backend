@@ -5,6 +5,10 @@ params:
   default:
     processCompanyConsumerTimeout: 60
     processCompanyQueueVisibilityTimeout: 90
+  dev:
+    processCompanySchedule: cron(0 0 ? * * *)
+  production:
+    processCompanySchedule: cron(0 0/6 ? * * *)
 
 provider:
   name: aws
@@ -77,7 +81,7 @@ functions:
   processCompanyScheduler:
     handler: src/company/infrastructure/api/enqueue/handler.index
     events:
-      - schedule: cron(0 0/6 ? * * *)
+      - schedule: ${param:processCompanySchedule}
   processCompanyConsumer:
     handler: src/company/infrastructure/queue/sqs/consumer/handler.index
     timeout: ${param:processCompanyConsumerTimeout}
