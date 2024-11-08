@@ -1,17 +1,16 @@
-import AWS from 'aws-sdk';
 import {
+  AttributeValue,
   BatchGetItemInput,
   BatchGetItemOutput,
   BatchWriteItemInput,
   BatchWriteItemOutput,
   DeleteItemInput,
   DeleteItemOutput,
+  DynamoDB,
   GetItemInput,
   GetItemOutput,
-  Key,
   KeysAndAttributes,
   PutItemInput,
-  PutItemInputAttributeMap,
   PutItemOutput,
   QueryInput,
   QueryOutput,
@@ -19,13 +18,13 @@ import {
   ScanOutput,
   UpdateItemInput,
   UpdateItemOutput,
-} from 'aws-sdk/clients/dynamodb';
+} from '@aws-sdk/client-dynamodb';
 
 export type UpdateItemExpression = Omit<UpdateItemInput, 'TableName'>;
 
-export const getItem = (table: string, key: Key): Promise<GetItemOutput> => {
+export const getItem = (table: string, key: Record<string, AttributeValue>): Promise<GetItemOutput> => {
   return new Promise((resolve, reject) => {
-    const dynamodb = new AWS.DynamoDB();
+    const dynamodb = new DynamoDB();
     const input: GetItemInput = {
       TableName: table,
       Key: key,
@@ -45,7 +44,7 @@ export const batchGetItems = (
   batchInput: Array<{ table: string; keysAndAttributes: KeysAndAttributes }>,
 ): Promise<BatchGetItemOutput> => {
   return new Promise((resolve, reject) => {
-    const dynamodb = new AWS.DynamoDB();
+    const dynamodb = new DynamoDB();
     const input: BatchGetItemInput = {
       RequestItems: batchInput.reduce((acc, input) => {
         return {
@@ -65,9 +64,9 @@ export const batchGetItems = (
   });
 };
 
-export const putItem = (table: string, item: PutItemInputAttributeMap): Promise<PutItemOutput> => {
+export const putItem = (table: string, item: Record<string, AttributeValue>): Promise<PutItemOutput> => {
   return new Promise((resolve, reject) => {
-    const dynamodb = new AWS.DynamoDB();
+    const dynamodb = new DynamoDB();
     const input: PutItemInput = {
       TableName: table,
       Item: item,
@@ -85,7 +84,7 @@ export const putItem = (table: string, item: PutItemInputAttributeMap): Promise<
 
 export const updateItem = (table: string, update: UpdateItemExpression): Promise<UpdateItemOutput> => {
   return new Promise((resolve, reject) => {
-    const dynamodb = new AWS.DynamoDB();
+    const dynamodb = new DynamoDB();
     const input: UpdateItemInput = {
       TableName: table,
       ...update,
@@ -101,9 +100,9 @@ export const updateItem = (table: string, update: UpdateItemExpression): Promise
   });
 };
 
-export const deleteItem = (table: string, key: Key): Promise<DeleteItemOutput> => {
+export const deleteItem = (table: string, key: Record<string, AttributeValue>): Promise<DeleteItemOutput> => {
   return new Promise((resolve, reject) => {
-    const dynamodb = new AWS.DynamoDB();
+    const dynamodb = new DynamoDB();
     const input: DeleteItemInput = {
       TableName: table,
       Key: key,
@@ -119,9 +118,9 @@ export const deleteItem = (table: string, key: Key): Promise<DeleteItemOutput> =
   });
 };
 
-export const batchWriteItems = (table: string, items: PutItemInputAttributeMap[]): Promise<BatchWriteItemOutput> =>
+export const batchWriteItems = (table: string, items: Record<string, AttributeValue>[]): Promise<BatchWriteItemOutput> =>
   new Promise((resolve, reject) => {
-    const dynamodb = new AWS.DynamoDB();
+    const dynamodb = new DynamoDB();
     const input: BatchWriteItemInput = {
       RequestItems: {
         [table]: items.map((item) => ({
@@ -143,7 +142,7 @@ export const batchWriteItems = (table: string, items: PutItemInputAttributeMap[]
 
 export const query = (table: string, query: Omit<QueryInput, 'TableName'>): Promise<QueryOutput> => {
   return new Promise((resolve, reject) => {
-    const dynamodb = new AWS.DynamoDB();
+    const dynamodb = new DynamoDB();
     const input: QueryInput = {
       TableName: table,
       ...query,
@@ -161,7 +160,7 @@ export const query = (table: string, query: Omit<QueryInput, 'TableName'>): Prom
 
 export const scan = (table: string, query: Omit<ScanInput, 'TableName'>): Promise<ScanOutput> => {
   return new Promise((resolve, reject) => {
-    const dynamodb = new AWS.DynamoDB();
+    const dynamodb = new DynamoDB();
     const input: ScanInput = {
       TableName: table,
       ...query,

@@ -1,5 +1,5 @@
+import { AttributeValue } from '@aws-sdk/client-dynamodb';
 import { PersistanceError } from '../../error/persistanceError';
-import { AttributeMap } from 'aws-sdk/clients/dynamodb';
 
 const printItem = (item: unknown) => {
   try {
@@ -11,7 +11,7 @@ const printItem = (item: unknown) => {
 };
 
 export class UnmarshallError extends PersistanceError {
-  constructor(message: string, entity: string, item: AttributeMap) {
+  constructor(message: string, entity: string, item: Record<string, AttributeValue>) {
     super(`[UNMARSHALL] [${entity}] \n Record: ${printItem(item)} \n Error: ${message}`);
   }
 }

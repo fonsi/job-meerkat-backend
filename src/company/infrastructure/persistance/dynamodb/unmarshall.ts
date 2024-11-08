@@ -1,8 +1,8 @@
-import { AttributeMap } from 'aws-sdk/clients/dynamodb';
+import { AttributeValue } from '@aws-sdk/client-dynamodb';
 import { Company, CompanyId } from 'company/domain/company';
 import { UnmarshallError } from 'shared/infrastructure/persistance/dynamodb/error/unmarshallError';
 
-export const unmarshall = (item: AttributeMap): Company => {
+export const unmarshall = (item: Record<string, AttributeValue>): Company => {
   try {
     return {
       id: item['id']['S'] as CompanyId,

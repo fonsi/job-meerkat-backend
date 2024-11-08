@@ -1,5 +1,4 @@
-import { SQS } from 'aws-sdk';
-import { SendMessageRequest } from 'aws-sdk/clients/sqs';
+import { SQS, SendMessageRequest } from '@aws-sdk/client-sqs';
 
 type QueueMessage = string | Record<string, unknown>;
 
@@ -22,7 +21,9 @@ export const sendMessage = async ({ url, message, groupId, deduplicationId }: Se
       MessageDeduplicationId: deduplicationId,
     };
 
-    const queue = new SQS();
+    const queue = new SQS({
+      useQueueUrlAsEndpoint: false,
+    });
     queue.sendMessage(request, (err, res) => {
       if (err) {
         console.log('[SQS SEND MESSAGE][ERROR]', err);

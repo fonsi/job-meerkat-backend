@@ -1,9 +1,9 @@
-import { AttributeMap } from 'aws-sdk/clients/dynamodb';
+import { AttributeValue } from '@aws-sdk/client-dynamodb';
 import { CompanyId } from 'company/domain/company';
 import { JobPost, JobPostId, JobType, Workplace,  } from 'jobPost/domain/jobPost';
 import { UnmarshallError } from 'shared/infrastructure/persistance/dynamodb/error/unmarshallError';
 
-export const unmarshall = (item: AttributeMap): JobPost => {
+export const unmarshall = (item: Record<string, AttributeValue>): JobPost => {
   try {
     const minSalary = parseFloat(item['salaryMin']?.['N']) || null;
     const maxSalary = parseFloat(item['salaryMax']?.['N']) || null;

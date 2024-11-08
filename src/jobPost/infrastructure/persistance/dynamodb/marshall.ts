@@ -1,7 +1,7 @@
-import { PutItemInputAttributeMap } from 'aws-sdk/clients/dynamodb';
+import { AttributeValue } from '@aws-sdk/client-dynamodb';
 import { JobPost } from 'jobPost/domain/jobPost';
 
-export const marshall = (jobPost: JobPost): PutItemInputAttributeMap => {
+export const marshall = (jobPost: JobPost): Record<string, AttributeValue> => {
   const { id, originalId, companyId, type, title, url, category, salaryRange, workplace, location, createdAt, closedAt } = jobPost;
 
   const item = {

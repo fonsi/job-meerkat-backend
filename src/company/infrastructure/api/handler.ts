@@ -1,8 +1,7 @@
 import 'source-map-support/register';
-import { APIGatewayProxyHandler } from 'aws-lambda';
 import { companyPost } from './post';
 
-export const index: APIGatewayProxyHandler = async (event) => {
+export const index = async (event) => {
   try {
     const method = event?.httpMethod;
 

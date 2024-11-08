@@ -1,4 +1,3 @@
-import { APIGatewayProxyEvent } from 'aws-lambda';
 import { createCompany } from 'company/application/createCompany';
 
 type Params = {
@@ -6,7 +5,7 @@ type Params = {
     homePage: string;
 }
 
-export const companyPost = async (event: APIGatewayProxyEvent) => {
+export const companyPost = async (event) => {
     const { name, homePage } = JSON.parse(event.body) as Params;
 
     const company = await createCompany({ name, homePage });

@@ -1,6 +1,11 @@
 org: jobmeerkat
 service: jobmeerkat
 
+params:
+  default:
+    processCompanyConsumerTimeout: 60
+    processCompanyQueueVisibilityTimeout: 90
+
 provider:
   name: aws
   runtime: nodejs20.x
@@ -10,6 +15,18 @@ provider:
     DYNAMODB_COMPANY_TABLE_NAME: ${sls:stage}-company
     DYNAMODB_JOB_POST_TABLE_NAME: ${sls:stage}-job-post
     PROCESS_COMPANY_QUEUE_NAME: ${sls:stage}-process-company-sqs-queue.fifo
+    OPENAI_API_KEY: ${env:OPENAI_API_KEY}
+  iamRoleStatements:
+    - Effect: "Allow"
+      Resource:
+        - arn:aws:dynamodb:*:*:table/*
+      Action:
+        - "dynamodb:*"
+    - Effect: Allow
+      Action:
+        - sqs:*
+      Resource:
+        Fn::GetAtt: [ processCompanyQueue, Arn ]
 
 resources:
   Resources:
@@ -48,6 +65,7 @@ resources:
       Properties:
         QueueName: ${self:provider.environment.PROCESS_COMPANY_QUEUE_NAME}
         FifoQueue: true
+        VisibilityTimeout: ${param:processCompanyQueueVisibilityTimeout}
 
 functions:
   company:
@@ -62,6 +80,7 @@ functions:
       - schedule: cron(0 0/6 ? * * *)
   processCompanyConsumer:
     handler: src/company/infrastructure/queue/sqs/consumer/handler.index
+    timeout: ${param:processCompanyConsumerTimeout}
     events:
       - sqs:
           arn:

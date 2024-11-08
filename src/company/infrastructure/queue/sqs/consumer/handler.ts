@@ -1,12 +1,11 @@
 import 'source-map-support/register';
-import { SQSEvent, SQSHandler } from 'aws-lambda';
 import { processCompany } from 'company/application/processCompany';
 import { CompanyId } from 'company/domain/company';
 
-const companiesIdsToString = (event: SQSEvent): string =>
+const companiesIdsToString = (event): string =>
   event.Records.map((record) => (record.body as unknown) as string).join(',');
 
-export const index: SQSHandler = async (event): Promise<void> => {
+export const index = async (event): Promise<void> => {
   try {
     console.log(`[COMPANIES IDS TO PROCESS]: ${companiesIdsToString(event)}`);
 

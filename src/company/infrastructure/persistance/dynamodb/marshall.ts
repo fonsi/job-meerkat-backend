@@ -1,7 +1,7 @@
-import { PutItemInputAttributeMap } from 'aws-sdk/clients/dynamodb';
+import { AttributeValue } from '@aws-sdk/client-dynamodb';
 import { Company } from 'company/domain/company';
 
-export const marshall = (company: Company): PutItemInputAttributeMap => {
+export const marshall = (company: Company): Record<string, AttributeValue> => {
   const { id, name, homePage } = company;
 
   return {
