@@ -1,7 +1,9 @@
 import { JobPost, JobType, Workplace } from 'jobPost/domain/jobPost';
 import OpenAI from 'openai';
 
-export type OpenaiJobPost = Omit<JobPost, 'id' | 'originalId' | 'companyId' | 'url' | 'createdAt' | 'closedAt'>;
+export type OpenaiJobPost = Omit<JobPost, 'id' | 'originalId' | 'companyId' | 'url' | 'createdAt' | 'closedAt'> & {
+    createdAt?: number | null;
+};
 
 const OPENAI_MODEL = 'gpt-4o-mini';
 

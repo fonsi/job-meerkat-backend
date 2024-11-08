@@ -6,6 +6,7 @@ export const CUSTOMERIO_NAME = 'customer.io';
 export const CUSTOMERIO_INITIAL_URL = 'https://job-boards.greenhouse.io/customerio';
 
 type ScrapJobPostData = {
+  id: string;
   url: string;
 }
 
@@ -20,15 +21,19 @@ const JOB_TAGS_SELECTOR = '.job__tags';
 const JOB_TITLE_SELECTOR = '.job__title';
 const JOB_DESCRIPTION_SELECTOR = '.job__description';
 
-const scrapJobPost = async ({ url }: ScrapJobPostData ): Promise<OpenaiJobPost> => {
-    const $ = await fromURL(url);
+const scrapJobPost = async ({ id, url }: ScrapJobPostData ): Promise<OpenaiJobPost> => {
+    try {
+      const $ = await fromURL(url);
   
-    const tagsText = $(JOB_TAGS_SELECTOR).text();
-    const titleText = $(JOB_TITLE_SELECTOR).text();
-    const descriptionText = $(JOB_DESCRIPTION_SELECTOR).text();
-    const jobPostContent = `${tagsText} ${titleText} ${descriptionText}`;
-  
-    return openaiJobPostAnalyzer(jobPostContent);
+      const tagsText = $(JOB_TAGS_SELECTOR).text();
+      const titleText = $(JOB_TITLE_SELECTOR).text();
+      const descriptionText = $(JOB_DESCRIPTION_SELECTOR).text();
+      const jobPostContent = `${tagsText} ${titleText} ${descriptionText}`;
+    
+      return openaiJobPostAnalyzer(jobPostContent);
+    } catch(e) {
+      console.log(`Error processing Customerio job post ${id}`, e);
+    }
 }
 
 export const customerioScrapper: CompanyScrapperFn = async ({ companyId }) => {
@@ -52,6 +57,7 @@ export const customerioScrapper: CompanyScrapperFn = async ({ companyId }) => {
         console.log(`Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`);
         
         const jobPostData = await scrapJobPost({
+          id: jobPost.id,
           url: jobPost.url,
         });
 
@@ -62,7 +68,7 @@ export const customerioScrapper: CompanyScrapperFn = async ({ companyId }) => {
           companyId,
         });
     } catch (e) {
-        console.log('Error processing job post', e);
+        console.log('Error processing Customerio', e);
     }
   }
 

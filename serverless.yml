@@ -72,6 +72,9 @@ resources:
         VisibilityTimeout: ${param:processCompanyQueueVisibilityTimeout}
 
 functions:
+  devScrapCompany:
+    # function used in development to build scrappers
+    handler: src/company/infrastructure/dev/scrapCompany.index
   company:
     handler: src/company/infrastructure/api/handler.index
     events:

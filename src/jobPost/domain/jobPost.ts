@@ -25,11 +25,13 @@ export type JobPost = {
     closedAt: number | null;
 }
 
-export type CreateJobPostData = Omit<JobPost, 'id' | 'createdAt' | 'closedAt'>;
+export type CreateJobPostData = Omit<JobPost, 'id' | 'createdAt' | 'closedAt'> & {
+  createdAt?: number  | null;
+};
 
 export const createJobPost = (data: CreateJobPostData): JobPost => {
     const id = randomUUID();
-    const createdAt = Date.now();
+    const createdAt = data.createdAt || Date.now();
     const closedAt = null;
 
     return {
