@@ -2,17 +2,18 @@ import { marshall } from './marshall';
 import { unmarshall } from './unmarshall';
 import { getItem, putItem, scan, updateItem, UpdateItemExpression } from 'shared/infrastructure/persistance/dynamodb';
 import { DynamodbError } from 'shared/infrastructure/persistance/dynamodb/error/dynamodbError';
-import { JobPostRepository, Create, GetById, GetAllOpenByCompanyId, GetAll, GetAllByCompanyId, GetByOriginalIdAndCompanyId, Close } from 'jobPost/domain/jobPostRepository';
+import { JobPostRepository, Create, GetById, GetAllOpenByCompanyId, GetAll, GetAllByCompanyId, GetByOriginalIdAndCompanyId, Close, GetAllOpen } from 'jobPost/domain/jobPostRepository';
 import { CompanyId } from 'company/domain/company';
 import { JobPost } from 'jobPost/domain/jobPost';
 
 const JOB_POST_TABLE = process.env.DYNAMODB_JOB_POST_TABLE_NAME;
 
+const isOpen = (jobPost: JobPost) => !jobPost.closedAt;
 const buildIsFromCompany = (companyId: CompanyId) => (jobPost: JobPost) => jobPost.companyId === companyId;
 const buildIsFromCompanyAndIsOpen = (companyId: CompanyId) => {
   const isFromCompany = buildIsFromCompany(companyId);
 
-  return (jobPost: JobPost) => isFromCompany(jobPost) && !jobPost.closedAt;
+  return (jobPost: JobPost) => isFromCompany(jobPost) && isOpen(jobPost);
 };
 
 const create: Create = async (jobPost) => {
@@ -56,6 +57,16 @@ const getAll: GetAll = async () => {
     }
 
     return items.map(unmarshall);
+  } catch (e) {
+    throw new DynamodbError(e);
+  }
+};
+
+const getAllOpen: GetAllOpen = async () => {
+  try {
+    const allItems = await getAll();
+    
+    return allItems.filter(isOpen);
   } catch (e) {
     throw new DynamodbError(e);
   }
@@ -121,6 +132,7 @@ const close: Close = async (jobPostId, companyId, closedAt) => {
 export const jobPostRepository = {
   create,
   getAll,
+  getAllOpen,
   getAllByCompanyId,
   getAllOpenByCompanyId,
   getById,

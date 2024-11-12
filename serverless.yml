@@ -75,11 +75,23 @@ functions:
   devScrapCompany:
     # function used in development to build scrappers
     handler: src/company/infrastructure/dev/scrapCompany.index
+  companyId:
+    handler: src/company/infrastructure/api/id/handler.index
+    events:
+      - httpApi:
+          path: /company/{id}
+          method: any
   company:
     handler: src/company/infrastructure/api/handler.index
     events:
       - httpApi:
           path: /company
+          method: any
+  jobPost:
+    handler: src/jobPost/infrastructure/api/handler.index
+    events:
+      - httpApi:
+          path: /jobPost
           method: any
   processCompanyScheduler:
     handler: src/company/infrastructure/api/enqueue/handler.index

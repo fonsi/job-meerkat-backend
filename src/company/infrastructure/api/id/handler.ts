@@ -1,6 +1,5 @@
 import 'source-map-support/register';
-import { companyPost } from './post';
-import { companyGet } from './get';
+import { companyGetById } from './getById';
 
 export const index = async (event) => {
   try {
@@ -8,9 +7,7 @@ export const index = async (event) => {
 
     switch(method) {
       case 'GET':
-        return await companyGet();
-      case 'POST':
-        return await companyPost(event);
+        return await companyGetById(event);
     }
 
     return {
