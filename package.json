@@ -4,8 +4,9 @@
         "prettier": "prettier --list-different './**/*.{js,ts}'",
         "typecheck": "tsc --noEmit",
         "local": "npm run lint && sls invoke local --function",
+        "scrap-company": "npm run local devScrapCompany -- --path src/company/infrastructure/dev/scrapCompany.event.json",
         "deploy": "npm run lint && serverless deploy -v",
-        "deploy-prod": "npm run lint && serverless deploy -v --stage=production",
+        "deploy:prod": "npm run lint && serverless deploy -v --stage=production",
         "test": "jest",
         "test:watch": "jest --watch"
     },
