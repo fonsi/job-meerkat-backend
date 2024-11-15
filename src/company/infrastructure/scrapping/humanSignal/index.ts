@@ -2,7 +2,7 @@ import { fromURL } from 'cheerio';
 import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
 import { OpenaiJobPost, openaiJobPostAnalyzer } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
 
-export const HUMAN_SIGNAL_NAME = 'HumanSignal';
+export const HUMAN_SIGNAL_NAME = 'humansignal';
 export const HUMAN_SIGNAL_INITIAL_URL = 'https://humansignal.com/careers/';
 
 type ScrapJobPostData = {

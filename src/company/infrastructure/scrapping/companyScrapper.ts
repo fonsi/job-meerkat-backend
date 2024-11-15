@@ -1,8 +1,9 @@
 import { Company, CompanyId } from 'company/domain/company';
 import { JobPost } from 'jobPost/domain/jobPost';
-import { CUSTOMERIO_NAME, customerioScrapper } from './customerio/customerioScrapper';
-import { FLOAT_NAME, floatScrapper } from './float/floatScrapper';
-import { HUMAN_SIGNAL_NAME, humanSignalScrapper } from './humanSignal/humanSignal';
+import { CUSTOMERIO_NAME, customerioScrapper } from './customerio';
+import { FLOAT_NAME, floatScrapper } from './float';
+import { HUMAN_SIGNAL_NAME, humanSignalScrapper } from './humanSignal';
+import { CHERRE_NAME, cherreScrapper } from './cherre';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -19,13 +20,15 @@ export type CompanyScrapper = () => Promise<ScrappedJobPost[]>;
 export type CompanyScrapperFn = (data: CompanyScrapperData) => Promise<ScrappedJobPost[]>;
 
 const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
-    switch (companyName) {
+    switch (companyName?.toLowerCase()) {
         case CUSTOMERIO_NAME:
             return customerioScrapper;
         case FLOAT_NAME:
             return floatScrapper;
         case HUMAN_SIGNAL_NAME:
             return humanSignalScrapper;
+        case CHERRE_NAME:
+            return cherreScrapper;
     }
 
     return null;
