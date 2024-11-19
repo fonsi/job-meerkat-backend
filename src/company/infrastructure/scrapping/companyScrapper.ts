@@ -5,6 +5,7 @@ import { FLOAT_NAME, floatScrapper } from './float';
 import { HUMAN_SIGNAL_NAME, humanSignalScrapper } from './humanSignal';
 import { CHERRE_NAME, cherreScrapper } from './cherre';
 import { ALL_TRAILS_NAME, allTrailsScrapper } from './allTrails';
+import { PHANTOM_NAME, phantomScrapper } from './phantom';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -32,6 +33,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return cherreScrapper;
         case ALL_TRAILS_NAME:
             return allTrailsScrapper;
+        case PHANTOM_NAME:
+            return phantomScrapper;
     }
 
     return null;
