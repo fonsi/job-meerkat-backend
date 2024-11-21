@@ -6,12 +6,12 @@ export const PHANTOM_NAME = 'phantom';
 export const PHANTOM_INITIAL_URL = 'https://boards-api.greenhouse.io/v1/boards/phantom45/departments';
 
 type ScrapJobPostData = {
-  id: string;
+  id: number;
   url: string;
 }
 
 type JobPostsListItem = {
-  id: string;
+  id: number;
   url: string;
   title: string;
   createdAt: number;
@@ -65,7 +65,7 @@ export const phantomScrapper: CompanyScrapperFn = async ({ companyId }) => {
 
         data.push({
           ...jobPostData,
-          originalId: jobPost.id,
+          originalId: jobPost.id.toString(),
           url: jobPost.url,
           companyId,
           createdAt: jobPost.createdAt,
