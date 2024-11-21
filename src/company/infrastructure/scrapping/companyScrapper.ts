@@ -6,6 +6,7 @@ import { HUMAN_SIGNAL_NAME, humanSignalScrapper } from './humanSignal';
 import { CHERRE_NAME, cherreScrapper } from './cherre';
 import { ALL_TRAILS_NAME, allTrailsScrapper } from './allTrails';
 import { PHANTOM_NAME, phantomScrapper } from './phantom';
+import { PULUMI_NAME, pulumiScrapper } from './pulumi';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -35,6 +36,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return allTrailsScrapper;
         case PHANTOM_NAME:
             return phantomScrapper;
+        case PULUMI_NAME:
+            return pulumiScrapper;
     }
 
     return null;

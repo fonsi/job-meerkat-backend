@@ -2,8 +2,8 @@ import { fromURL } from 'cheerio';
 import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
 import { OpenaiJobPost, openaiJobPostAnalyzer } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
 
-export const CUSTOMERIO_NAME = 'customer.io';
-export const CUSTOMERIO_INITIAL_URL = 'https://job-boards.greenhouse.io/customerio';
+export const PULUMI_NAME = 'pulumi';
+export const PULUMI_INITIAL_URL = 'https://boards.greenhouse.io/pulumicorporation';
 
 type ScrapJobPostData = {
   id: string;
@@ -16,37 +16,35 @@ type JobPostsListItem = {
   title: string;
 }
 
-const JOB_POST_SELECTOR = '.job-post a';
-const JOB_TAGS_SELECTOR = '.job__tags';
-const JOB_TITLE_SELECTOR = '.job__title';
-const JOB_DESCRIPTION_SELECTOR = '.job__description';
+const JOB_POST_SELECTOR = '.opening a';
+const JOB_HEADER_SELECTOR = '#header';
+const JOB_CONTENT_SELECTOR = '#content';
 
 const scrapJobPost = async ({ id, url }: ScrapJobPostData ): Promise<OpenaiJobPost> => {
     try {
       const $ = await fromURL(url);
   
-      const tagsText = $(JOB_TAGS_SELECTOR).text();
-      const titleText = $(JOB_TITLE_SELECTOR).text();
-      const descriptionText = $(JOB_DESCRIPTION_SELECTOR).text();
-      const jobPostContent = `${tagsText} ${titleText} ${descriptionText}`;
+      const titleText = $(JOB_HEADER_SELECTOR).text();
+      const descriptionText = $(JOB_CONTENT_SELECTOR).text();
+      const jobPostContent = `${titleText} ${descriptionText}`;
     
       return openaiJobPostAnalyzer(jobPostContent);
     } catch(e) {
-      console.log(`Error processing ${CUSTOMERIO_NAME} job post ${id}`, e);
+      console.log(`Error processing ${PULUMI_NAME} job post ${id}`, e);
     }
 }
 
-export const customerioScrapper: CompanyScrapperFn = async ({ companyId }) => {
-  const $ = await fromURL(CUSTOMERIO_INITIAL_URL);
+export const pulumiScrapper: CompanyScrapperFn = async ({ companyId }) => {
+  const $ = await fromURL(PULUMI_INITIAL_URL);
   const jobPostsElements = $(JOB_POST_SELECTOR);
 
   const jobPosts: JobPostsListItem[] = jobPostsElements.toArray().map((jobPost) => {
-    const url = $(jobPost).attr('href');
+    const url = `https://boards.greenhouse.io${$(jobPost).attr('href')}`;
 
     return {
       id: url.split('/').pop(),
       url,
-      title: $('p', jobPost).first().text()
+      title: $(jobPost).text()
     };
   });
 
@@ -68,7 +66,7 @@ export const customerioScrapper: CompanyScrapperFn = async ({ companyId }) => {
           companyId,
         });
     } catch (e) {
-        console.log(`Error processing ${CUSTOMERIO_NAME}`, e);
+        console.log(`Error processing ${PULUMI_NAME}`, e);
     }
   }
 
