@@ -1,4 +1,4 @@
-import { JobPost, JobType, Workplace } from 'jobPost/domain/jobPost';
+import { JobPost, JobType, Period, Workplace } from 'jobPost/domain/jobPost';
 import OpenAI from 'openai';
 
 export type OpenaiJobPost = Omit<JobPost, 'id' | 'originalId' | 'companyId' | 'url' | 'createdAt' | 'closedAt'> & {
@@ -17,6 +17,7 @@ const jobOfferExample: OpenaiJobPost = {
         min: 60000,
         max: 75000,
         currency: 'eur',
+        period: Period.Year,
     },
     workplace: Workplace.Remote,
     location: 'europe'

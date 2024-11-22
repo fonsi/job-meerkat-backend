@@ -55,6 +55,12 @@ export const marshall = (jobPost: JobPost): Record<string, AttributeValue> => {
         N: salaryRange.max.toString(),
       }
     }
+
+    if (salaryRange.period) {
+      item['salaryPeriod'] = {
+        N: salaryRange.period,
+      }
+    }
   }
 
   if (closedAt) {

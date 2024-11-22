@@ -1,6 +1,6 @@
 import { AttributeValue } from '@aws-sdk/client-dynamodb';
 import { CompanyId } from 'company/domain/company';
-import { JobPost, JobPostId, JobType, Workplace,  } from 'jobPost/domain/jobPost';
+import { JobPost, JobPostId, JobType, Period, Workplace,  } from 'jobPost/domain/jobPost';
 import { UnmarshallError } from 'shared/infrastructure/persistance/dynamodb/error/unmarshallError';
 
 export const unmarshall = (item: Record<string, AttributeValue>): JobPost => {
@@ -8,10 +8,12 @@ export const unmarshall = (item: Record<string, AttributeValue>): JobPost => {
     const minSalary = parseFloat(item['salaryMin']?.['N']) || null;
     const maxSalary = parseFloat(item['salaryMax']?.['N']) || null;
     const salaryCurrency = item['salaryCurrency']?.['S'] || null;
+    const salaryPeriod = item['salaryPeriod']?.['S'] as Period || Period.Year;
     const salaryRange = (minSalary | maxSalary) && salaryCurrency ? {
         min: minSalary,
         max: maxSalary,
         currency: salaryCurrency,
+        period: salaryPeriod,
     } : null;
 
     return {

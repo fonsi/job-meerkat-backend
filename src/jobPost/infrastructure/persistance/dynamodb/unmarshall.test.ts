@@ -1,6 +1,6 @@
 import { UnmarshallError } from 'shared/infrastructure/persistance/dynamodb/error/unmarshallError';
 import { unmarshall } from './unmarshall';
-import { JobPost, JobType, Workplace } from 'jobPost/domain/jobPost';
+import { JobPost, JobType, Period, Workplace } from 'jobPost/domain/jobPost';
 
 const baseDbItem = {
   id: {
@@ -28,10 +28,13 @@ const baseDbItem = {
     S: 'eur',
   },
   salaryMin: {
-    N: '60000',
+    N: '6000',
   },
   salaryMax: {
-    N: '75000',
+    N: '7500',
+  },
+  salaryPeriod: {
+    S: 'month',
   },
   workplace: {
     S: 'remote',
@@ -56,9 +59,10 @@ const baseJobPost: JobPost = {
   title: 'Job title',
   category: 'frontend',
   salaryRange: {
-    min:  60000,
-    max:  75000,
+    min:  6000,
+    max:  7500,
     currency: 'eur',
+    period: Period.Month,
   },
   workplace: Workplace.Remote,
   location: 'EMEA',
@@ -104,6 +108,23 @@ describe('DynamoDB job post unmarshall', () => {
     const jobPost: JobPost = {
       ...baseJobPost,
       closedAt: 1730218065637,
+    };
+
+    expect(unmarshall(item)).toEqual(jobPost);
+  });
+
+  it('should return a JobPost without salary period', () => {
+    const item = {
+      ...baseDbItem,
+      salaryPeriod: undefined,
+    };
+
+    const jobPost: JobPost = {
+      ...baseJobPost,
+      salaryRange: {
+        ...baseJobPost.salaryRange,
+        period: Period.Year,
+      }
     };
 
     expect(unmarshall(item)).toEqual(jobPost);

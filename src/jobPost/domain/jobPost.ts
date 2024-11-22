@@ -5,6 +5,7 @@ export type JobPostId = UUID;
 
 export enum JobType { FullTime = 'fullTime', PartTime = 'partTime', Contract = 'contract', Unknown = 'unknown' };
 export enum Workplace { Remote = 'remote', OnSite = 'onSite', Hybrid = 'hybrid', Unknown = 'unknown' };
+export enum Period { Year = 'year', Month = 'month', Week = 'week', Day = 'day', Hour = 'hour' }
 
 export type JobPost = {
     id: JobPostId;
@@ -18,6 +19,7 @@ export type JobPost = {
       min?:  number;
       max:  number;
       currency: string;
+      period: Period;
     } | null,
     workplace: Workplace;
     location: string;
