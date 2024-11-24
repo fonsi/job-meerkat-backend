@@ -58,7 +58,7 @@ export const marshall = (jobPost: JobPost): Record<string, AttributeValue> => {
 
     if (salaryRange.period) {
       item['salaryPeriod'] = {
-        N: salaryRange.period,
+        S: salaryRange.period,
       }
     }
   }
