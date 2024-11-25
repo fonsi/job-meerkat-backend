@@ -7,6 +7,7 @@ import { CHERRE_NAME, cherreScrapper } from './cherre';
 import { ALL_TRAILS_NAME, allTrailsScrapper } from './allTrails';
 import { PHANTOM_NAME, phantomScrapper } from './phantom';
 import { PULUMI_NAME, pulumiScrapper } from './pulumi';
+import { DISCORD_NAME, discordScrapper } from './discord';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -38,6 +39,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return phantomScrapper;
         case PULUMI_NAME:
             return pulumiScrapper;
+        case DISCORD_NAME:
+            return discordScrapper;
     }
 
     return null;
