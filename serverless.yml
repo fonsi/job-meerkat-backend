@@ -6,9 +6,9 @@ params:
     processCompanyConsumerTimeout: 120
     processCompanyQueueVisibilityTimeout: 130
   dev:
-    processCompanySchedule: cron(0 0 ? * * *)
+    processCompanySchedule: cron(0 0 1 1 ? 1970) # never
   production:
-    processCompanySchedule: cron(0 0/6 ? * * *)
+    processCompanySchedule: cron(0 0/12 ? * * *) # every 12 hours
 
 provider:
   name: aws
