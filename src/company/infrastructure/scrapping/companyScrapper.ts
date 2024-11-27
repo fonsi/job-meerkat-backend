@@ -9,6 +9,7 @@ import { PHANTOM_NAME, phantomScrapper } from './phantom';
 import { PULUMI_NAME, pulumiScrapper } from './pulumi';
 import { DISCORD_NAME, discordScrapper } from './discord';
 import { PLANET_SCALE_NAME, planetScaleScrapper } from './planetScale';
+import { STREAK_NAME, streakScrapper } from './streak';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -44,6 +45,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return discordScrapper;
         case PLANET_SCALE_NAME:
             return planetScaleScrapper;
+        case STREAK_NAME:
+            return streakScrapper;
     }
 
     return null;
