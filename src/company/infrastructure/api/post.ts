@@ -1,4 +1,5 @@
 import { createCompany } from 'company/application/createCompany';
+import { success } from 'shared/infrastructure/api/response';
 
 type Params = {
     name: string;
@@ -10,10 +11,5 @@ export const companyPost = async (event) => {
 
     const company = await createCompany({ name, homePage });
 
-    return {
-        statusCode: 200,
-        body: JSON.stringify({
-          company,
-        }),
-      };
+    return success(company);
 }

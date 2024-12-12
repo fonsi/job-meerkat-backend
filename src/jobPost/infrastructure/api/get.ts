@@ -1,10 +1,8 @@
 import { getAllJobPosts } from 'jobPost/application/getAllJobPosts';
+import { success } from 'shared/infrastructure/api/response';
 
 export const jobPostGet = async () => {
     const jobPosts = await getAllJobPosts();
 
-    return {
-        statusCode: 200,
-        body: JSON.stringify(jobPosts),
-      };
+    return success(jobPosts);
 }

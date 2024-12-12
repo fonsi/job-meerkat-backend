@@ -1,10 +1,8 @@
 import { getAllCompanies } from 'company/application/getAllCompanies';
+import { success } from 'shared/infrastructure/api/response';
 
 export const companyGet = async () => {
     const companies = await getAllCompanies();
 
-    return {
-        statusCode: 200,
-        body: JSON.stringify(companies),
-      };
+    return success(companies);
 }
