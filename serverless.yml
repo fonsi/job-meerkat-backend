@@ -20,6 +20,7 @@ provider:
     DYNAMODB_JOB_POST_TABLE_NAME: ${sls:stage}-job-post
     PROCESS_COMPANY_QUEUE_NAME: ${sls:stage}-process-company-sqs-queue.fifo
     OPENAI_API_KEY: ${env:OPENAI_API_KEY}
+    ASSETS_URL: ${env:ASSETS_URL}
   iamRoleStatements:
     - Effect: "Allow"
       Resource:

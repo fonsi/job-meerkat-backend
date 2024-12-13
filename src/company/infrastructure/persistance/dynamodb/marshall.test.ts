@@ -1,6 +1,5 @@
 import { Company, CompanyId } from 'company/domain/company';
-import { UnmarshallError } from 'shared/infrastructure/persistance/dynamodb/error/unmarshallError';
-import { unmarshall } from './unmarshall';
+import { marshall } from './marshall';
 
 jest.mock('shared/infrastructure/assets/constants', () => {
   return {
@@ -24,28 +23,22 @@ const baseItem = {
   }
 };
 
-describe('DynamoDB company unmarshall', () => {
-  it('should return a Company from an Item', () => {
+describe('DynamoDB company marshall', () => {
+  it('should return an Item from a Company', () => {
     const company: Company = {
       id: companyId,
       name: companyName,
-      homePage: homePage,
+      homePage,
       logo: {
         url: logoUrl,
       }
     };
 
-    expect(unmarshall(baseItem)).toEqual(company);
+    expect(marshall(company)).toEqual(baseItem);
   });
 
-  it('should return a Company with logo background', () => {
+  it('should return an Item with logo background', () => {
     const logoBg = '#fff';
-    const item = {
-      ...baseItem,
-      logoBackground: {
-        S: logoBg,
-      }
-    };
     const company: Company = {
       id: companyId,
       name: companyName,
@@ -56,16 +49,13 @@ describe('DynamoDB company unmarshall', () => {
       }
     };
 
-    expect(unmarshall(item)).toEqual(company);
-  });
-
-  it('should throw UnmarshallError if something goes wrong', () => {
     const item = {
-      id: {
-        S: 'fea19519-c97b-47e6-b916-5a475d6a41c1',
-      },
+      ...baseItem,
+      logoBackground: {
+        S: logoBg,
+      }
     };
 
-    expect(() => unmarshall(item)).toThrow(UnmarshallError);
+    expect(marshall(company)).toEqual(item);
   });
 });

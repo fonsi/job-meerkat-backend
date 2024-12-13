@@ -2,9 +2,9 @@ import { AttributeValue } from '@aws-sdk/client-dynamodb';
 import { Company } from 'company/domain/company';
 
 export const marshall = (company: Company): Record<string, AttributeValue> => {
-  const { id, name, homePage } = company;
+  const { id, name, homePage, logo } = company;
 
-  return {
+  const item = {
     id: {
       S: id,
     },
@@ -15,4 +15,12 @@ export const marshall = (company: Company): Record<string, AttributeValue> => {
       S: homePage,
     },
   };
+
+  if (logo.background) {
+    item['logoBackground'] = {
+      S: logo.background
+    }
+  }
+
+  return item;
 };
