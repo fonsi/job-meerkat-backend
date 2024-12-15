@@ -11,6 +11,7 @@ import { DISCORD_NAME, discordScrapper } from './discord';
 import { PLANET_SCALE_NAME, planetScaleScrapper } from './planetScale';
 import { STREAK_NAME, streakScrapper } from './streak';
 import { MIMO_NAME, mimoScrapper } from './mimo';
+import { FEELD_NAME, feeldScrapper } from './feeld';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -50,6 +51,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return streakScrapper;
         case MIMO_NAME:
             return mimoScrapper;
+        case FEELD_NAME:
+            return feeldScrapper;
     }
 
     return null;
