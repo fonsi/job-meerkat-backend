@@ -3,7 +3,7 @@ import { ASSETS_BASE_URL } from 'shared/infrastructure/assets/constants';
 
 export type CompanyId = UUID;
 
-type CompanyLogo = {
+export type CompanyLogo = {
     url: string;
     background?: string;
 }
