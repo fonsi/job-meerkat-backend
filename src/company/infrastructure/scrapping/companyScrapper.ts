@@ -14,6 +14,7 @@ import { MIMO_NAME, mimoScrapper } from './mimo';
 import { FEELD_NAME, feeldScrapper } from './feeld';
 import { SUPER_NAME, superScrapper } from './super';
 import { REVENUE_CAT_NAME, revenueCatScrapper } from './revenueCat';
+import { KIT_NAME, kitScrapper } from './kit';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -59,6 +60,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return superScrapper;
         case REVENUE_CAT_NAME:
             return revenueCatScrapper;
+        case KIT_NAME:
+            return kitScrapper;
     }
 
     return null;
