@@ -15,6 +15,7 @@ import { FEELD_NAME, feeldScrapper } from './feeld';
 import { SUPER_NAME, superScrapper } from './super';
 import { REVENUE_CAT_NAME, revenueCatScrapper } from './revenueCat';
 import { KIT_NAME, kitScrapper } from './kit';
+import { DUCK_DUCK_GO_NAME, duckDuckGoScrapper } from './duckDuckGo';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -62,6 +63,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return revenueCatScrapper;
         case KIT_NAME:
             return kitScrapper;
+        case DUCK_DUCK_GO_NAME:
+            return duckDuckGoScrapper;
     }
 
     return null;
