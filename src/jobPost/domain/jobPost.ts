@@ -21,6 +21,9 @@ export enum Category {
   QA = 'QA',
   DevOps = 'DevOps',
   Data = 'Data',
+  GameDeveloper = 'Game developer',
+  MachineLearning = 'Machine learning',
+  EngineeringManager = 'Engineering manager',
   Product = 'Product',
   Design = 'Design',
   Marketing = 'Marketing',
@@ -28,6 +31,7 @@ export enum Category {
   Operations = 'Operations',
   CustomerSuccess = 'Customer success',
   BusinessDevelopment = 'Business development',
+  Legal = 'Legal',
   Other = 'Other',
 };
 
@@ -41,6 +45,9 @@ export const EngineeringCategories: Category[] = [
   Category.QA,
   Category.DevOps,
   Category.Data,
+  Category.GameDeveloper,
+  Category.MachineLearning,
+  Category.EngineeringManager,
 ];
 
 export const ProductCategories: Category[] = [
@@ -54,6 +61,8 @@ export const OtherCategories: Category[] = [
   Category.Operations,
   Category.CustomerSuccess,
   Category.BusinessDevelopment,
+  Category.Legal,
+  Category.Other,
 ];
 
 export const categoryTree: CategoryTree = [
