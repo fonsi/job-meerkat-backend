@@ -10,10 +10,13 @@ export type CategoryTree = Array<{
 export enum JobType { FullTime = 'fullTime', PartTime = 'partTime', Contract = 'contract', Unknown = 'unknown' };
 export enum Workplace { Remote = 'remote', OnSite = 'onSite', Hybrid = 'hybrid', Unknown = 'unknown' };
 export enum Period { Year = 'year', Month = 'month', Week = 'week', Day = 'day', Hour = 'hour' }
+
 export enum Category {
   Backend = 'Backend',
   Frontend = 'Frontend',
   Fullstack = 'Fullstack',
+  Blockchain = 'Blockchain',
+  AI = 'AI',
   Mobile = 'Mobile',
   QA = 'QA',
   DevOps = 'DevOps',
@@ -27,35 +30,44 @@ export enum Category {
   BusinessDevelopment = 'Business development',
   Other = 'Other',
 };
+
+export const EngineeringCategories: Category[] = [
+  Category.Backend,
+  Category.Frontend,
+  Category.Fullstack,
+  Category.Blockchain,
+  Category.AI,
+  Category.Mobile,
+  Category.QA,
+  Category.DevOps,
+  Category.Data,
+];
+
+export const ProductCategories: Category[] = [
+  Category.Product,
+  Category.Design,
+  Category.Marketing,
+];
+
+export const OtherCategories: Category[] = [
+  Category.Sales,
+  Category.Operations,
+  Category.CustomerSuccess,
+  Category.BusinessDevelopment,
+];
+
 export const categoryTree: CategoryTree = [
   {
     name: 'Engineering',
-    categories: [
-      Category.Backend,
-      Category.Frontend,
-      Category.Fullstack,
-      Category.Mobile,
-      Category.QA,
-      Category.DevOps,
-      Category.Data,
-    ]
+    categories: EngineeringCategories,
   },
   {
     name: 'Product',
-    categories: [
-      Category.Product,
-      Category.Design,
-      Category.Marketing,
-    ],
+    categories: ProductCategories,
   },
   {
     name: 'Other',
-    categories: [
-      Category.Sales,
-      Category.Operations,
-      Category.CustomerSuccess,
-      Category.BusinessDevelopment,
-    ]
+    categories: OtherCategories,
   }
 ]
 
