@@ -18,6 +18,7 @@ import { KIT_NAME, kitScrapper } from './kit';
 import { DUCK_DUCK_GO_NAME, duckDuckGoScrapper } from './duckDuckGo';
 import { REC_ROOM_NAME, recRoomScrapper } from './recroom';
 import { CHORUS_ONE_NAME, chorusOneScrapper } from './chorusOne';
+import { ZERO_X_NAME, zeroXScrapper } from './0x';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -71,6 +72,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return recRoomScrapper;
         case CHORUS_ONE_NAME:
             return chorusOneScrapper;
+        case ZERO_X_NAME:
+            return zeroXScrapper;
     }
 
     return null;
