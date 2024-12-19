@@ -1,6 +1,6 @@
 import { UnmarshallError } from 'shared/infrastructure/persistance/dynamodb/error/unmarshallError';
 import { unmarshall } from './unmarshall';
-import { JobPost, JobType, Period, Workplace } from 'jobPost/domain/jobPost';
+import { Category, JobPost, JobType, Period, Workplace } from 'jobPost/domain/jobPost';
 
 const baseDbItem = {
   id: {
@@ -22,7 +22,7 @@ const baseDbItem = {
     S: 'https://jobs.com/careers/123456',
   },
   category: {
-    S: 'frontend',
+    S: 'Frontend',
   },
   salaryCurrency: {
     S: 'eur',
@@ -57,7 +57,7 @@ const baseJobPost: JobPost = {
   type: JobType.FullTime,
   url: 'https://jobs.com/careers/123456',
   title: 'Job title',
-  category: 'frontend',
+  category: Category.Frontend,
   salaryRange: {
     min:  6000,
     max:  7500,

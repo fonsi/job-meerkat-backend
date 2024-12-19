@@ -1,6 +1,6 @@
 import { AttributeValue } from '@aws-sdk/client-dynamodb';
 import { CompanyId } from 'company/domain/company';
-import { JobPost, JobPostId, JobType, Period, Workplace,  } from 'jobPost/domain/jobPost';
+import { Category, JobPost, JobPostId, JobType, Period, Workplace } from 'jobPost/domain/jobPost';
 import { UnmarshallError } from 'shared/infrastructure/persistance/dynamodb/error/unmarshallError';
 
 export const unmarshall = (item: Record<string, AttributeValue>): JobPost => {
@@ -23,7 +23,7 @@ export const unmarshall = (item: Record<string, AttributeValue>): JobPost => {
       type: item['type']['S'] as JobType,
       title: item['title']['S'],
       url: item['url']['S'],
-      category: item['category']['S'],
+      category: item['category']['S'] as Category,
       workplace: item['workplace']['S'] as Workplace,
       location: item['location']['S'],
       salaryRange,
