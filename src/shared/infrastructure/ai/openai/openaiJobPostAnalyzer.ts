@@ -1,4 +1,4 @@
-import { JobPost, JobType, Period, Workplace } from 'jobPost/domain/jobPost';
+import { Category, JobPost, JobType, Period, Workplace } from 'jobPost/domain/jobPost';
 import OpenAI from 'openai';
 
 export type OpenaiJobPost = Omit<JobPost, 'id' | 'originalId' | 'companyId' | 'url' | 'createdAt' | 'closedAt'> & {
@@ -11,7 +11,7 @@ const openai = new OpenAI();
 
 const jobOfferExample: OpenaiJobPost = {
     title: 'Job offer title',
-    category: 'frontend',
+    category: Category.Frontend,
     type: JobType.FullTime,
     salaryRange: {
         min: 60000,
@@ -36,7 +36,13 @@ export const openaiJobPostAnalyzer = async (jobPostContent: string): Promise<Ope
             content: [
                 {
                     type: 'text',
-                    text: `Analyze the following job offer "${jobPostContent}". You have to extract the main data and return it. The output format must be a JSON following this example: ${JSON.stringify(jobOfferExample)}`,
+                    text: `
+                        Analyze the following job offer "${jobPostContent}".
+                        You have to extract the main data and return it.
+                        The output format must be a JSON following this example: ${JSON.stringify(jobOfferExample)}.
+                        The category must be one in (${Object.values(Category)}).
+                        If none of the categories matches, the category should be ${Category.Other}.
+                    `,
                 },
             ]
             },
