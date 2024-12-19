@@ -38,7 +38,7 @@ export const streakScrapper: CompanyScrapperFn = async ({ companyId }) => {
 
   const jobPosts: JobPostsListItem[] = jobPostsElements.toArray().map((jobPost) => {
     const url = `${STREAK_DOMAIN}${$(jobPost).attr('href')}`;
-    const title = $('career-filter-listing-text', jobPost).text();
+    const title = $('.career-filter-listing-text', jobPost).text();
     const id = hash('md5', title); // hash generated from the title because there isn't any job post id
 
     return {
