@@ -22,17 +22,19 @@ import { ZERO_X_NAME, zeroXScrapper } from './0x';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
-}
+};
 
 type BuildCompanyScrapperData = {
     company: Company;
-}
+};
 
 export type ScrappedJobPost = Omit<JobPost, 'id' | 'createdAt' | 'closedAt'> & {
     createdAt?: number | null;
 };
 export type CompanyScrapper = () => Promise<ScrappedJobPost[]>;
-export type CompanyScrapperFn = (data: CompanyScrapperData) => Promise<ScrappedJobPost[]>;
+export type CompanyScrapperFn = (
+    data: CompanyScrapperData,
+) => Promise<ScrappedJobPost[]>;
 
 const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
     switch (companyName?.toLowerCase()) {
@@ -77,9 +79,11 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
     }
 
     return null;
-}
+};
 
-export const buildCompanyScrapper = ({ company }: BuildCompanyScrapperData): CompanyScrapper => {
+export const buildCompanyScrapper = ({
+    company,
+}: BuildCompanyScrapperData): CompanyScrapper => {
     const scrapperFn = getCompanyScrapperFn(company.name);
 
     if (!scrapperFn) {
@@ -88,4 +92,4 @@ export const buildCompanyScrapper = ({ company }: BuildCompanyScrapperData): Com
     }
 
     return () => scrapperFn({ companyId: company.id });
-}
+};

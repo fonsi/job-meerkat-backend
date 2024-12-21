@@ -5,4 +5,4 @@ export const companyGet = async () => {
     const companies = await getAllCompanies();
 
     return success(companies);
-}
+};

@@ -8,25 +8,29 @@ type JobPostWithCompany = JobPost & {
         id: CompanyId;
         name: string;
         logo: CompanyLogo;
-    }
-}
+    };
+};
 
 export const getAllJobPosts = async (): Promise<JobPostWithCompany[]> => {
     const jobPostsPromise = jobPostRepository.getAllOpen();
     const companiesPromise = companyRepository.getAll();
 
-    return Promise.all([jobPostsPromise, companiesPromise]).then(([jobPosts, companies]) => {
-        return jobPosts.map((jobPost) => {
-            const company = companies.find((company) => company.id === jobPost.companyId);
+    return Promise.all([jobPostsPromise, companiesPromise]).then(
+        ([jobPosts, companies]) => {
+            return jobPosts.map((jobPost) => {
+                const company = companies.find(
+                    (company) => company.id === jobPost.companyId,
+                );
 
-            return {
-                ...jobPost,
-                company: {
-                    id: company.id,
-                    name: company.name,
-                    logo: company.logo,
-                }
-            }
-        });
-    })
-}
+                return {
+                    ...jobPost,
+                    company: {
+                        id: company.id,
+                        name: company.name,
+                        logo: company.logo,
+                    },
+                };
+            });
+        },
+    );
+};

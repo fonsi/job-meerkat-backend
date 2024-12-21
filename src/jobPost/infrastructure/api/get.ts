@@ -5,4 +5,4 @@ export const jobPostGet = async () => {
     const jobPosts = await getAllJobPosts();
 
     return success(jobPosts);
-}
+};

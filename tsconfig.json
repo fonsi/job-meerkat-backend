@@ -1,9 +1,6 @@
 {
     "compilerOptions": {
-        "lib": [
-            "es2022",
-            "dom"
-        ],
+        "lib": ["es2022", "dom"],
         "module": "Node16",
         "removeComments": true,
         "moduleResolution": "Node16",
@@ -15,20 +12,12 @@
         "outDir": ".build",
         "baseUrl": "src/",
         "paths": {
-            "company/*": [
-                "company/*"
-            ],
-            "jobPost/*": [
-                "jobPost/*"
-            ],
-            "shared/*": [
-                "shared/*"
-            ]
+            "company/*": ["company/*"],
+            "jobPost/*": ["jobPost/*"],
+            "shared/*": ["shared/*"]
         }
     },
-    "include": [
-        "./**/*.ts"
-    ],
+    "include": ["./**/*.ts"],
     "exclude": [
         "node_modules/**/*",
         ".serverless/**/*",

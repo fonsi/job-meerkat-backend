@@ -8,4 +8,4 @@ export const index = async (event) => {
     const scrappedJobPosts = await scrapCompany({ companyId });
 
     console.log(scrappedJobPosts);
-}
+};
