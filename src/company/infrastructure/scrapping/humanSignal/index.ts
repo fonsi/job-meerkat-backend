@@ -20,8 +20,8 @@ type JobPostsListItem = {
 };
 
 const JOB_POST_SELECTOR = '.CareersListCardTitle';
-const JOB_HEADER_SELECTOR = '#header';
-const JOB_TITLE_SELECTOR = '#content';
+const JOB_HEADER_SELECTOR = '.job__header';
+const JOB_DESCRIPTION_SELECTOR = '.job__description';
 
 const scrapJobPost = async ({
     id,
@@ -31,7 +31,7 @@ const scrapJobPost = async ({
         const $ = await fromURL(url);
 
         const tagsText = $(JOB_HEADER_SELECTOR).text();
-        const titleText = $(JOB_TITLE_SELECTOR).text();
+        const titleText = $(JOB_DESCRIPTION_SELECTOR).text();
         const jobPostContent = `${tagsText} ${titleText}`;
 
         return openaiJobPostAnalyzer(jobPostContent);
