@@ -2,109 +2,109 @@ org: jobmeerkat
 service: jobmeerkat
 
 params:
-  default:
-    processCompanyConsumerTimeout: 120
-    processCompanyQueueVisibilityTimeout: 130
-  dev:
-    processCompanySchedule: cron(0 0 1 1 ? 1970) # never
-  production:
-    processCompanySchedule: cron(0 0/12 ? * * *) # every 12 hours
+    default:
+        processCompanyConsumerTimeout: 120
+        processCompanyQueueVisibilityTimeout: 130
+    dev:
+        processCompanySchedule: cron(0 0 1 1 ? 1970) # never
+    production:
+        processCompanySchedule: cron(0 0 ? * * *) # every day at 0 am
 
 provider:
-  name: aws
-  runtime: nodejs20.x
-  profile: ${env:PROFILE}
-  region: ${env:REGION}
-  environment:
-    DYNAMODB_COMPANY_TABLE_NAME: ${sls:stage}-company
-    DYNAMODB_JOB_POST_TABLE_NAME: ${sls:stage}-job-post
-    PROCESS_COMPANY_QUEUE_NAME: ${sls:stage}-process-company-sqs-queue.fifo
-    OPENAI_API_KEY: ${env:OPENAI_API_KEY}
-    ASSETS_URL: ${env:ASSETS_URL}
-  iamRoleStatements:
-    - Effect: "Allow"
-      Resource:
-        - arn:aws:dynamodb:*:*:table/*
-      Action:
-        - "dynamodb:*"
-    - Effect: Allow
-      Action:
-        - sqs:*
-      Resource:
-        Fn::GetAtt: [ processCompanyQueue, Arn ]
+    name: aws
+    runtime: nodejs20.x
+    profile: ${env:PROFILE}
+    region: ${env:REGION}
+    environment:
+        DYNAMODB_COMPANY_TABLE_NAME: ${sls:stage}-company
+        DYNAMODB_JOB_POST_TABLE_NAME: ${sls:stage}-job-post
+        PROCESS_COMPANY_QUEUE_NAME: ${sls:stage}-process-company-sqs-queue.fifo
+        OPENAI_API_KEY: ${env:OPENAI_API_KEY}
+        ASSETS_URL: ${env:ASSETS_URL}
+    iamRoleStatements:
+        - Effect: 'Allow'
+          Resource:
+              - arn:aws:dynamodb:*:*:table/*
+          Action:
+              - 'dynamodb:*'
+        - Effect: Allow
+          Action:
+              - sqs:*
+          Resource:
+              Fn::GetAtt: [processCompanyQueue, Arn]
 
 resources:
-  Resources:
-    companyTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:provider.environment.DYNAMODB_COMPANY_TABLE_NAME}
-        AttributeDefinitions:
-          - AttributeName: id
-            AttributeType: S
-        KeySchema:
-          - AttributeName: id
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-    jobPostTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:provider.environment.DYNAMODB_JOB_POST_TABLE_NAME}
-        AttributeDefinitions:
-          - AttributeName: id
-            AttributeType: S
-          - AttributeName: companyId
-            AttributeType: S
-        KeySchema:
-          - AttributeName: id
-            KeyType: HASH
-          - AttributeName: companyId
-            KeyType: RANGE
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-    processCompanyQueue:
-      Type: "AWS::SQS::Queue"
-      Properties:
-        QueueName: ${self:provider.environment.PROCESS_COMPANY_QUEUE_NAME}
-        FifoQueue: true
-        VisibilityTimeout: ${param:processCompanyQueueVisibilityTimeout}
+    Resources:
+        companyTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+                TableName: ${self:provider.environment.DYNAMODB_COMPANY_TABLE_NAME}
+                AttributeDefinitions:
+                    - AttributeName: id
+                      AttributeType: S
+                KeySchema:
+                    - AttributeName: id
+                      KeyType: HASH
+                ProvisionedThroughput:
+                    ReadCapacityUnits: 1
+                    WriteCapacityUnits: 1
+        jobPostTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+                TableName: ${self:provider.environment.DYNAMODB_JOB_POST_TABLE_NAME}
+                AttributeDefinitions:
+                    - AttributeName: id
+                      AttributeType: S
+                    - AttributeName: companyId
+                      AttributeType: S
+                KeySchema:
+                    - AttributeName: id
+                      KeyType: HASH
+                    - AttributeName: companyId
+                      KeyType: RANGE
+                ProvisionedThroughput:
+                    ReadCapacityUnits: 1
+                    WriteCapacityUnits: 1
+        processCompanyQueue:
+            Type: 'AWS::SQS::Queue'
+            Properties:
+                QueueName: ${self:provider.environment.PROCESS_COMPANY_QUEUE_NAME}
+                FifoQueue: true
+                VisibilityTimeout: ${param:processCompanyQueueVisibilityTimeout}
 
 functions:
-  devScrapCompany:
-    # function used in development to build scrappers
-    handler: src/company/infrastructure/dev/scrapCompany.index
-  companyId:
-    handler: src/company/infrastructure/api/id/handler.index
-    events:
-      - httpApi:
-          path: /company/{id}
-          method: any
-  company:
-    handler: src/company/infrastructure/api/handler.index
-    events:
-      - httpApi:
-          path: /company
-          method: any
-  jobPost:
-    handler: src/jobPost/infrastructure/api/handler.index
-    events:
-      - httpApi:
-          path: /jobPost
-          method: any
-  processCompanyScheduler:
-    handler: src/company/infrastructure/api/enqueue/handler.index
-    events:
-      - schedule: ${param:processCompanySchedule}
-  processCompanyConsumer:
-    handler: src/company/infrastructure/queue/sqs/consumer/handler.index
-    timeout: ${param:processCompanyConsumerTimeout}
-    events:
-      - sqs:
-          arn:
-            Fn::GetAtt:
-              - processCompanyQueue
-              - Arn
-          batchSize: 1
+    devScrapCompany:
+        # function used in development to build scrappers
+        handler: src/company/infrastructure/dev/scrapCompany.index
+    companyId:
+        handler: src/company/infrastructure/api/id/handler.index
+        events:
+            - httpApi:
+                  path: /company/{id}
+                  method: any
+    company:
+        handler: src/company/infrastructure/api/handler.index
+        events:
+            - httpApi:
+                  path: /company
+                  method: any
+    jobPost:
+        handler: src/jobPost/infrastructure/api/handler.index
+        events:
+            - httpApi:
+                  path: /jobPost
+                  method: any
+    processCompanyScheduler:
+        handler: src/company/infrastructure/api/enqueue/handler.index
+        events:
+            - schedule: ${param:processCompanySchedule}
+    processCompanyConsumer:
+        handler: src/company/infrastructure/queue/sqs/consumer/handler.index
+        timeout: ${param:processCompanyConsumerTimeout}
+        events:
+            - sqs:
+                  arn:
+                      Fn::GetAtt:
+                          - processCompanyQueue
+                          - Arn
+                  batchSize: 1
