@@ -55,6 +55,10 @@ export const openaiJobPostAnalyzer = async (
                         The category must be one in (${Object.values(Category)}).
                         If the job post title says something like "Software engineer" or "Developer" but you can't find a category that fits well, you can look for the required tech skills to guess if this position is for any of these engineering categories: ${EngineeringCategories.join(',')}.
                         If none of the categories matches, the category should be ${Category.Other}.
+                        Location could be a city, a state, a country, a continent, a world region (like EMEA), a span of time zones or a list of the above.
+                        If the job post is available from anywhere in the world, location should be 'worldwide'.
+                        If you can't find a location within the job offer context, it should be 'unknown'.
+                        Location never could be the word 'remote'.
                     `,
                     },
                 ],
