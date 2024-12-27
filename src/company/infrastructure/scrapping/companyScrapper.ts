@@ -20,6 +20,7 @@ import { REC_ROOM_NAME, recRoomScrapper } from './recroom';
 import { CHORUS_ONE_NAME, chorusOneScrapper } from './chorusOne';
 import { ZERO_X_NAME, zeroXScrapper } from './0x';
 import { TINYBIRD_NAME, tinybirdScrapper } from './tinybird';
+import { HAPPY_MONEY_NAME, happyMoneyScrapper } from './happyMoney';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -79,6 +80,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return zeroXScrapper;
         case TINYBIRD_NAME:
             return tinybirdScrapper;
+        case HAPPY_MONEY_NAME:
+            return happyMoneyScrapper;
     }
 
     return null;
