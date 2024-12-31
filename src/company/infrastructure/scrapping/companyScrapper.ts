@@ -22,6 +22,7 @@ import { ZERO_X_NAME, zeroXScrapper } from './0x';
 import { TINYBIRD_NAME, tinybirdScrapper } from './tinybird';
 import { HAPPY_MONEY_NAME, happyMoneyScrapper } from './happyMoney';
 import { ASTRONOMER_NAME, astronomerScrapper } from './astronomer';
+import { CIRCLE_NAME, circleScrapper } from './circle';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -85,6 +86,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return happyMoneyScrapper;
         case ASTRONOMER_NAME:
             return astronomerScrapper;
+        case CIRCLE_NAME:
+            return circleScrapper;
     }
 
     return null;
