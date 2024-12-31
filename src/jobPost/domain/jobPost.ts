@@ -45,6 +45,7 @@ export enum Category {
     Marketing = 'Marketing',
     Sales = 'Sales',
     Operations = 'Operations',
+    'People/HR' = 'People/HR',
     CustomerSuccess = 'Customer success',
     BusinessDevelopment = 'Business development',
     Legal = 'Legal',
@@ -75,6 +76,7 @@ export const ProductCategories: Category[] = [
 export const OtherCategories: Category[] = [
     Category.Sales,
     Category.Operations,
+    Category['People/HR'],
     Category.CustomerSuccess,
     Category.BusinessDevelopment,
     Category.Legal,

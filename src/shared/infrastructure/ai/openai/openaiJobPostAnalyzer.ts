@@ -53,7 +53,7 @@ export const openaiJobPostAnalyzer = async (
                         You have to extract the main data and return it.
                         The output format must be a JSON following this example: ${JSON.stringify(jobOfferExample)}.
                         The category must be one in (${Object.values(Category)}).
-                        If the job post title says something like "Software engineer" or "Developer" but you can't find a category that fits well, you can look for the required tech skills to guess if this position is for any of these engineering categories: ${EngineeringCategories.join(',')}.
+                        If the job post title includes words like "Software engineer", "Engineer", "Developer" or "Architect" but you can't find a category that fits well, you can look for the required tech skills to guess if this position is for any of these engineering categories: ${EngineeringCategories.join(',')}.
                         If none of the categories matches, the category should be ${Category.Other}.
                         Location could be a city, a state, a country, a continent, a world region (like EMEA), a span of time zones or a list of the above.
                         If the job post is available from anywhere in the world, location should be 'worldwide'.
