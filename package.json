@@ -30,10 +30,10 @@
         "node": "20.17.0"
     },
     "dependencies": {
-        "@aws-sdk/client-api-gateway": "^3.686.0",
-        "@aws-sdk/client-dynamodb": "^3.714.0",
-        "@aws-sdk/client-lambda": "^3.714.0",
-        "@aws-sdk/client-sqs": "^3.686.0",
+        "@aws-sdk/client-api-gateway": "^3.716.0",
+        "@aws-sdk/client-dynamodb": "^3.716.0",
+        "@aws-sdk/client-lambda": "^3.716.0",
+        "@aws-sdk/client-sqs": "^3.716.0",
         "cheerio": "^1.0.0",
         "openai": "^4.77.0"
     },
