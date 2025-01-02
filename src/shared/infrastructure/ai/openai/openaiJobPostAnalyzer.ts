@@ -59,6 +59,7 @@ export const openaiJobPostAnalyzer = async (
                         If the job post is available from anywhere in the world, location should be 'worldwide'.
                         If you can't find a location within the job offer context, it should be 'unknown'.
                         Location never could be the word 'remote'.
+                        The workplace must be one in (${Object.values(Workplace)}).
                     `,
                     },
                 ],

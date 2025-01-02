@@ -7,11 +7,12 @@ import {
 
 export const PHANTOM_NAME = 'phantom';
 export const PHANTOM_INITIAL_URL =
-    'https://boards-api.greenhouse.io/v1/boards/phantom45/departments';
+    'https://api.ashbyhq.com/posting-api/job-board/phantom';
 
 type ScrapJobPostData = {
     id: number;
     url: string;
+    locationText: string;
 };
 
 type JobPostsListItem = {
@@ -19,22 +20,24 @@ type JobPostsListItem = {
     url: string;
     title: string;
     createdAt: number;
+    locationText: string;
 };
-
-const JOB_HEADER_SELECTOR = '.job__header';
-const JOB_CONTENT_SELECTOR = '.job__description';
 
 const scrapJobPost = async ({
     id,
     url,
+    locationText,
 }: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
         const $ = await fromURL(url);
 
-        const jobPostHeader = $(JOB_HEADER_SELECTOR).text();
-        const jobPostContent = $(JOB_CONTENT_SELECTOR).text();
+        const metaDescriptionContent = $('meta[name="description"]').attr(
+            'content',
+        );
 
-        return openaiJobPostAnalyzer(`${jobPostHeader} ${jobPostContent}`);
+        return openaiJobPostAnalyzer(
+            `Location: ${locationText}. ${metaDescriptionContent}`,
+        );
     } catch (e) {
         console.log(`Error processing ${PHANTOM_NAME} job post ${id}`, e);
     }
@@ -46,16 +49,15 @@ export const phantomScrapper: CompanyScrapperFn = async ({ companyId }) => {
 
     const jobPosts: JobPostsListItem[] = [];
 
-    jobsData.departments.forEach((department) => {
-        department.jobs.forEach((jobData) => {
-            const url = jobData.absolute_url;
+    jobsData.jobs.forEach((jobData) => {
+        const url = jobData.jobUrl;
 
-            jobPosts.push({
-                id: jobData.internal_job_id,
-                url,
-                title: jobData.title,
-                createdAt: new Date(jobData.updated_at).getTime(),
-            });
+        jobPosts.push({
+            id: jobData.id,
+            url,
+            title: jobData.title,
+            createdAt: new Date(jobData.publishedAt).getTime(),
+            locationText: jobData.location,
         });
     });
 
@@ -70,12 +72,14 @@ export const phantomScrapper: CompanyScrapperFn = async ({ companyId }) => {
             const jobPostData = await scrapJobPost({
                 id: jobPost.id,
                 url: jobPost.url,
+                locationText: jobPost.locationText,
             });
 
             data.push({
                 ...jobPostData,
                 originalId: jobPost.id.toString(),
                 url: jobPost.url,
+                title: jobPost.title,
                 companyId,
                 createdAt: jobPost.createdAt,
             });
