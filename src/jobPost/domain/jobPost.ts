@@ -4,8 +4,13 @@ import { randomUUID, UUID } from 'crypto';
 export type JobPostId = UUID;
 export type CategoryTree = Array<{
     name: string;
-    categories: Category[];
+    categories: WebCategory[];
 }>;
+
+type WebCategory = {
+    name: Category;
+    slug: string;
+};
 
 export enum JobType {
     FullTime = 'fullTime',
@@ -52,35 +57,101 @@ export enum Category {
     Other = 'Other',
 }
 
-export const EngineeringCategories: Category[] = [
-    Category.Backend,
-    Category.Frontend,
-    Category.Fullstack,
-    Category.Blockchain,
-    Category.AI,
-    Category.Mobile,
-    Category.QA,
-    Category.DevOps,
-    Category.Data,
-    Category.GameDeveloper,
-    Category.MachineLearning,
-    Category.EngineeringManager,
+export const EngineeringCategories: WebCategory[] = [
+    {
+        name: Category.Backend,
+        slug: 'backend',
+    },
+    {
+        name: Category.Frontend,
+        slug: 'frontend',
+    },
+    {
+        name: Category.Fullstack,
+        slug: 'fullstack',
+    },
+    {
+        name: Category.Blockchain,
+        slug: 'blockchain',
+    },
+    {
+        name: Category.AI,
+        slug: 'ai',
+    },
+    {
+        name: Category.Mobile,
+        slug: 'mobile',
+    },
+    {
+        name: Category.QA,
+        slug: 'qa',
+    },
+    {
+        name: Category.DevOps,
+        slug: 'devops',
+    },
+    {
+        name: Category.Data,
+        slug: 'data',
+    },
+    {
+        name: Category.GameDeveloper,
+        slug: 'game-developer',
+    },
+    {
+        name: Category.MachineLearning,
+        slug: 'machine-learning',
+    },
+    {
+        name: Category.EngineeringManager,
+        slug: 'engineering-manager',
+    },
 ];
 
-export const ProductCategories: Category[] = [
-    Category.Product,
-    Category.Design,
-    Category.Marketing,
+export const ProductCategories: WebCategory[] = [
+    {
+        name: Category.Product,
+        slug: 'product',
+    },
+    {
+        name: Category.Design,
+        slug: 'design',
+    },
+    {
+        name: Category.Marketing,
+        slug: 'marketing',
+    },
 ];
 
-export const OtherCategories: Category[] = [
-    Category.Sales,
-    Category.Operations,
-    Category['People/HR'],
-    Category.CustomerSuccess,
-    Category.BusinessDevelopment,
-    Category.Legal,
-    Category.Other,
+export const OtherCategories: WebCategory[] = [
+    {
+        name: Category.Sales,
+        slug: 'sales',
+    },
+    {
+        name: Category.Operations,
+        slug: 'operations',
+    },
+    {
+        name: Category['People/HR'],
+        slug: 'people-hr',
+    },
+    {
+        name: Category.CustomerSuccess,
+        slug: 'customer-success',
+    },
+    {
+        name: Category.BusinessDevelopment,
+        slug: 'businness-development',
+    },
+    {
+        name: Category.Legal,
+        slug: 'legal',
+    },
+    {
+        name: Category.Other,
+        slug: 'other',
+    },
 ];
 
 export const categoryTree: CategoryTree = [
