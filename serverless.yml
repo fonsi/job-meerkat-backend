@@ -94,6 +94,12 @@ functions:
             - httpApi:
                   path: /jobPost
                   method: any
+    category:
+        handler: src/category/infrastructure/api/handler.index
+        events:
+            - httpApi:
+                  path: /category
+                  method: any
     processCompanyScheduler:
         handler: src/company/infrastructure/api/enqueue/handler.index
         events:
