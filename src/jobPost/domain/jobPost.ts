@@ -142,7 +142,7 @@ export const OtherCategories: WebCategory[] = [
     },
     {
         name: Category.BusinessDevelopment,
-        slug: 'businness-development',
+        slug: 'business-development',
     },
     {
         name: Category.Legal,
