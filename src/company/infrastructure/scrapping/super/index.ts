@@ -50,7 +50,10 @@ export const superScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 url,
                 title: $('h5', jobPost).text(),
             };
-        });
+        })
+        .filter(
+            (jobPost) => !jobPost.title.toLocaleLowerCase().includes(' intern'),
+        );
 
     const data: ScrappedJobPost[] = [];
     for (let i = 0; i < jobPosts.length; i++) {
