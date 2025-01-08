@@ -25,6 +25,7 @@ import { ASTRONOMER_NAME, astronomerScrapper } from './astronomer';
 import { CIRCLE_NAME, circleScrapper } from './circle';
 import { INVISIBLE_NAME, invisibleScrapper } from './invisible';
 import { PHOTOROOM_NAME, photoroomScrapper } from './photoroom';
+import { HELPSCOUT_NAME, helpscoutScrapper } from './helpscout';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -94,6 +95,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return invisibleScrapper;
         case PHOTOROOM_NAME:
             return photoroomScrapper;
+        case HELPSCOUT_NAME:
+            return helpscoutScrapper;
     }
 
     return null;
