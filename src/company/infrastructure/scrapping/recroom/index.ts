@@ -1,11 +1,13 @@
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
 import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 export const REC_ROOM_NAME = 'rec room';
-export const REC_ROOM_INITIAL_URL =
+const REC_ROOM_INITIAL_URL =
     'https://boards-api.greenhouse.io/v1/boards/recroom/jobs?content=true';
 
 type ScrapJobPostData = {
@@ -29,7 +31,13 @@ const scrapJobPost = async ({
     try {
         return openaiJobPostAnalyzer(content);
     } catch (e) {
-        console.log(`Error processing ${REC_ROOM_NAME} job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${REC_ROOM_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -74,7 +82,13 @@ export const recRoomScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 location: jobPost.location || jobPostData.location,
             });
         } catch (e) {
-            console.log(`Error processing ${REC_ROOM_NAME}`, e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${REC_ROOM_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

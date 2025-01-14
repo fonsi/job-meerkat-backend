@@ -4,9 +4,11 @@ import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
+import { logger } from 'shared/infrastructure/logger/logger';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 
 export const CHORUS_ONE_NAME = 'chorus one';
-export const CHORUS_ONE_INITIAL_URL = 'https://careers.chorus.one/api/offers';
+const CHORUS_ONE_INITIAL_URL = 'https://careers.chorus.one/api/offers';
 
 type ScrapJobPostData = {
     id: number;
@@ -32,7 +34,13 @@ const scrapJobPost = async ({
 
         return openaiJobPostAnalyzer(jobPostContent);
     } catch (e) {
-        console.log(`Error processing ${CHORUS_ONE_NAME} job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${CHORUS_ONE_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -77,7 +85,13 @@ export const chorusOneScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 createdAt: jobPost.createdAt,
             });
         } catch (e) {
-            console.log(`Error processing ${CHORUS_ONE_NAME}`, e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${CHORUS_ONE_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

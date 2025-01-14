@@ -4,9 +4,11 @@ import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 export const SUPER_NAME = 'super';
-export const SUPER_INITIAL_URL = 'https://jobs.lever.co/super-com';
+const SUPER_INITIAL_URL = 'https://jobs.lever.co/super-com';
 
 type ScrapJobPostData = {
     id: string;
@@ -32,7 +34,13 @@ const scrapJobPost = async ({
 
         return openaiJobPostAnalyzer(jobPostContent);
     } catch (e) {
-        console.log(`Error processing ${SUPER_NAME} job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${SUPER_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -75,7 +83,13 @@ export const superScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 companyId,
             });
         } catch (e) {
-            console.log(`Error processing ${SUPER_NAME}`, e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${SUPER_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

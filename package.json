@@ -35,7 +35,8 @@
         "@aws-sdk/client-lambda": "^3.716.0",
         "@aws-sdk/client-sqs": "^3.716.0",
         "cheerio": "^1.0.0",
-        "openai": "^4.77.0"
+        "openai": "^4.77.0",
+        "rollbar": "^2.26.4"
     },
     "lint-staged": {
         "*.{js,ts,mjs,json}": "prettier --list-different --write"

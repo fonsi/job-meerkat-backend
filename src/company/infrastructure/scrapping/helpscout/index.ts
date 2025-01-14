@@ -4,6 +4,8 @@ import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 export const HELPSCOUT_NAME = 'helpscout';
 const HELPSCOUT_INITIAL_URL = 'https://www.helpscout.com/company/careers/';
@@ -32,7 +34,13 @@ const scrapJobPost = async ({
 
         return openaiJobPostAnalyzer(jobPostContent);
     } catch (e) {
-        console.log(`Error processing ${HELPSCOUT_NAME} job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${HELPSCOUT_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -75,7 +83,13 @@ export const helpscoutScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 companyId,
             });
         } catch (e) {
-            console.log(`Error processing ${HELPSCOUT_NAME}`, e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${HELPSCOUT_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

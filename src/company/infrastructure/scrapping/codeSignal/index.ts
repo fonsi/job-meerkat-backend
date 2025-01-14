@@ -4,6 +4,8 @@ import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
+import { logger } from 'shared/infrastructure/logger/logger';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 
 export const CODE_SIGNAL_NAME = 'codesignal';
 const CODE_SIGNAL_INITIAL_URL =
@@ -41,7 +43,13 @@ const scrapJobPost = async ({
             `Location: ${location}. ${jobPostHeader} ${jobPostContent}`,
         );
     } catch (e) {
-        console.log(`Error processing ${CODE_SIGNAL_NAME} job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${CODE_SIGNAL_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -85,7 +93,13 @@ export const codeSignalScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 createdAt: jobPost.createdAt,
             });
         } catch (e) {
-            console.log(`Error processing ${CODE_SIGNAL_NAME}`, e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${CODE_SIGNAL_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

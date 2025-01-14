@@ -5,10 +5,12 @@ import {
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
 import { hash } from 'node:crypto';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 export const PLANET_SCALE_NAME = 'planetscale';
-export const PLANET_SCALE_DOMAIN = 'https://planetscale.com';
-export const PLANET_SCALE_INITIAL_URL = `${PLANET_SCALE_DOMAIN}/careers`;
+const PLANET_SCALE_DOMAIN = 'https://planetscale.com';
+const PLANET_SCALE_INITIAL_URL = `${PLANET_SCALE_DOMAIN}/careers`;
 
 type ScrapJobPostData = {
     title: string;
@@ -34,10 +36,13 @@ const scrapJobPost = async ({
 
         return openaiJobPostAnalyzer(jobPostContent);
     } catch (e) {
-        console.log(
-            `Error processing ${PLANET_SCALE_NAME} job post ${title}`,
+        const error = errorWithPrefix(
             e,
+            `Error processing ${PLANET_SCALE_NAME} job post ${title}`,
         );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -79,7 +84,13 @@ export const planetScaleScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 companyId,
             });
         } catch (e) {
-            console.log(`Error processing ${PLANET_SCALE_NAME}`, e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${PLANET_SCALE_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

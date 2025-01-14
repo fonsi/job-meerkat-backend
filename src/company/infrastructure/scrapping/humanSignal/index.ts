@@ -4,9 +4,11 @@ import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 export const HUMAN_SIGNAL_NAME = 'humansignal';
-export const HUMAN_SIGNAL_INITIAL_URL = 'https://humansignal.com/careers/';
+const HUMAN_SIGNAL_INITIAL_URL = 'https://humansignal.com/careers/';
 
 type ScrapJobPostData = {
     id: string;
@@ -36,7 +38,13 @@ const scrapJobPost = async ({
 
         return openaiJobPostAnalyzer(jobPostContent);
     } catch (e) {
-        console.log(`Error processing ${HUMAN_SIGNAL_NAME} job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${HUMAN_SIGNAL_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -76,7 +84,13 @@ export const humanSignalScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 companyId,
             });
         } catch (e) {
-            console.log(`Error processing ${HUMAN_SIGNAL_NAME}`, e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${HUMAN_SIGNAL_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

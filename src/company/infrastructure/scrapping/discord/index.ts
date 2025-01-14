@@ -4,9 +4,11 @@ import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 export const DISCORD_NAME = 'discord';
-export const DISCORD_INITIAL_URL =
+const DISCORD_INITIAL_URL =
     'https://api.greenhouse.io/v1/boards/discord/jobs?content=true';
 
 type ScrapJobPostData = {
@@ -36,7 +38,13 @@ const scrapJobPost = async ({
 
         return openaiJobPostAnalyzer(`${jobPostHeader} ${jobPostContent}`);
     } catch (e) {
-        console.log(`Error processing ${DISCORD_NAME} job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${DISCORD_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -76,7 +84,13 @@ export const discordScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 createdAt: jobPost.createdAt,
             });
         } catch (e) {
-            console.log(`Error processing ${DISCORD_NAME}`, e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${DISCORD_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

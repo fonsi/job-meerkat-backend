@@ -4,10 +4,11 @@ import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 export const REVENUE_CAT_NAME = 'revenuecat';
-export const REVENUE_CAT_INITIAL_URL =
-    'https://job-boards.greenhouse.io/revenuecat';
+const REVENUE_CAT_INITIAL_URL = 'https://job-boards.greenhouse.io/revenuecat';
 
 type ScrapJobPostData = {
     id: string;
@@ -37,7 +38,13 @@ const scrapJobPost = async ({
 
         return openaiJobPostAnalyzer(jobPostContent);
     } catch (e) {
-        console.log(`Error processing ${REVENUE_CAT_NAME} job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${REVENUE_CAT_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -77,7 +84,13 @@ export const revenueCatScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 companyId,
             });
         } catch (e) {
-            console.log(`Error processing ${REVENUE_CAT_NAME}`, e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${REVENUE_CAT_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

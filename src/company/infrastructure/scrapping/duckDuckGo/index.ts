@@ -1,11 +1,13 @@
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
 import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 export const DUCK_DUCK_GO_NAME = 'duckduckgo';
-export const DUCK_DUCK_GO_INITIAL_URL = 'https://duckduckgo.com/jobs.js';
+const DUCK_DUCK_GO_INITIAL_URL = 'https://duckduckgo.com/jobs.js';
 
 type ScrapJobPostData = {
     id: string;
@@ -27,7 +29,13 @@ const scrapJobPost = async ({
     try {
         return openaiJobPostAnalyzer(JSON.stringify(data));
     } catch (e) {
-        console.log(`Error processing ${DUCK_DUCK_GO_NAME} job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${DUCK_DUCK_GO_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -70,7 +78,13 @@ export const duckDuckGoScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 createdAt: jobPost.createdAt,
             });
         } catch (e) {
-            console.log(`Error processing ${DUCK_DUCK_GO_NAME}`, e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${DUCK_DUCK_GO_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

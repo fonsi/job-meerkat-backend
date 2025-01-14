@@ -4,10 +4,11 @@ import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 export const CUSTOMERIO_NAME = 'customer.io';
-export const CUSTOMERIO_INITIAL_URL =
-    'https://job-boards.greenhouse.io/customerio';
+const CUSTOMERIO_INITIAL_URL = 'https://job-boards.greenhouse.io/customerio';
 
 type ScrapJobPostData = {
     id: string;
@@ -39,7 +40,13 @@ const scrapJobPost = async ({
 
         return openaiJobPostAnalyzer(jobPostContent);
     } catch (e) {
-        console.log(`Error processing ${CUSTOMERIO_NAME} job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${CUSTOMERIO_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -79,7 +86,13 @@ export const customerioScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 companyId,
             });
         } catch (e) {
-            console.log(`Error processing ${CUSTOMERIO_NAME}`, e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${CUSTOMERIO_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

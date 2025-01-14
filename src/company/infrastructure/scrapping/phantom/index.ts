@@ -4,9 +4,11 @@ import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 export const PHANTOM_NAME = 'phantom';
-export const PHANTOM_INITIAL_URL =
+const PHANTOM_INITIAL_URL =
     'https://api.ashbyhq.com/posting-api/job-board/phantom';
 
 type ScrapJobPostData = {
@@ -39,7 +41,13 @@ const scrapJobPost = async ({
             `Location: ${locationText}. ${metaDescriptionContent}`,
         );
     } catch (e) {
-        console.log(`Error processing ${PHANTOM_NAME} job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${PHANTOM_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -84,7 +92,13 @@ export const phantomScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 createdAt: jobPost.createdAt,
             });
         } catch (e) {
-            console.log(`Error processing ${PHANTOM_NAME}`, e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${PHANTOM_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

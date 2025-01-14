@@ -5,9 +5,11 @@ import {
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
 import { hash } from 'node:crypto';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 export const MIMO_NAME = 'mimo';
-export const MIMO_INITIAL_URL = 'https://jobs.mimo.org';
+const MIMO_INITIAL_URL = 'https://jobs.mimo.org';
 
 type ScrapJobPostData = {
     id: string;
@@ -33,7 +35,13 @@ const scrapJobPost = async ({
 
         return openaiJobPostAnalyzer(jobPostContent);
     } catch (e) {
-        console.log(`Error processing ${MIMO_NAME} job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${MIMO_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -82,7 +90,10 @@ export const mimoScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 companyId,
             });
         } catch (e) {
-            console.log(`Error processing ${MIMO_NAME}`, e);
+            const error = errorWithPrefix(e, `[Error processing ${MIMO_NAME}]`);
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

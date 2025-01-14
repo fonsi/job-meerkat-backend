@@ -4,10 +4,11 @@ import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 export const ASTRONOMER_NAME = 'astronomer';
-export const ASTRONOMER_INITIAL_URL =
-    'https://www.astronomer.io/careers';
+const ASTRONOMER_INITIAL_URL = 'https://www.astronomer.io/careers';
 
 type ScrapJobPostData = {
     id: string;
@@ -32,11 +33,21 @@ const scrapJobPost = async ({
     try {
         const $ = await fromURL(url);
 
-        const metaDescriptionContent = $('meta[name="description"]').attr('content');
+        const metaDescriptionContent = $('meta[name="description"]').attr(
+            'content',
+        );
 
-        return openaiJobPostAnalyzer(`Location: ${locationText}. ${metaDescriptionContent}`);
+        return openaiJobPostAnalyzer(
+            `Location: ${locationText}. ${metaDescriptionContent}`,
+        );
     } catch (e) {
-        console.log(`Error processing ${ASTRONOMER_NAME} job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${ASTRONOMER_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -81,7 +92,13 @@ export const astronomerScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 companyId,
             });
         } catch (e) {
-            console.log(`Error processing ${ASTRONOMER_NAME}`, e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${ASTRONOMER_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

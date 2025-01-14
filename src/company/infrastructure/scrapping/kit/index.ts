@@ -4,9 +4,11 @@ import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 export const KIT_NAME = 'kit';
-export const KIT_INITIAL_URL = 'https://job-boards.greenhouse.io/convertkit';
+const KIT_INITIAL_URL = 'https://job-boards.greenhouse.io/convertkit';
 
 type ScrapJobPostData = {
     id: string;
@@ -36,7 +38,13 @@ const scrapJobPost = async ({
 
         return openaiJobPostAnalyzer(jobPostContent);
     } catch (e) {
-        console.log(`Error processing ${KIT_NAME} job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${KIT_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -77,7 +85,10 @@ export const kitScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 companyId,
             });
         } catch (e) {
-            console.log(`Error processing ${KIT_NAME}`, e);
+            const error = errorWithPrefix(e, `[Error processing ${KIT_NAME}]`);
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

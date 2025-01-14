@@ -4,9 +4,11 @@ import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 export const FLOAT_NAME = 'float';
-export const FLOAT_INITIAL_URL = 'https://www.float.com/careers';
+const FLOAT_INITIAL_URL = 'https://www.float.com/careers';
 
 type ScrapJobPostData = {
     id: string;
@@ -38,7 +40,13 @@ const scrapJobPost = async ({
 
         return openaiJobPost;
     } catch (e) {
-        console.log(`Error processing Float job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${FLOAT_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -77,7 +85,13 @@ export const floatScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 companyId,
             });
         } catch (e) {
-            console.log('Error processing Float', e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${FLOAT_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

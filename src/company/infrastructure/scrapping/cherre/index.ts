@@ -4,10 +4,11 @@ import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 export const CHERRE_NAME = 'cherre';
-export const CHERRE_INITIAL_URL =
-    'https://api.lever.co/v0/postings/cherre?mode=json';
+const CHERRE_INITIAL_URL = 'https://api.lever.co/v0/postings/cherre?mode=json';
 
 type ScrapJobPostData = {
     id: string;
@@ -34,7 +35,13 @@ const scrapJobPost = async ({
 
         return openaiJobPostAnalyzer(jobPostContent);
     } catch (e) {
-        console.log(`Error processing ${CHERRE_NAME} job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${CHERRE_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -74,7 +81,13 @@ export const cherreScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 createdAt: jobPost.createdAt,
             });
         } catch (e) {
-            console.log(`Error processing ${CHERRE_NAME}`, e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${CHERRE_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

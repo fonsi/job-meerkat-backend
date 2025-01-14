@@ -4,9 +4,11 @@ import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 export const ALL_TRAILS_NAME = 'alltrails';
-export const ALL_TRAILS_INITIAL_URL =
+const ALL_TRAILS_INITIAL_URL =
     'https://api.lever.co/v0/postings/alltrails?mode=json';
 
 type ScrapJobPostData = {
@@ -34,7 +36,13 @@ const scrapJobPost = async ({
 
         return openaiJobPostAnalyzer(jobPostContent);
     } catch (e) {
-        console.log(`Error processing ${ALL_TRAILS_NAME} job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${ALL_TRAILS_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -74,7 +82,13 @@ export const allTrailsScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 createdAt: jobPost.createdAt,
             });
         } catch (e) {
-            console.log(`Error processing ${ALL_TRAILS_NAME}`, e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${ALL_TRAILS_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

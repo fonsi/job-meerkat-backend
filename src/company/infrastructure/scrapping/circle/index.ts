@@ -4,9 +4,11 @@ import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 export const CIRCLE_NAME = 'circle';
-export const CIRCLE_INITIAL_URL =
+const CIRCLE_INITIAL_URL =
     'https://boards-api.greenhouse.io/v1/boards/circleso/jobs?content=true';
 
 type ScrapJobPostData = {
@@ -36,7 +38,13 @@ const scrapJobPost = async ({
 
         return openaiJobPostAnalyzer(`${jobPostHeader} ${jobPostContent}`);
     } catch (e) {
-        console.log(`Error processing ${CIRCLE_NAME} job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${CIRCLE_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -76,7 +84,13 @@ export const circleScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 createdAt: jobPost.createdAt,
             });
         } catch (e) {
-            console.log(`Error processing ${CIRCLE_NAME}`, e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${CIRCLE_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

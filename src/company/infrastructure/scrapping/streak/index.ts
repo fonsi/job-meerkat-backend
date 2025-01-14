@@ -5,10 +5,12 @@ import {
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
 import { hash } from 'node:crypto';
+import { logger } from 'shared/infrastructure/logger/logger';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 
 export const STREAK_NAME = 'streak';
-export const STREAK_DOMAIN = 'https://streak.com';
-export const STREAK_INITIAL_URL = `${STREAK_DOMAIN}/careers`;
+const STREAK_DOMAIN = 'https://streak.com';
+const STREAK_INITIAL_URL = `${STREAK_DOMAIN}/careers`;
 
 type ScrapJobPostData = {
     title: string;
@@ -34,7 +36,13 @@ const scrapJobPost = async ({
 
         return openaiJobPostAnalyzer(jobPostContent);
     } catch (e) {
-        console.log(`Error processing ${STREAK_NAME} job post ${title}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${STREAK_NAME} job post ${title}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -76,7 +84,13 @@ export const streakScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 companyId,
             });
         } catch (e) {
-            console.log(`Error processing ${STREAK_NAME}`, e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${STREAK_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

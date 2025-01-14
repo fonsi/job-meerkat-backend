@@ -4,6 +4,8 @@ import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 export const TINYBIRD_NAME = 'tinybird';
 const BASE_URL = 'https://www.tinybird.co';
@@ -32,7 +34,13 @@ const scrapJobPost = async ({
 
         return openaiJobPostAnalyzer(content);
     } catch (e) {
-        console.log(`Error processing ${TINYBIRD_NAME} job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${TINYBIRD_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -72,7 +80,13 @@ export const tinybirdScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 companyId,
             });
         } catch (e) {
-            console.log(`Error processing ${TINYBIRD_NAME}`, e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${TINYBIRD_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 

@@ -4,9 +4,11 @@ import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 export const FEELD_NAME = 'feeld';
-export const FEELD_INITIAL_URL = 'https://feeld.co/careers';
+const FEELD_INITIAL_URL = 'https://feeld.co/careers';
 
 type ScrapJobPostData = {
     id: string;
@@ -54,7 +56,13 @@ const scrapJobPost = async ({
             url: realUrl,
         };
     } catch (e) {
-        console.log(`Error processing ${FEELD_NAME} job post ${id}`, e);
+        const error = errorWithPrefix(
+            e,
+            `Error processing ${FEELD_NAME} job post ${id}`,
+        );
+
+        console.log(error);
+        logger.error(error);
     }
 };
 
@@ -95,7 +103,13 @@ export const feeldScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 companyId,
             });
         } catch (e) {
-            console.log(`Error processing ${FEELD_NAME}`, e);
+            const error = errorWithPrefix(
+                e,
+                `[Error processing ${FEELD_NAME}]`,
+            );
+
+            console.log(error);
+            logger.error(error);
         }
     }
 
