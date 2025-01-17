@@ -27,6 +27,7 @@ import { INVISIBLE_NAME, invisibleScrapper } from './invisible';
 import { PHOTOROOM_NAME, photoroomScrapper } from './photoroom';
 import { HELPSCOUT_NAME, helpscoutScrapper } from './helpscout';
 import { CODE_SIGNAL_NAME, codeSignalScrapper } from './codeSignal';
+import { MATTERMOST_NAME, mattermostScrapper } from './mattermost';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -100,6 +101,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return helpscoutScrapper;
         case CODE_SIGNAL_NAME:
             return codeSignalScrapper;
+        case MATTERMOST_NAME:
+            return mattermostScrapper;
     }
 
     return null;
