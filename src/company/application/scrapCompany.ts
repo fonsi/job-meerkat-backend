@@ -4,6 +4,7 @@ import {
     buildCompanyScrapper,
     ScrappedJobPost,
 } from 'company/infrastructure/scrapping/companyScrapper';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 type ScrappeCompanyCommand = {
     companyId: CompanyId;
@@ -20,5 +21,11 @@ export const scrapCompany = async ({
 
     const scrap = buildCompanyScrapper({ company });
 
-    return await scrap();
+    const scrappedJobPosts = await scrap();
+
+    if (!scrappedJobPosts || scrappedJobPosts.length === 0) {
+        logger.info(`No open positions in ${company.name}`);
+    }
+
+    return scrappedJobPosts;
 };
