@@ -13,7 +13,7 @@ export const index = async (event) => {
 
         switch (method) {
             case HTTP_METHOD.GET:
-                return await companyGet();
+                return await companyGet(event);
             case HTTP_METHOD.POST:
                 return await companyPost(event);
         }
