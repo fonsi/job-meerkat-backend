@@ -30,6 +30,7 @@ import { CODE_SIGNAL_NAME, codeSignalScrapper } from './codeSignal';
 import { MATTERMOST_NAME, mattermostScrapper } from './mattermost';
 import { HIGHTOUCH_NAME, hightouchScrapper } from './hightouch';
 import { HUMAN_INTEREST_NAME, humanInterestScrapper } from './humanInterest';
+import { GUIDELINE_NAME, guidelineScrapper } from './guideline';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -109,6 +110,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return hightouchScrapper;
         case HUMAN_INTEREST_NAME:
             return humanInterestScrapper;
+        case GUIDELINE_NAME:
+            return guidelineScrapper;
     }
 
     return null;
