@@ -47,14 +47,17 @@ export const duckDuckGoScrapper: CompanyScrapperFn = async ({ companyId }) => {
 
     jobsData.jobs.forEach((jobData) => {
         const url = jobData.jobUrl;
+        const isListed = jobData.isListed;
 
-        jobPosts.push({
-            id: jobData.id,
-            url,
-            title: jobData.title,
-            createdAt: new Date(jobData.publishedAt).getTime(),
-            data: jobData,
-        });
+        if (isListed) {
+            jobPosts.push({
+                id: jobData.id,
+                url,
+                title: jobData.title,
+                createdAt: new Date(jobData.publishedAt).getTime(),
+                data: jobData,
+            });
+        }
     });
 
     const data: ScrappedJobPost[] = [];
