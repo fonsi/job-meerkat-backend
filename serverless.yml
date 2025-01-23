@@ -3,8 +3,8 @@ service: jobmeerkat
 
 params:
     default:
-        processCompanyConsumerTimeout: 120
-        processCompanyQueueVisibilityTimeout: 130
+        processCompanyConsumerTimeout: 180
+        processCompanyQueueVisibilityTimeout: 190
     dev:
         processCompanySchedule: cron(0 0 1 1 ? 1970) # never
     production:
