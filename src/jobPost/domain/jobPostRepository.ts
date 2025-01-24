@@ -12,7 +12,7 @@ export type GetById = (jobPostId: JobPostId) => Promise<JobPost>;
 export type GetByOriginalIdAndCompanyId = (
     originalId: string,
     companyId: CompanyId,
-) => Promise<JobPost>;
+) => Promise<JobPost | null>;
 export type Close = (
     jobPostId: JobPostId,
     companyId: CompanyId,

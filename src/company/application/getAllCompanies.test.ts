@@ -60,8 +60,12 @@ const allOpenJobPosts: JobPost[] = [
 describe('getAllCompanies', () => {
     beforeEach(() => {
         (companyRepository.getAll as jest.Mock).mockResolvedValue(allCompanies);
-        (jobPostRepository.getAllOpen as jest.Mock).mockResolvedValue(
-            allOpenJobPosts,
+        (
+            jobPostRepository.getAllOpenByCompanyId as jest.Mock
+        ).mockImplementation((companyId: CompanyId) =>
+            allOpenJobPosts.filter(
+                (jobPost) => jobPost.companyId === companyId,
+            ),
         );
     });
 

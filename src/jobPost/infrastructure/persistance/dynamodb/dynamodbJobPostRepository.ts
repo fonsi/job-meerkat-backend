@@ -3,6 +3,7 @@ import { unmarshall } from './unmarshall';
 import {
     getItem,
     putItem,
+    query,
     scan,
     updateItem,
     UpdateItemExpression,
@@ -19,19 +20,9 @@ import {
     Close,
     GetAllOpen,
 } from 'jobPost/domain/jobPostRepository';
-import { CompanyId } from 'company/domain/company';
-import { JobPost } from 'jobPost/domain/jobPost';
+import { isOpen } from 'jobPost/domain/jobPost';
 
 const JOB_POST_TABLE = process.env.DYNAMODB_JOB_POST_TABLE_NAME;
-
-const isOpen = (jobPost: JobPost) => !jobPost.closedAt;
-const buildIsFromCompany = (companyId: CompanyId) => (jobPost: JobPost) =>
-    jobPost.companyId === companyId;
-const buildIsFromCompanyAndIsOpen = (companyId: CompanyId) => {
-    const isFromCompany = buildIsFromCompany(companyId);
-
-    return (jobPost: JobPost) => isFromCompany(jobPost) && isOpen(jobPost);
-};
 
 const create: Create = async (jobPost) => {
     try {
@@ -91,10 +82,21 @@ const getAllOpen: GetAllOpen = async () => {
 
 const getAllByCompanyId: GetAllByCompanyId = async (companyId) => {
     try {
-        const allItems = await getAll();
-        const isFromCompany = buildIsFromCompany(companyId);
+        const results = await scan(JOB_POST_TABLE, {
+            FilterExpression: 'companyId = :companyId',
+            ExpressionAttributeValues: {
+                ':companyId': {
+                    S: companyId,
+                },
+            },
+        });
+        const items = results.Items;
 
-        return allItems.filter(isFromCompany);
+        if (!items) {
+            return [];
+        }
+
+        return items.map(unmarshall);
     } catch (e) {
         throw new DynamodbError(e);
     }
@@ -102,10 +104,9 @@ const getAllByCompanyId: GetAllByCompanyId = async (companyId) => {
 
 const getAllOpenByCompanyId: GetAllOpenByCompanyId = async (companyId) => {
     try {
-        const allItems = await getAll();
-        const isFromCompanyAndOpen = buildIsFromCompanyAndIsOpen(companyId);
+        const allItems = await getAllByCompanyId(companyId);
 
-        return allItems.filter(isFromCompanyAndOpen);
+        return allItems.filter(isOpen);
     } catch (e) {
         throw new DynamodbError(e);
     }
@@ -115,9 +116,28 @@ const getByOriginalIdAndCompanyId: GetByOriginalIdAndCompanyId = async (
     originalId,
     companyId,
 ) => {
-    const companyJobPosts = await getAllByCompanyId(companyId);
+    try {
+        const results = await query(JOB_POST_TABLE, {
+            KeyConditionExpression: 'id = :id AND companyId = :companyId',
+            ExpressionAttributeValues: {
+                ':id': {
+                    S: originalId,
+                },
+                ':companyId': {
+                    S: companyId,
+                },
+            },
+        });
+        const item = results.Items[0];
 
-    return companyJobPosts.find((jobPost) => jobPost.originalId === originalId);
+        if (!item) {
+            return null;
+        }
+
+        return unmarshall(item);
+    } catch (e) {
+        throw new DynamodbError(e);
+    }
 };
 
 const close: Close = async (jobPostId, companyId, closedAt) => {

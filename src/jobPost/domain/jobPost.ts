@@ -217,3 +217,5 @@ export const closeJobPost = (jobPost: JobPost): JobPost => {
         closedAt,
     };
 };
+
+export const isOpen = (jobPost: JobPost) => !jobPost.closedAt;
