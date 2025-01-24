@@ -22,7 +22,7 @@ type JobPostsListItem = {
     createdAt: number;
 };
 
-const JOB_CONTENT_SELECTOR = '[data-reach-tab-panels]';
+const JOB_CONTENT_SELECTOR = 'main';
 
 const scrapJobPost = async ({
     id,
@@ -81,6 +81,7 @@ export const chorusOneScrapper: CompanyScrapperFn = async ({ companyId }) => {
                 ...jobPostData,
                 originalId: jobPost.id.toString(),
                 url: jobPost.url,
+                title: jobPost.title,
                 companyId,
                 createdAt: jobPost.createdAt,
             });
