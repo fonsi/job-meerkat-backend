@@ -1,5 +1,8 @@
 org: jobmeerkat
+app: jobmeerkat
 service: jobmeerkat
+
+frameworkVersion: '4.4.18'
 
 params:
     default:
