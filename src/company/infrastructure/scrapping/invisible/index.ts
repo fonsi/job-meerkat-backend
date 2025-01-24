@@ -23,8 +23,8 @@ type JobPostsListItem = {
     createdAt: number;
 };
 
-const JOB_HEADER_SELECTOR = '#header';
-const JOB_CONTENT_SELECTOR = '#content';
+const JOB_TITLE_SELECTOR = '.job__title';
+const JOB_DESCRIPTION_SELECTOR = '.job__description';
 
 const scrapJobPost = async ({
     id,
@@ -33,10 +33,10 @@ const scrapJobPost = async ({
     try {
         const $ = await fromURL(url);
 
-        const jobPostHeader = $(JOB_HEADER_SELECTOR).text();
-        const jobPostContent = $(JOB_CONTENT_SELECTOR).text();
+        const jobPostTitle = $(JOB_TITLE_SELECTOR).text();
+        const jobPostDescription = $(JOB_DESCRIPTION_SELECTOR).text();
 
-        return openaiJobPostAnalyzer(`${jobPostHeader} ${jobPostContent}`);
+        return openaiJobPostAnalyzer(`${jobPostTitle} ${jobPostDescription}`);
     } catch (e) {
         const error = errorWithPrefix(
             e,
