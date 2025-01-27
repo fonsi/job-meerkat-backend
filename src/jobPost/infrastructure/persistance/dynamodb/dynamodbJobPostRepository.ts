@@ -16,7 +16,7 @@ import {
     GetAllOpenByCompanyId,
     GetAll,
     GetAllByCompanyId,
-    GetByOriginalIdAndCompanyId,
+    GetByIdAndCompanyId,
     Close,
     GetAllOpen,
 } from 'jobPost/domain/jobPostRepository';
@@ -112,16 +112,13 @@ const getAllOpenByCompanyId: GetAllOpenByCompanyId = async (companyId) => {
     }
 };
 
-const getByOriginalIdAndCompanyId: GetByOriginalIdAndCompanyId = async (
-    originalId,
-    companyId,
-) => {
+const getByIdAndCompanyId: GetByIdAndCompanyId = async (id, companyId) => {
     try {
         const results = await query(JOB_POST_TABLE, {
             KeyConditionExpression: 'id = :id AND companyId = :companyId',
             ExpressionAttributeValues: {
                 ':id': {
-                    S: originalId,
+                    S: id,
                 },
                 ':companyId': {
                     S: companyId,
@@ -175,6 +172,6 @@ export const jobPostRepository = {
     getAllByCompanyId,
     getAllOpenByCompanyId,
     getById,
-    getByOriginalIdAndCompanyId,
+    getByIdAndCompanyId,
     close,
 } as JobPostRepository;

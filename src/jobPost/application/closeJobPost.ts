@@ -3,31 +3,31 @@ import {
     JobPost,
     closeJobPost as closeJobPostEntity,
 } from 'jobPost/domain/jobPost';
-import { ScrappedJobPost } from 'company/infrastructure/scrapping/companyScrapper';
 import { logger } from 'shared/infrastructure/logger/logger';
 
-type CloseJobPostCommand = JobPost | ScrappedJobPost;
+type CloseJobPostCommand = JobPost;
 
 export const closeJobPost = async (command: CloseJobPostCommand) => {
-    const { originalId, companyId } = command;
-    const jobPost = await jobPostRepository.getByOriginalIdAndCompanyId(
-        originalId,
-        companyId,
-    );
+    const { id, companyId } = command;
+    const jobPost = await jobPostRepository.getByIdAndCompanyId(id, companyId);
 
-    if (!jobPost || jobPost.closedAt) {
-        logger.error(new Error('Error closing job post'), {
-            originalId,
+    if (!jobPost) {
+        logger.error(new Error('Error closing job post - Not found'), {
+            id,
             companyId,
         });
         return;
     }
 
-    const {
-        id,
-        companyId: entityCompanyId,
-        closedAt,
-    } = closeJobPostEntity(jobPost);
+    if (jobPost.closedAt) {
+        logger.error(new Error('Error closing job post - Already closed'), {
+            id,
+            companyId,
+        });
+        return;
+    }
 
-    await jobPostRepository.close(id, entityCompanyId, closedAt);
+    const { closedAt } = closeJobPostEntity(jobPost);
+
+    await jobPostRepository.close(id, companyId, closedAt);
 };

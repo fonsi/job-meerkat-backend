@@ -9,8 +9,8 @@ export type GetAllOpenByCompanyId = (
     companyId: CompanyId,
 ) => Promise<JobPost[]>;
 export type GetById = (jobPostId: JobPostId) => Promise<JobPost>;
-export type GetByOriginalIdAndCompanyId = (
-    originalId: string,
+export type GetByIdAndCompanyId = (
+    id: JobPostId,
     companyId: CompanyId,
 ) => Promise<JobPost | null>;
 export type Close = (
@@ -26,6 +26,6 @@ export interface JobPostRepository {
     getAllByCompanyId: GetAllByCompanyId;
     getAllOpenByCompanyId: GetAllOpenByCompanyId;
     getById: GetById;
-    getByOriginalIdAndCompanyId: GetByOriginalIdAndCompanyId;
+    getByIdAndCompanyId: GetByIdAndCompanyId;
     close: Close;
 }

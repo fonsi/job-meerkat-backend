@@ -1,4 +1,7 @@
 import { scrapCompany } from 'company/application/scrapCompany';
+import { initializeLogger } from 'shared/infrastructure/logger/logger';
+
+initializeLogger();
 
 /*
     function used in development to build scrappers
