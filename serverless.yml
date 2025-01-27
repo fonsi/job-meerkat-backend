@@ -68,7 +68,7 @@ resources:
                     - AttributeName: companyId
                       KeyType: RANGE
                 ProvisionedThroughput:
-                    ReadCapacityUnits: 1
+                    ReadCapacityUnits: 5
                     WriteCapacityUnits: 1
         processCompanyQueue:
             Type: 'AWS::SQS::Queue'

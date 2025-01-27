@@ -19,19 +19,14 @@ export const getAllCompanies = async ({
         return companies;
     }
 
-    const setJobPostsCountPromises = companies.map(
-        (company) =>
-            new Promise<void>(async (resolve) => {
-                const openJobPost =
-                    await jobPostRepository.getAllOpenByCompanyId(company.id);
-                (company as CompanyWithJobPostsCount).jobPostsCount =
-                    openJobPost.length;
-
-                resolve();
-            }),
-    );
-
-    await Promise.all(setJobPostsCountPromises);
+    for (let i = 0; i < companies.length; i++) {
+        const company = companies[i];
+        const openJobPost = await jobPostRepository.getAllOpenByCompanyId(
+            company.id,
+        );
+        (company as CompanyWithJobPostsCount).jobPostsCount =
+            openJobPost.length;
+    }
 
     return companies;
 };
