@@ -31,6 +31,7 @@ import { MATTERMOST_NAME, mattermostScrapper } from './mattermost';
 import { HIGHTOUCH_NAME, hightouchScrapper } from './hightouch';
 import { HUMAN_INTEREST_NAME, humanInterestScrapper } from './humanInterest';
 import { GUIDELINE_NAME, guidelineScrapper } from './guideline';
+import { LATTICE_NAME, latticeScrapper } from './lattice';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -112,6 +113,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return humanInterestScrapper;
         case GUIDELINE_NAME:
             return guidelineScrapper;
+        case LATTICE_NAME:
+            return latticeScrapper;
     }
 
     return null;
