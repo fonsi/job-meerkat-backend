@@ -1,4 +1,3 @@
-import { fromURL } from 'cheerio';
 import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
 import {
     OpenaiJobPost,
@@ -6,42 +5,40 @@ import {
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
 import { logger } from 'shared/infrastructure/logger/logger';
 import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { getGemJobPostContent, getGemJobPosts } from '../gemGraphQL';
 
 export const CODE_SIGNAL_NAME = 'codesignal';
-const CODE_SIGNAL_INITIAL_URL =
-    'https://job-boards.greenhouse.io/codesignal?_data=routes%2F%24url_token';
+const CODE_SIGNAL_JOB_POST_URL = 'https://jobs.gem.com/codesignal';
 
 type ScrapJobPostData = {
-    id: number;
-    url: string;
-    location: string;
+    id: string;
 };
 
 type JobPostsListItem = {
-    id: number;
+    id: string;
     url: string;
     title: string;
-    createdAt: number;
-    location: string;
 };
-
-const JOB_HEADER_SELECTOR = '.job__header';
-const JOB_CONTENT_SELECTOR = '.job__description';
 
 const scrapJobPost = async ({
     id,
-    url,
-    location,
 }: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
-        const $ = await fromURL(url);
-
-        const jobPostHeader = $(JOB_HEADER_SELECTOR).text();
-        const jobPostContent = $(JOB_CONTENT_SELECTOR).text();
-
-        return openaiJobPostAnalyzer(
-            `Location: ${location}. ${jobPostHeader} ${jobPostContent}`,
+        const jobPostContent = await getGemJobPostContent({
+            companyName: CODE_SIGNAL_NAME,
+            atsId: id,
+        });
+        const createdAt = jobPostContent.publishedDateTs
+            ? (jobPostContent.publishedDateTs as number) * 1000
+            : undefined;
+        const analyzedJobPost = await openaiJobPostAnalyzer(
+            JSON.stringify(jobPostContent),
         );
+
+        return {
+            ...analyzedJobPost,
+            createdAt,
+        };
     } catch (e) {
         const error = errorWithPrefix(
             e,
@@ -54,22 +51,17 @@ const scrapJobPost = async ({
 };
 
 export const codeSignalScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const response = await fetch(CODE_SIGNAL_INITIAL_URL);
-    const jobsData = await response.json();
+    const jobsData = await getGemJobPosts({ companyName: CODE_SIGNAL_NAME });
 
-    const jobPosts: JobPostsListItem[] = jobsData.jobPosts.data.map(
-        (jobData) => {
-            const url = jobData.absolute_url;
+    const jobPosts: JobPostsListItem[] = jobsData.map((jobData) => {
+        const url = `${CODE_SIGNAL_JOB_POST_URL}/${jobData.atsId}`;
 
-            return {
-                id: jobData.id,
-                url,
-                title: jobData.title,
-                createdAt: new Date(jobData.updated_at).getTime(),
-                location: jobData.location,
-            };
-        },
-    );
+        return {
+            id: jobData.atsId,
+            url,
+            title: jobData.title,
+        };
+    });
 
     const data: ScrappedJobPost[] = [];
     for (let i = 0; i < jobPosts.length; i++) {
@@ -81,16 +73,13 @@ export const codeSignalScrapper: CompanyScrapperFn = async ({ companyId }) => {
 
             const jobPostData = await scrapJobPost({
                 id: jobPost.id,
-                url: jobPost.url,
-                location: jobPost.location,
             });
 
             data.push({
                 ...jobPostData,
-                originalId: jobPost.id.toString(),
+                originalId: jobPost.id,
                 url: jobPost.url,
                 companyId,
-                createdAt: jobPost.createdAt,
             });
         } catch (e) {
             const error = errorWithPrefix(
