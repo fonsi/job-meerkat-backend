@@ -1,4 +1,5 @@
 {
+    "name": "jobmeerkat",
     "scripts": {
         "lint": "eslint --fix",
         "typecheck": "tsc --noEmit",
