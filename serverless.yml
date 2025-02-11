@@ -6,8 +6,8 @@ frameworkVersion: '4.4.18'
 
 params:
     default:
-        processCompanyConsumerTimeout: 180
-        processCompanyQueueVisibilityTimeout: 190
+        processCompanyConsumerTimeout: 300
+        processCompanyQueueVisibilityTimeout: 310
     dev:
         processCompanySchedule: cron(0 0 1 1 ? 1970) # never
     production:
