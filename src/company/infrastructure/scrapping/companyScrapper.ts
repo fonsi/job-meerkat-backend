@@ -37,6 +37,7 @@ import { CINDER_NAME, cinderScrapper } from './cinder';
 import { ZAPIER_NAME, zapierScrapper } from './zapier';
 import { MAGIC_SCHOOL_NAME, magicSchoolScrapper } from './magicSchool';
 import { RAMP_NAME, rampScrapper } from './ramp';
+import { AMONDO_NAME, amondoScrapper } from './amondo';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -130,6 +131,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return magicSchoolScrapper;
         case RAMP_NAME:
             return rampScrapper;
+        case AMONDO_NAME:
+            return amondoScrapper;
     }
 
     return null;
