@@ -7,8 +7,8 @@ import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
 import { getAshbyJobPostContent } from '../ashbyGraphQLRequest';
 
-export const ZERO_X_NAME = '0x';
-const ZERO_X_INITIAL_URL = 'https://api.ashbyhq.com/posting-api/job-board/0x';
+export const CLOSE_NAME = 'close';
+const CLOSE_INITIAL_URL = 'https://api.ashbyhq.com/posting-api/job-board/close';
 
 type ScrapJobPostData = {
     id: string;
@@ -26,7 +26,7 @@ const scrapJobPost = async ({
 }: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
         const jobsData = await getAshbyJobPostContent({
-            companyName: ZERO_X_NAME,
+            companyName: CLOSE_NAME,
             jobPostId: id,
         });
 
@@ -34,7 +34,7 @@ const scrapJobPost = async ({
     } catch (e) {
         const error = errorWithPrefix(
             e,
-            `Error processing ${ZERO_X_NAME} job post ${id}`,
+            `Error processing ${CLOSE_NAME} job post ${id}`,
         );
 
         console.log(error);
@@ -42,8 +42,8 @@ const scrapJobPost = async ({
     }
 };
 
-export const zeroXScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const response = await fetch(ZERO_X_INITIAL_URL);
+export const closeScrapper: CompanyScrapperFn = async ({ companyId }) => {
+    const response = await fetch(CLOSE_INITIAL_URL);
     const jobsData = await response.json();
 
     const jobPosts: JobPostsListItem[] = [];
@@ -84,7 +84,7 @@ export const zeroXScrapper: CompanyScrapperFn = async ({ companyId }) => {
         } catch (e) {
             const error = errorWithPrefix(
                 e,
-                `[Error processing ${ZERO_X_NAME}]`,
+                `[Error processing ${CLOSE_NAME}]`,
             );
 
             console.log(error);
