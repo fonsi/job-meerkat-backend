@@ -1,4 +1,3 @@
-import { fromURL } from 'cheerio';
 import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
 import {
     OpenaiJobPost,
@@ -6,37 +5,32 @@ import {
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
 import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
+import { getAshbyJobPostContent } from '../ashbyGraphQLRequest';
 
 export const ZERO_X_NAME = '0x';
-const ZERO_X_INITIAL_URL = 'https://boards.greenhouse.io/0x';
+const ZERO_X_INITIAL_URL = 'https://api.ashbyhq.com/posting-api/job-board/0x';
 
 type ScrapJobPostData = {
     id: string;
-    url: string;
 };
 
 type JobPostsListItem = {
     id: string;
     url: string;
     title: string;
+    createdAt: number;
 };
-
-const JOB_POST_SELECTOR = '.opening a';
-const JOB_HEADER_SELECTOR = '#header';
-const JOB_CONTENT_SELECTOR = '#content';
 
 const scrapJobPost = async ({
     id,
-    url,
 }: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
-        const $ = await fromURL(url);
+        const jobsData = await getAshbyJobPostContent({
+            companyName: ZERO_X_NAME,
+            jobPostId: id,
+        });
 
-        const titleText = $(JOB_HEADER_SELECTOR).text();
-        const descriptionText = $(JOB_CONTENT_SELECTOR).text();
-        const jobPostContent = `${titleText} ${descriptionText}`;
-
-        return openaiJobPostAnalyzer(jobPostContent);
+        return openaiJobPostAnalyzer(JSON.stringify(jobsData));
     } catch (e) {
         const error = errorWithPrefix(
             e,
@@ -49,20 +43,28 @@ const scrapJobPost = async ({
 };
 
 export const zeroXScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const $ = await fromURL(ZERO_X_INITIAL_URL);
-    const jobPostsElements = $(JOB_POST_SELECTOR);
+    const response = await fetch(ZERO_X_INITIAL_URL);
+    const jobsData = await response.json();
 
-    const jobPosts: JobPostsListItem[] = jobPostsElements
-        .toArray()
-        .map((jobPost) => {
-            const url = `https://boards.greenhouse.io${$(jobPost).attr('href')}`;
+    const jobPosts: JobPostsListItem[] = [];
 
-            return {
-                id: url.split('/').pop(),
+    jobsData.jobs.forEach((jobData) => {
+        const url = jobData.jobUrl;
+
+        if (
+            jobData.isListed &&
+            !(jobData.title as string)
+                .toLowerCase()
+                .includes('future opportunities')
+        ) {
+            jobPosts.push({
+                id: jobData.id,
                 url,
-                title: $(jobPost).text(),
-            };
-        });
+                title: jobData.title,
+                createdAt: new Date(jobData.publishedAt).getTime(),
+            });
+        }
+    });
 
     const data: ScrappedJobPost[] = [];
     for (let i = 0; i < jobPosts.length; i++) {
@@ -74,14 +76,15 @@ export const zeroXScrapper: CompanyScrapperFn = async ({ companyId }) => {
 
             const jobPostData = await scrapJobPost({
                 id: jobPost.id,
-                url: jobPost.url,
             });
 
             data.push({
                 ...jobPostData,
                 originalId: jobPost.id,
                 url: jobPost.url,
+                title: jobPost.title,
                 companyId,
+                createdAt: jobPost.createdAt,
             });
         } catch (e) {
             const error = errorWithPrefix(
