@@ -1,4 +1,3 @@
-import { fromURL } from 'cheerio';
 import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
 import {
     OpenaiJobPost,
@@ -8,7 +7,8 @@ import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
 
 export const FLOAT_NAME = 'float';
-const FLOAT_INITIAL_URL = 'https://www.float.com/careers';
+const FLOAT_INITIAL_URL =
+    'https://apply.workable.com/api/v3/accounts/floatjobs/jobs';
 
 type ScrapJobPostData = {
     id: string;
@@ -19,8 +19,6 @@ type JobPostsListItem = {
     url: string;
     title: string;
 };
-
-const JOB_POST_SELECTOR = '.careers-open-role_card';
 
 const scrapJobPost = async ({
     id,
@@ -51,20 +49,22 @@ const scrapJobPost = async ({
 };
 
 export const floatScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const $ = await fromURL(FLOAT_INITIAL_URL);
-    const jobPostsElements = $(JOB_POST_SELECTOR);
+    const url = FLOAT_INITIAL_URL;
+    const response = await fetch(url, {
+        method: 'POST',
+    });
+    const jobsData = (await response.json()).results;
 
-    const jobPosts: JobPostsListItem[] = jobPostsElements
-        .toArray()
-        .map((jobPost) => {
-            const url = $(jobPost).attr('href');
+    const jobPosts: JobPostsListItem[] = jobsData.map((jobData) => {
+        const id = jobData.shortcode;
+        const url = `https://apply.workable.com/floatjobs/j/${id}`;
 
-            return {
-                id: url.split('/').filter(Boolean).pop(),
-                url,
-                title: $('div[data-text="job"]', jobPost).text(),
-            };
-        });
+        return {
+            id,
+            url,
+            title: jobData.title,
+        };
+    });
 
     const data: ScrappedJobPost[] = [];
     for (let i = 0; i < jobPosts.length; i++) {
