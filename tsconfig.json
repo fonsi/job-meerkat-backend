@@ -14,6 +14,7 @@
         "paths": {
             "company/*": ["company/*"],
             "jobPost/*": ["jobPost/*"],
+            "social/*": ["social/*"],
             "shared/*": ["shared/*"]
         }
     },

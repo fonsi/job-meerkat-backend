@@ -1,7 +1,6 @@
 import { marshall } from './marshall';
 import { unmarshall } from './unmarshall';
 import {
-    getItem,
     putItem,
     query,
     scan,
@@ -12,13 +11,14 @@ import { DynamodbError } from 'shared/infrastructure/persistance/dynamodb/error/
 import {
     JobPostRepository,
     Create,
-    GetById,
     GetAllOpenByCompanyId,
     GetAll,
     GetAllByCompanyId,
     GetByIdAndCompanyId,
     Close,
     GetAllOpen,
+    GetLatest,
+    FROM_WHEN,
 } from 'jobPost/domain/jobPostRepository';
 import { isOpen } from 'jobPost/domain/jobPost';
 
@@ -31,25 +31,6 @@ const create: Create = async (jobPost) => {
         await putItem(JOB_POST_TABLE, item);
 
         return jobPost;
-    } catch (e) {
-        throw new DynamodbError(e);
-    }
-};
-
-const getById: GetById = async (jobPostId) => {
-    try {
-        const result = await getItem(JOB_POST_TABLE, {
-            id: {
-                N: jobPostId.toString(),
-            },
-        });
-        const item = result.Item;
-
-        if (!item) {
-            return null;
-        }
-
-        return unmarshall(item);
     } catch (e) {
         throw new DynamodbError(e);
     }
@@ -137,6 +118,19 @@ const getByIdAndCompanyId: GetByIdAndCompanyId = async (id, companyId) => {
     }
 };
 
+const getLatest: GetLatest = async () => {
+    try {
+        const allOpenItems = await getAllOpen();
+        const latestItems = allOpenItems
+            .filter((jobPost) => jobPost.createdAt > Date.now() - FROM_WHEN * 2) // remove 2
+            .sort((a, b) => b.createdAt - a.createdAt);
+
+        return latestItems;
+    } catch (e) {
+        throw new DynamodbError(e);
+    }
+};
+
 const close: Close = async (jobPostId, companyId, closedAt) => {
     const update: UpdateItemExpression = {
         Key: {
@@ -171,7 +165,7 @@ export const jobPostRepository = {
     getAllOpen,
     getAllByCompanyId,
     getAllOpenByCompanyId,
-    getById,
     getByIdAndCompanyId,
+    getLatest,
     close,
 } as JobPostRepository;
