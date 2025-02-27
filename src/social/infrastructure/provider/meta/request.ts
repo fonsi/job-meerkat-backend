@@ -122,6 +122,9 @@ export const publishThread = async (posts: string[]): Promise<void> => {
 
     for (let i = 0; i < posts.length; i++) {
         try {
+            console.log(
+                `[PUBLISH POST]: publishing post ${i + 1}/${posts.length}`,
+            );
             const createdPostId = await createContainer(
                 TEXT_TYPE,
                 posts[i],
@@ -130,10 +133,10 @@ export const publishThread = async (posts: string[]): Promise<void> => {
             await waitUntilContainerStatus(createdPostId, FINISHED_STATUS);
             const publishedPostId = await publishContainer(createdPostId);
             await waitUntilContainerStatus(createdPostId, PUBLISHED_STATUS);
-            await waitFor(10000);
 
             if (!firstPostId) {
                 firstPostId = publishedPostId;
+                await waitFor(10000); // wait to first post to be published to be able to reply to it
             }
         } catch (error) {
             console.error('Error creating and publishing thread:', error);

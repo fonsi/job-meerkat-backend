@@ -1,28 +1,20 @@
 import 'source-map-support/register';
-import {
-    methodNotAllowed,
-    serverError,
-} from 'shared/infrastructure/api/response';
-import { HTTP_METHOD } from 'shared/infrastructure/api/constants';
 import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
-import { logger } from 'shared/infrastructure/logger/logger';
-import { socialSchedulePost } from './post';
+import { initializeLogger, logger } from 'shared/infrastructure/logger/logger';
+import { scheduleSocialPosts } from 'social/application/scheduleSocialPosts';
 
-export const index = async (event) => {
+export const index = async () => {
     try {
-        const method = event?.requestContext?.http?.method;
+        initializeLogger();
 
-        switch (method) {
-            case HTTP_METHOD.POST:
-                return await socialSchedulePost();
-        }
-
-        return methodNotAllowed();
+        await scheduleSocialPosts();
     } catch (e) {
         const error = errorWithPrefix(e, 'schedule social posts');
         logger.error(error);
         await logger.wait();
 
-        return serverError();
+        return {
+            statusCode: 400,
+        };
     }
 };

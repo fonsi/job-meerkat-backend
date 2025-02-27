@@ -8,10 +8,16 @@ params:
     default:
         processCompanyConsumerTimeout: 300
         processCompanyQueueVisibilityTimeout: 310
+        publishSocialPostsTimeout: 120
+        publishSocialPostsQueueVisibilityTimeout: 130
     dev:
         processCompanySchedule: cron(0 0 1 1 ? 1970) # never
+        socialPostsSchedule: cron(0 0 1 1 ? 1970) # never
+        socialPostsCheck: cron(0 0 1 1 ? 1970) # never
     production:
         processCompanySchedule: cron(0 0 ? * * *) # every day at 0 am
+        socialPostsSchedule: cron(0 2 ? * * *) # every day at 2 am
+        socialPostsCheck: cron(0 * ? * 3-7 *) # every hour from tuesday to saturday
 
 provider:
     name: aws
@@ -28,6 +34,7 @@ provider:
         OPENAI_API_KEY: ${env:OPENAI_API_KEY}
         ASSETS_URL: ${env:ASSETS_URL}
         ROLLBAR_ACCESS_TOKEN: ${env:ROLLBAR_ACCESS_TOKEN}
+        THREADS_API_TOKEN: ${env:THREADS_API_TOKEN}
     iamRoleStatements:
         - Effect: 'Allow'
           Resource:
@@ -96,6 +103,7 @@ resources:
             Type: 'AWS::SQS::Queue'
             Properties:
                 QueueName: ${self:provider.environment.PUBLISH_SOCIAL_POST_QUEUE_NAME}
+                VisibilityTimeout: ${param:publishSocialPostsQueueVisibilityTimeout}
 
 functions:
     devScrapCompany:
@@ -142,11 +150,15 @@ functions:
     scheduleSocialPosts:
         handler: src/social/infrastructure/api/schedule/handler.index
         events:
-            - httpApi:
-                  path: /social/schedule
-                  method: POST
+            - schedule: ${param:socialPostsSchedule}
+    checkSocialPosts:
+        handler: src/social/infrastructure/api/enqueue/handler.index
+        events:
+            - schedule: ${param:socialPostsCheck}
     publishSocialPosts:
-        handler: src/social/infrastructure/api/publish/handler.index
+        handler: src/social/infrastructure/queue/sqs/consumer/handler.index
+        maximumRetryAttempts: 1
+        timeout: ${param:publishSocialPostsTimeout}
         events:
             - sqs:
                   arn:

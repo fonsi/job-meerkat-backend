@@ -28,20 +28,26 @@ export const scheduleSocialPosts = async (): Promise<void> => {
         },
     );
 
-    const timeSpanBetweenPosts =
-        (24 * 60 * 60 * 1000) / bestPaidJobPostsByCompany.length;
-    let publishTime = Date.now();
+    const timeSpanBetweenPosts = Math.floor(
+        (24 * 60 * 60 * 1000) / bestPaidJobPostsByCompany.length,
+    );
+    const publishTime = Date.now();
+
+    console.log(
+        `Scheduling ${bestPaidJobPostsByCompany.length} social posts. One post every ${(timeSpanBetweenPosts / (60 * 1000)).toFixed(2)} minutes`,
+    );
 
     await Promise.allSettled(
-        bestPaidJobPostsByCompany.map((jobPost) => {
-            publishTime += timeSpanBetweenPosts;
+        bestPaidJobPostsByCompany.map((jobPost, index) => {
+            const date = publishTime + (index + 1) * timeSpanBetweenPosts;
+            console.log(index, date);
 
             const scheduledSocialPost: ScheduledSocialPost = {
                 id: makeScheduledSocialPostId({
                     jobPostId: jobPost.id,
                     companyId: jobPost.companyId,
                 }),
-                date: publishTime,
+                date,
             };
 
             return scheduledSocialPostRepository.add(scheduledSocialPost);
