@@ -17,7 +17,7 @@ params:
     production:
         processCompanySchedule: cron(0 0 ? * * *) # every day at 0 am
         socialPostsSchedule: cron(0 2 ? * * *) # every day at 2 am
-        socialPostsCheck: cron(0 * ? * 2-7 *) # every hour from monday to saturday
+        socialPostsCheck: cron(0 * ? * * *) # every day every hour
 
 provider:
     name: aws
