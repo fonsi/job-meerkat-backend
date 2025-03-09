@@ -39,6 +39,7 @@ import { MAGIC_SCHOOL_NAME, magicSchoolScrapper } from './magicSchool';
 import { RAMP_NAME, rampScrapper } from './ramp';
 import { AMONDO_NAME, amondoScrapper } from './amondo';
 import { CLOSE_NAME, closeScrapper } from './close';
+import { MAILER_LITE_NAME, mailerLiteScrapper } from './mailerLite';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -136,6 +137,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return amondoScrapper;
         case CLOSE_NAME:
             return closeScrapper;
+        case MAILER_LITE_NAME:
+            return mailerLiteScrapper;
     }
 
     return null;
