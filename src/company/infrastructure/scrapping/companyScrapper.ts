@@ -41,6 +41,7 @@ import { AMONDO_NAME, amondoScrapper } from './amondo';
 import { CLOSE_NAME, closeScrapper } from './close';
 import { MAILER_LITE_NAME, mailerLiteScrapper } from './mailerLite';
 import { AXIOS_HQ_NAME, axiosHqScrapper } from './axioshq';
+import { PROOF_NAME, proofScrapper } from './proof';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -142,6 +143,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return mailerLiteScrapper;
         case AXIOS_HQ_NAME:
             return axiosHqScrapper;
+        case PROOF_NAME:
+            return proofScrapper;
     }
 
     return null;
