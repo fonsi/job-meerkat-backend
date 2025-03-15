@@ -8,7 +8,7 @@ import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
 
 export const FEDERATO_NAME = 'federato';
-const FEDERATO_INITIAL_URL = 'https://jobs.lever.co/Federato';
+const FEDERATO_INITIAL_URL = 'https://job-boards.greenhouse.io/federato';
 
 type ScrapJobPostData = {
     id: string;
@@ -21,8 +21,9 @@ type JobPostsListItem = {
     title: string;
 };
 
-const JOB_POST_SELECTOR = '.posting-title';
-const CONTENT_SELECTOR = '.content';
+const JOB_POST_SELECTOR = '.job-post a';
+const JOB_TITLE_SELECTOR = '.job__title';
+const JOB_DESCRIPTION_SELECTOR = '.job__description';
 
 const scrapJobPost = async ({
     id,
@@ -30,7 +31,10 @@ const scrapJobPost = async ({
 }: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
         const $ = await fromURL(url);
-        const jobPostContent = $(CONTENT_SELECTOR).text();
+
+        const titleText = $(JOB_TITLE_SELECTOR).text();
+        const descriptionText = $(JOB_DESCRIPTION_SELECTOR).text();
+        const jobPostContent = `${titleText} ${descriptionText}`;
 
         return openaiJobPostAnalyzer(jobPostContent);
     } catch (e) {
@@ -56,7 +60,7 @@ export const federatoScrapper: CompanyScrapperFn = async ({ companyId }) => {
             return {
                 id: url.split('/').pop(),
                 url,
-                title: $('h5', jobPost).text(),
+                title: $('p', jobPost).first().text(),
             };
         });
 
