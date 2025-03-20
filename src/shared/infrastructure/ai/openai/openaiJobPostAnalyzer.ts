@@ -60,6 +60,7 @@ export const openaiJobPostAnalyzer = async (
                         If you can't find a location within the job offer context, it should be 'unknown'.
                         Location never could be the word 'remote'.
                         The workplace must be one in (${Object.values(Workplace)}).
+                        The salary range amounts could not be 0. If you can't find any of the amounts, you should set them to null.
                     `,
                     },
                 ],
