@@ -59,14 +59,13 @@ export const astronomerScrapper: CompanyScrapperFn = async ({ companyId }) => {
         .toArray()
         .map((jobPost) => {
             const url = $(jobPost).attr('href');
-            const textsContainer = $('span', jobPost).first();
-            const texts = $('span', textsContainer).toArray();
+            const texts = $('span', jobPost).toArray();
 
             return {
                 id: url.split('/').pop(),
                 url,
-                title: $(texts[0]).text(),
-                locationText: $(texts[1]).text(),
+                title: $(texts[1]).text(),
+                locationText: $(texts[2]).text()?.split('-')[0].trim(),
             };
         });
 
