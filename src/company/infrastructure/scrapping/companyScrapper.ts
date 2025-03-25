@@ -44,6 +44,7 @@ import { AXIOS_HQ_NAME, axiosHqScrapper } from './axioshq';
 import { PROOF_NAME, proofScrapper } from './proof';
 import { SUPERHUMAN_NAME, superhumanScrapper } from './superhuman';
 import { ASSEMBLY_AI_NAME, assemblyAiScrapper } from './assemblyAI';
+import { HEARD_NAME, heardScrapper } from './heard';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -151,6 +152,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return superhumanScrapper;
         case ASSEMBLY_AI_NAME:
             return assemblyAiScrapper;
+        case HEARD_NAME:
+            return heardScrapper;
     }
 
     return null;
