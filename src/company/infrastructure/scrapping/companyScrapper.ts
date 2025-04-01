@@ -45,6 +45,7 @@ import { PROOF_NAME, proofScrapper } from './proof';
 import { SUPERHUMAN_NAME, superhumanScrapper } from './superhuman';
 import { ASSEMBLY_AI_NAME, assemblyAiScrapper } from './assemblyAI';
 import { HEARD_NAME, heardScrapper } from './heard';
+import { V7_NAME, v7Scrapper } from './v7';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -154,6 +155,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return assemblyAiScrapper;
         case HEARD_NAME:
             return heardScrapper;
+        case V7_NAME:
+            return v7Scrapper;
     }
 
     return null;
