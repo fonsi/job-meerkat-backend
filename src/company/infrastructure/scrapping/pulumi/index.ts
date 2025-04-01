@@ -21,9 +21,10 @@ type JobPostsListItem = {
     title: string;
 };
 
-const JOB_POST_SELECTOR = '.opening a';
-const JOB_HEADER_SELECTOR = '#header';
-const JOB_CONTENT_SELECTOR = '#content';
+const JOB_POST_SELECTOR = '.job-post a';
+const JOB_HEADER_SELECTOR = '.job__title h1';
+const JOB_CONTENT_SELECTOR = '.job__description';
+const JOB_LOCATION_SELECTOR = '.job__location';
 
 const scrapJobPost = async ({
     id,
@@ -34,7 +35,8 @@ const scrapJobPost = async ({
 
         const titleText = $(JOB_HEADER_SELECTOR).text();
         const descriptionText = $(JOB_CONTENT_SELECTOR).text();
-        const jobPostContent = `${titleText} ${descriptionText}`;
+        const locationText = $(JOB_LOCATION_SELECTOR).text();
+        const jobPostContent = `Location: ${locationText}\n${titleText}\n${descriptionText}`;
 
         return openaiJobPostAnalyzer(jobPostContent);
     } catch (e) {
@@ -55,12 +57,12 @@ export const pulumiScrapper: CompanyScrapperFn = async ({ companyId }) => {
     const jobPosts: JobPostsListItem[] = jobPostsElements
         .toArray()
         .map((jobPost) => {
-            const url = `https://boards.greenhouse.io${$(jobPost).attr('href')}`;
+            const url = $(jobPost).attr('href');
 
             return {
                 id: url.split('/').pop(),
                 url,
-                title: $(jobPost).text(),
+                title: $('p', jobPost).first().text(),
             };
         });
 
