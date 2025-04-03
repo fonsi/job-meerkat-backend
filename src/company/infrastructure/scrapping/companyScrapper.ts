@@ -47,7 +47,7 @@ import { ASSEMBLY_AI_NAME, assemblyAiScrapper } from './assemblyAI';
 import { HEARD_NAME, heardScrapper } from './heard';
 import { V7_NAME, v7Scrapper } from './v7';
 import { krakenScrapper, KRAKEN_NAME } from './kraken';
-
+import { RUNWAY_NAME, runwayScrapper } from './runway';
 type CompanyScrapperData = {
     companyId: CompanyId;
 };
@@ -160,6 +160,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return v7Scrapper;
         case KRAKEN_NAME:
             return krakenScrapper;
+        case RUNWAY_NAME:
+            return runwayScrapper;
     }
 
     return null;
