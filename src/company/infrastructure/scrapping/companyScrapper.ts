@@ -49,6 +49,7 @@ import { V7_NAME, v7Scrapper } from './v7';
 import { krakenScrapper, KRAKEN_NAME } from './kraken';
 import { RUNWAY_NAME, runwayScrapper } from './runway';
 import { MAZE_NAME, mazeScrapper } from './maze';
+import { RAVIO_NAME, ravioScrapper } from './ravio';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -166,6 +167,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return runwayScrapper;
         case MAZE_NAME:
             return mazeScrapper;
+        case RAVIO_NAME:
+            return ravioScrapper;
     }
 
     return null;
