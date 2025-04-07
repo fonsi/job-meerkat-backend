@@ -125,6 +125,12 @@ functions:
             - httpApi:
                   path: /jobPost
                   method: any
+    jobPostId:
+        handler: src/jobPost/infrastructure/api/id/handler.index
+        events:
+            - httpApi:
+                  path: /company/{companyId}/jobPost/{id}
+                  method: any
     category:
         handler: src/category/infrastructure/api/handler.index
         events:
