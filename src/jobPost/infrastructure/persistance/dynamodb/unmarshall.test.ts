@@ -54,6 +54,9 @@ const baseDbItem = {
     closedAt: {
         N: null,
     },
+    slug: {
+        S: 'test-company_job-post',
+    },
 };
 
 const baseJobPost: JobPost = {
@@ -74,6 +77,7 @@ const baseJobPost: JobPost = {
     location: 'EMEA',
     createdAt: 1730217826109,
     closedAt: null,
+    slug: 'test-company_job-post',
 };
 
 describe('DynamoDB job post unmarshall', () => {

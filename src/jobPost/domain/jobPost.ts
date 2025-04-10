@@ -187,6 +187,7 @@ export type JobPost = {
     location: string;
     createdAt: number;
     closedAt: number | null;
+    slug: string;
 };
 
 export type CreateJobPostData = Omit<

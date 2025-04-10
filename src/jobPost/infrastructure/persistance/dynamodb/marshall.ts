@@ -15,6 +15,7 @@ export const marshall = (jobPost: JobPost): Record<string, AttributeValue> => {
         location,
         createdAt,
         closedAt,
+        slug,
     } = jobPost;
 
     const item = {
@@ -47,6 +48,9 @@ export const marshall = (jobPost: JobPost): Record<string, AttributeValue> => {
         },
         createdAt: {
             N: createdAt.toString(),
+        },
+        slug: {
+            S: slug,
         },
     };
 

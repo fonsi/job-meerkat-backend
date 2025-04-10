@@ -1,6 +1,6 @@
 import { CompanyId, CompanyLogo } from 'company/domain/company';
 import { companyRepository } from 'company/infrastructure/persistance/dynamodb/dynamodbCompanyRepository';
-import { JobPost, JobPostId } from 'jobPost/domain/jobPost';
+import { JobPost } from 'jobPost/domain/jobPost';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
 
 type JobPostWithCompany = JobPost & {
@@ -11,11 +11,10 @@ type JobPostWithCompany = JobPost & {
     };
 };
 
-export const getJobPostById = async (
-    id: JobPostId,
-    companyId: CompanyId,
+export const getJobPostBySlug = async (
+    slug: string,
 ): Promise<JobPostWithCompany | null> => {
-    const jobPost = await jobPostRepository.getByIdAndCompanyId(id, companyId);
+    const jobPost = await jobPostRepository.getBySlug(slug);
 
     if (!jobPost) {
         return null;

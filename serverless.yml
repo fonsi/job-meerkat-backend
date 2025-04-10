@@ -72,12 +72,21 @@ resources:
                       AttributeType: S
                     - AttributeName: companyId
                       AttributeType: S
+                    - AttributeName: slug
+                      AttributeType: S
                 KeySchema:
                     - AttributeName: id
                       KeyType: HASH
                     - AttributeName: companyId
                       KeyType: RANGE
                 BillingMode: PAY_PER_REQUEST
+                GlobalSecondaryIndexes:
+                    - IndexName: slug-index
+                      KeySchema:
+                          - AttributeName: slug
+                            KeyType: HASH
+                      Projection:
+                          ProjectionType: ALL
         scheduledSocialPostsTable:
             Type: AWS::DynamoDB::Table
             Properties:
@@ -125,11 +134,11 @@ functions:
             - httpApi:
                   path: /jobPost
                   method: any
-    jobPostId:
-        handler: src/jobPost/infrastructure/api/id/handler.index
+    jobPostSlug:
+        handler: src/jobPost/infrastructure/api/slug/handler.index
         events:
             - httpApi:
-                  path: /company/{companyId}/jobPost/{id}
+                  path: /jobpost/{slug}
                   method: any
     category:
         handler: src/category/infrastructure/api/handler.index
