@@ -1,4 +1,4 @@
-import { CompanyId } from 'company/domain/company';
+import { CompanyId, Company } from 'company/domain/company';
 import { randomUUID, UUID } from 'crypto';
 
 export type JobPostId = UUID;
@@ -192,20 +192,48 @@ export type JobPost = {
 
 export type CreateJobPostData = Omit<
     JobPost,
-    'id' | 'createdAt' | 'closedAt'
+    'id' | 'createdAt' | 'closedAt' | 'slug'
 > & {
     createdAt?: number | null;
+    company: Company;
+};
+
+const createSlugFromText = (text: string): string => {
+    const trimmedText = text.trim();
+    const withHyphens = trimmedText.toLowerCase().replace(/\s+/g, '-');
+    const withHyphensOnly = withHyphens.replace(/_/g, '-');
+
+    return withHyphensOnly.replace(/[^a-z0-9-]/g, '');
+};
+
+const generateSlug = (
+    companyName: string,
+    jobPostTitle: string,
+    createdAt: number,
+) => {
+    const companySlug = createSlugFromText(companyName);
+    const titleSlug = createSlugFromText(jobPostTitle);
+
+    const date = new Date(createdAt);
+    const dateStr =
+        date.getFullYear().toString() +
+        (date.getMonth() + 1).toString().padStart(2, '0') +
+        date.getDate().toString().padStart(2, '0');
+
+    return `${companySlug}_${titleSlug}_${dateStr}`;
 };
 
 export const createJobPost = (data: CreateJobPostData): JobPost => {
     const id = randomUUID();
     const createdAt = data.createdAt || Date.now();
     const closedAt = null;
+    const slug = generateSlug(data.company.name, data.title, createdAt);
 
     return {
         id,
         createdAt,
         closedAt,
+        slug,
         ...data,
     };
 };
