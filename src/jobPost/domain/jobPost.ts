@@ -213,25 +213,22 @@ const createSlugFromText = (text: string): string => {
 const generateSlug = (
     companyName: string,
     jobPostTitle: string,
-    createdAt: number,
+    id: JobPostId,
 ) => {
     const companySlug = createSlugFromText(companyName);
     const titleSlug = createSlugFromText(jobPostTitle);
 
-    const date = new Date(createdAt);
-    const year = date.getFullYear().toString();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
+    // Get the first chunk of the UUID (before the first hyphen)
+    const uuidChunk = id.split('-')[0];
 
-    return `${titleSlug}-at-${companySlug}-${dateStr}`.replace(/-+/g, '-');
+    return `${titleSlug}-at-${companySlug}-${uuidChunk}`.replace(/-+/g, '-');
 };
 
 export const createJobPost = (data: CreateJobPostData): JobPost => {
     const id = randomUUID();
     const createdAt = data.createdAt || Date.now();
     const closedAt = null;
-    const slug = generateSlug(data.company.name, data.title, createdAt);
+    const slug = generateSlug(data.company.name, data.title, id);
 
     return {
         id,

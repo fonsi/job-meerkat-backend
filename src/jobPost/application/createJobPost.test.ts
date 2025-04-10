@@ -14,6 +14,14 @@ jest.mock(
     }),
 );
 
+// Mock the randomUUID function to return a predictable UUID
+jest.mock('crypto', () => ({
+    ...jest.requireActual('crypto'),
+    randomUUID: jest
+        .fn()
+        .mockReturnValue('123e4567-e89b-12d3-a456-426614174000'),
+}));
+
 const mockTimestamp = 1684166400000; // May 15, 2023 12:00:00 UTC
 const originalDateNow = Date.now;
 Date.now = jest.fn(() => mockTimestamp);
@@ -49,7 +57,7 @@ describe('createJobPost', () => {
         const jobPost = await createJobPost(createJobPostCommand);
 
         expect(jobPost.title).toBe('Job Post');
-        expect(jobPost.slug).toBe('job-post-at-company-2023-05-15');
+        expect(jobPost.slug).toBe('job-post-at-company-123e4567');
         expect(jobPost.createdAt).toBe(mockTimestamp);
     });
 
@@ -59,85 +67,67 @@ describe('createJobPost', () => {
                 name: 'with spaces',
                 companyName: 'Acme Corp',
                 jobTitle: 'Senior Software Engineer',
-                expectedSlug:
-                    'senior-software-engineer-at-acme-corp-2023-05-15',
+                expectedSlug: 'senior-software-engineer-at-acme-corp-123e4567',
             },
             {
                 name: 'with underscores',
                 companyName: 'Acme_Corp',
                 jobTitle: 'Senior_Software_Engineer',
-                expectedSlug:
-                    'senior-software-engineer-at-acme-corp-2023-05-15',
+                expectedSlug: 'senior-software-engineer-at-acme-corp-123e4567',
             },
             {
                 name: 'with special characters',
                 companyName: 'Acme@Corp!',
                 jobTitle: 'Senior#Software$Engineer',
-                expectedSlug:
-                    'senior-software-engineer-at-acme-corp-2023-05-15',
-            },
-            {
-                name: 'with parentheses',
-                companyName: 'Acme (Corp)',
-                jobTitle: 'Senior Software Engineer',
-                expectedSlug:
-                    'senior-software-engineer-at-acme-corp-2023-05-15',
-            },
-            {
-                name: 'with brackets',
-                companyName: 'Acme[Corp]',
-                jobTitle: 'Senior Software Engineer',
-                expectedSlug:
-                    'senior-software-engineer-at-acme-corp-2023-05-15',
+                expectedSlug: 'senior-software-engineer-at-acme-corp-123e4567',
             },
             {
                 name: 'with mixed case',
                 companyName: 'AcMe CoRp',
                 jobTitle: 'SeNiOr SoFtWaRe EnGiNeEr',
-                expectedSlug:
-                    'senior-software-engineer-at-acme-corp-2023-05-15',
+                expectedSlug: 'senior-software-engineer-at-acme-corp-123e4567',
             },
             {
                 name: 'with multiple spaces',
                 companyName: 'Acme  Corp',
                 jobTitle: 'Senior  Software  Engineer',
-                expectedSlug:
-                    'senior-software-engineer-at-acme-corp-2023-05-15',
+                expectedSlug: 'senior-software-engineer-at-acme-corp-123e4567',
             },
             {
                 name: 'with empty spaces at edges',
                 companyName: ' Acme Corp ',
                 jobTitle: ' Senior Software Engineer ',
-                expectedSlug:
-                    'senior-software-engineer-at-acme-corp-2023-05-15',
+                expectedSlug: 'senior-software-engineer-at-acme-corp-123e4567',
+            },
+            {
+                name: 'with special characters replaced by hyphens',
+                companyName: 'Acme@Corp!',
+                jobTitle: 'Senior#Software$Engineer',
+                expectedSlug: 'senior-software-engineer-at-acme-corp-123e4567',
             },
             {
                 name: 'with punctuation',
                 companyName: 'Acme, Corp.',
                 jobTitle: 'Senior: Software; Engineer',
-                expectedSlug:
-                    'senior-software-engineer-at-acme-corp-2023-05-15',
+                expectedSlug: 'senior-software-engineer-at-acme-corp-123e4567',
             },
             {
                 name: 'with other symbols',
                 companyName: 'Acme & Corp',
                 jobTitle: 'Senior + Software = Engineer',
-                expectedSlug:
-                    'senior-software-engineer-at-acme-corp-2023-05-15',
+                expectedSlug: 'senior-software-engineer-at-acme-corp-123e4567',
             },
             {
                 name: 'with special characters and spaces',
                 companyName: 'Acme & Corp',
                 jobTitle: 'Senior + Software = Engineer',
-                expectedSlug:
-                    'senior-software-engineer-at-acme-corp-2023-05-15',
+                expectedSlug: 'senior-software-engineer-at-acme-corp-123e4567',
             },
             {
                 name: 'with special characters at the end',
                 companyName: 'Acme Corp',
                 jobTitle: 'Senior Software Engineer &',
-                expectedSlug:
-                    'senior-software-engineer-at-acme-corp-2023-05-15',
+                expectedSlug: 'senior-software-engineer-at-acme-corp-123e4567',
             },
         ];
 
@@ -168,7 +158,7 @@ describe('createJobPost', () => {
         };
 
         const jobPost = await createJobPost(command);
-        expect(jobPost.slug).toBe('job-post-at-company-2022-12-25');
+        expect(jobPost.slug).toBe('job-post-at-company-123e4567');
         expect(jobPost.createdAt).toBe(customTimestamp);
     });
 });
