@@ -200,10 +200,14 @@ export type CreateJobPostData = Omit<
 
 const createSlugFromText = (text: string): string => {
     const trimmedText = text.trim();
-    const withHyphens = trimmedText.toLowerCase().replace(/\s+/g, '-');
-    const withHyphensOnly = withHyphens.replace(/_/g, '-');
-
-    return withHyphensOnly.replace(/[^a-z0-9-]/g, '');
+    const withHyphensForSpaces = trimmedText
+        .toLowerCase()
+        .replace(/[\s_]+/g, '-');
+    const withHyphensForSpecialChars = withHyphensForSpaces.replace(
+        /[#@!()[\]{}.,;:'"$&+=|\\/<>^~`]/g,
+        '-',
+    );
+    return withHyphensForSpecialChars.replace(/[^a-z0-9-]/g, '');
 };
 
 const generateSlug = (
@@ -215,12 +219,12 @@ const generateSlug = (
     const titleSlug = createSlugFromText(jobPostTitle);
 
     const date = new Date(createdAt);
-    const dateStr =
-        date.getFullYear().toString() +
-        (date.getMonth() + 1).toString().padStart(2, '0') +
-        date.getDate().toString().padStart(2, '0');
+    const year = date.getFullYear().toString();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
 
-    return `${companySlug}_${titleSlug}_${dateStr}`;
+    return `${titleSlug}-at-${companySlug}-${dateStr}`.replace(/-+/g, '-');
 };
 
 export const createJobPost = (data: CreateJobPostData): JobPost => {

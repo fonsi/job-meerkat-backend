@@ -46,7 +46,7 @@ const mockJobPost: JobPost = {
     location: 'Worldwide',
     createdAt: Date.now(),
     closedAt: null,
-    slug: 'test-company_job-post',
+    slug: 'senior-developer-at-test-company-2023-05-15',
 };
 
 describe('getJobPostBySlug', () => {
