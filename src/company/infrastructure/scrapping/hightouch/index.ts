@@ -8,7 +8,7 @@ import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
 
 export const HIGHTOUCH_NAME = 'hightouch';
-const HIGHTOUCH_INITIAL_URL = 'https://boards.greenhouse.io/hightouch';
+const HIGHTOUCH_INITIAL_URL = 'https://job-boards.greenhouse.io/hightouch';
 
 type ScrapJobPostData = {
     id: string;
@@ -21,9 +21,9 @@ type JobPostsListItem = {
     title: string;
 };
 
-const JOB_POST_SELECTOR = '.opening a';
-const JOB_HEADER_SELECTOR = '#header';
-const JOB_CONTENT_SELECTOR = '#content';
+const JOB_POST_SELECTOR = '.job-post a';
+const JOB_TITLE_SELECTOR = '.job__title';
+const JOB_DESCRIPTION_SELECTOR = '.job__description';
 
 const scrapJobPost = async ({
     id,
@@ -32,8 +32,8 @@ const scrapJobPost = async ({
     try {
         const $ = await fromURL(url);
 
-        const titleText = $(JOB_HEADER_SELECTOR).text();
-        const descriptionText = $(JOB_CONTENT_SELECTOR).text();
+        const titleText = $(JOB_TITLE_SELECTOR).text();
+        const descriptionText = $(JOB_DESCRIPTION_SELECTOR).text();
         const jobPostContent = `${titleText} ${descriptionText}`;
 
         return openaiJobPostAnalyzer(jobPostContent);
@@ -55,12 +55,12 @@ export const hightouchScrapper: CompanyScrapperFn = async ({ companyId }) => {
     const jobPosts: JobPostsListItem[] = jobPostsElements
         .toArray()
         .map((jobPost) => {
-            const url = `https://boards.greenhouse.io${$(jobPost).attr('href')}`;
+            const url = $(jobPost).attr('href');
 
             return {
                 id: url.split('/').pop(),
                 url,
-                title: $(jobPost).text(),
+                title: $('p', jobPost).first().text(),
             };
         });
 
