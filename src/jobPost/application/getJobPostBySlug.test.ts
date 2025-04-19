@@ -1,6 +1,6 @@
 import { companyRepository } from 'company/infrastructure/persistance/dynamodb/dynamodbCompanyRepository';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
-import { getJobPostById } from './getJobPostById';
+import { getJobPostBySlug } from './getJobPostBySlug';
 import {
     Category,
     JobPost,
@@ -46,12 +46,13 @@ const mockJobPost: JobPost = {
     location: 'Worldwide',
     createdAt: Date.now(),
     closedAt: null,
+    slug: 'senior-developer-at-test-company-123e4567',
 };
 
-describe('getJobPostById', () => {
+describe('getJobPostBySlug', () => {
     beforeAll(() => {
         (companyRepository.getById as jest.Mock).mockResolvedValue(mockCompany);
-        (jobPostRepository.getByIdAndCompanyId as jest.Mock).mockResolvedValue(
+        (jobPostRepository.getBySlug as jest.Mock).mockResolvedValue(
             mockJobPost,
         );
     });
@@ -61,7 +62,7 @@ describe('getJobPostById', () => {
     });
 
     test('should return job post with company information when found', async () => {
-        const result = await getJobPostById(jobPostId, companyId);
+        const result = await getJobPostBySlug(mockJobPost.slug);
 
         expect(result).toEqual({
             ...mockJobPost,
@@ -71,24 +72,22 @@ describe('getJobPostById', () => {
                 logo: mockCompany.logo,
             },
         });
-        expect(jobPostRepository.getByIdAndCompanyId).toHaveBeenCalledWith(
-            jobPostId,
-            companyId,
+        expect(jobPostRepository.getBySlug).toHaveBeenCalledWith(
+            mockJobPost.slug,
         );
-        expect(companyRepository.getById).toHaveBeenCalledWith(companyId);
+        expect(companyRepository.getById).toHaveBeenCalledWith(
+            mockJobPost.companyId,
+        );
     });
 
     test('should return null when job post is not found', async () => {
-        (jobPostRepository.getByIdAndCompanyId as jest.Mock).mockResolvedValue(
-            null,
-        );
+        (jobPostRepository.getBySlug as jest.Mock).mockResolvedValue(null);
 
-        const result = await getJobPostById(jobPostId, companyId);
+        const result = await getJobPostBySlug(mockJobPost.slug);
 
         expect(result).toBeNull();
-        expect(jobPostRepository.getByIdAndCompanyId).toHaveBeenCalledWith(
-            jobPostId,
-            companyId,
+        expect(jobPostRepository.getBySlug).toHaveBeenCalledWith(
+            mockJobPost.slug,
         );
         expect(companyRepository.getById).not.toHaveBeenCalled();
     });

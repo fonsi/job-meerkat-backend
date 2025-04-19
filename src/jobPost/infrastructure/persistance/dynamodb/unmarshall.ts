@@ -40,6 +40,7 @@ export const unmarshall = (item: Record<string, AttributeValue>): JobPost => {
             salaryRange,
             createdAt: parseInt(item['createdAt']['N']),
             closedAt: parseInt(item['closedAt']?.['N']) || null,
+            slug: item['slug']?.['S'] || '',
         };
     } catch (e) {
         throw new UnmarshallError(e.message, 'JobPost', item);

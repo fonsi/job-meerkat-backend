@@ -2,12 +2,18 @@ import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/d
 import {
     createJobPost as createJobPostEntity,
     CreateJobPostData,
+    JobPost,
 } from 'jobPost/domain/jobPost';
+import { Company } from 'company/domain/company';
 
-type CreateJobPostCommand = CreateJobPostData;
+export type CreateJobPostCommand = CreateJobPostData & {
+    company: Company;
+};
 
-export const createJobPost = async (command: CreateJobPostCommand) => {
+export const createJobPost = async (
+    command: CreateJobPostCommand,
+): Promise<JobPost> => {
     const jobPost = createJobPostEntity(command);
 
-    await jobPostRepository.create(jobPost);
+    return await jobPostRepository.create(jobPost);
 };

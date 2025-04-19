@@ -20,6 +20,7 @@ export type Close = (
     companyId: CompanyId,
     closedAt: number,
 ) => Promise<JobPost>;
+export type GetBySlug = (slug: string) => Promise<JobPost>;
 
 export interface JobPostRepository {
     create: Create;
@@ -30,4 +31,5 @@ export interface JobPostRepository {
     getByIdAndCompanyId: GetByIdAndCompanyId;
     getLatest: GetLatest;
     close: Close;
+    getBySlug: GetBySlug;
 }

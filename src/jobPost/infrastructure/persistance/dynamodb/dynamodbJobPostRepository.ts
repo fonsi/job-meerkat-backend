@@ -19,6 +19,7 @@ import {
     GetAllOpen,
     GetLatest,
     FROM_WHEN,
+    GetBySlug,
 } from 'jobPost/domain/jobPostRepository';
 import { isOpen } from 'jobPost/domain/jobPost';
 
@@ -159,6 +160,29 @@ const close: Close = async (jobPostId, companyId, closedAt) => {
     return unmarshall(item);
 };
 
+const getBySlug: GetBySlug = async (slug) => {
+    try {
+        const results = await query(JOB_POST_TABLE, {
+            IndexName: 'slug-index',
+            KeyConditionExpression: 'slug = :slug',
+            ExpressionAttributeValues: {
+                ':slug': {
+                    S: slug,
+                },
+            },
+        });
+        const item = results.Items[0];
+
+        if (!item) {
+            return null;
+        }
+
+        return unmarshall(item);
+    } catch (e) {
+        throw new DynamodbError(e);
+    }
+};
+
 export const jobPostRepository = {
     create,
     getAll,
@@ -166,6 +190,7 @@ export const jobPostRepository = {
     getAllByCompanyId,
     getAllOpenByCompanyId,
     getByIdAndCompanyId,
+    getBySlug,
     getLatest,
     close,
 } as JobPostRepository;

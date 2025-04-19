@@ -60,7 +60,10 @@ type BuildCompanyScrapperData = {
     company: Company;
 };
 
-export type ScrappedJobPost = Omit<JobPost, 'id' | 'createdAt' | 'closedAt'> & {
+export type ScrappedJobPost = Omit<
+    JobPost,
+    'id' | 'createdAt' | 'closedAt' | 'slug'
+> & {
     createdAt?: number | null;
 };
 export type CompanyScrapper = () => Promise<ScrappedJobPost[]>;

@@ -10,7 +10,13 @@ import OpenAI from 'openai';
 
 export type OpenaiJobPost = Omit<
     JobPost,
-    'id' | 'originalId' | 'companyId' | 'url' | 'createdAt' | 'closedAt'
+    | 'id'
+    | 'originalId'
+    | 'companyId'
+    | 'url'
+    | 'createdAt'
+    | 'closedAt'
+    | 'slug'
 > & {
     createdAt?: number | null;
 };

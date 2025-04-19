@@ -5,6 +5,7 @@ import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/d
 import { JobPost } from 'jobPost/domain/jobPost';
 import { ScrappedJobPost } from 'company/infrastructure/scrapping/companyScrapper';
 import { closeJobPost } from 'jobPost/application/closeJobPost';
+import { companyRepository } from 'company/infrastructure/persistance/dynamodb/dynamodbCompanyRepository';
 
 type ProcessCompanyCommand = {
     companyId: CompanyId;
@@ -50,6 +51,7 @@ export const processCompany = async ({
 }: ProcessCompanyCommand): Promise<void> => {
     console.log('[PROCESS COMPANY]', companyId);
 
+    const company = await companyRepository.getById(companyId);
     const scrappedJobPosts = await scrapCompany({ companyId });
     const openJobPosts =
         await jobPostRepository.getAllOpenByCompanyId(companyId);
@@ -63,8 +65,13 @@ export const processCompany = async ({
         `[SCRAPPED: ${scrappedJobPosts.length}] [OPEN: ${openJobPosts.length}] [NEW: ${newJobPosts.length}] [CLOSED: ${closedJobPosts.length}]`,
     );
 
-    const createJobPostsPromises: Promise<void>[] =
-        newJobPosts.map(createJobPost);
+    const createJobPostsPromises: Promise<JobPost>[] = newJobPosts.map(
+        (jobPost) =>
+            createJobPost({
+                ...jobPost,
+                company,
+            }),
+    );
     const closeJobPostsPromises: Promise<void>[] =
         closedJobPosts.map(closeJobPost);
 
