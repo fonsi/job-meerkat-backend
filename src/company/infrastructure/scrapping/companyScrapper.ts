@@ -52,6 +52,8 @@ import { MAZE_NAME, mazeScrapper } from './maze';
 import { RAVIO_NAME, ravioScrapper } from './ravio';
 import { NETLIFY_NAME, netlifyScrapper } from './netlify';
 import { CONFIANT_NAME, confiantScrapper } from './confiant';
+import { LIGHTDASH_NAME, lightdashScrapper } from './lightdash';
+
 type CompanyScrapperData = {
     companyId: CompanyId;
 };
@@ -177,6 +179,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return netlifyScrapper;
         case CONFIANT_NAME:
             return confiantScrapper;
+        case LIGHTDASH_NAME:
+            return lightdashScrapper;
     }
 
     return null;
