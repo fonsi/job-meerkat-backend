@@ -53,6 +53,7 @@ import { RAVIO_NAME, ravioScrapper } from './ravio';
 import { NETLIFY_NAME, netlifyScrapper } from './netlify';
 import { CONFIANT_NAME, confiantScrapper } from './confiant';
 import { LIGHTDASH_NAME, lightdashScrapper } from './lightdash';
+import { POSTSCRIPT_NAME, postscriptScrapper } from './postscript';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -181,6 +182,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return confiantScrapper;
         case LIGHTDASH_NAME:
             return lightdashScrapper;
+        case POSTSCRIPT_NAME:
+            return postscriptScrapper;
     }
 
     return null;
