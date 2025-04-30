@@ -27,6 +27,9 @@ export const openaiSocialMediaPostsCreator = async ({
     jobPost,
     company,
 }: OpenaiSocialMediaPostsCreator): Promise<SocialMediaPosts> => {
+    const companyLink = `https://jobmeerkat.com/company/${company.id}`;
+    const jobmeerkatLink = 'https://jobmeerkat.com';
+
     const completion = await openai.chat.completions.create({
         model: OPENAI_MODEL,
         response_format: {
@@ -50,10 +53,13 @@ export const openaiSocialMediaPostsCreator = async ({
                             In the first tweet you can talk about the offer (category, workplace and salary). If any of the data is missing, you can omit it.
                             In the second tweet you can introduce the company: ${company.name}.
                             In third tweet encourage to take a look to the offer details and add the link to the offer (${jobPost.url}).
-                            In fourth tweet you can suggest to see more ${company.name} offers at https://jobmeerkat.com/company/${company.id}.
-                            And in the fifth tweet you can suggest to explore more job offers at https://jobmeerkat.com and add some related hastags as #remoteWork, #jobSeach, something related to the job category, etc. Don't add the company name as a hashtag.
-                            The same thread could be used for both twitter and threads. The content should be adjusted to fit in the character limit.
-                            And with the same content you can create a linkedin post.
+                            In fourth tweet you can suggest to see more ${company.name} offers at ${companyLink}.
+                            And in the fifth tweet you can suggest to explore more job offers at ${jobmeerkatLink} and add some related hastags as #remoteWork, #jobSeach, something related to the job category, etc. Don't add the company name as a hashtag.
+                            The content should be adjusted to fit in the character limit.
+                            For Meta Threads I want to have a different content than for twitter. I prefer to put all the information in a single message.
+                            As Threads messages are limited to 500 characters, you should be careful to not exceed this limit. We can skip the company description and use a more schematic content to show the job offer.
+                            And at the end of the message we can add the links to the job offer, the company's jobs link at Jobmeerkat (${companyLink}) and the Jobmeerkat homepage link (${jobmeerkatLink}).
+                            And with the same content you can create a linkedin post. As there is no character limit we can include the company description.
                             The response should be a JSON following the example: ${JSON.stringify(socialMediaPostsExample)}.
                         `,
                     },
