@@ -56,10 +56,12 @@ export const openaiSocialMediaPostsCreator = async ({
                             In fourth tweet you can suggest to see more ${company.name} offers at ${companyLink}.
                             And in the fifth tweet you can suggest to explore more job offers at ${jobmeerkatLink} and add some related hastags as #remoteWork, #jobSeach, something related to the job category, etc. Don't add the company name as a hashtag.
                             The content should be adjusted to fit in the character limit.
-                            For Meta Threads I want to have a different content than for twitter. I prefer to put all the information in a single message.
-                            As Threads messages are limited to 500 characters, you should be careful to not exceed this limit. We can skip the company description and use a more schematic content to show the job offer.
-                            And at the end of the message we can add the links to the job offer, the company's jobs link at Jobmeerkat (${companyLink}) and the Jobmeerkat homepage link (${jobmeerkatLink}).
-                            And with the same content you can create a linkedin post. As there is no character limit we can include the company description.
+                            For Meta Threads I want to have a different content than for twitter. In the first message I prefer to put the job post description (with location and salary, if available) and in a next line a text indicating that the job offer link is inside the thread. Then, in another line, don't forget to add a text and the link to Jobmeerkat (${jobmeerkatLink}) encouraging users to visit for more job posts.
+                            In the second message we can add the company's description with the link to the company's page at Jobmeerkat where viewers can discover more company's open job posts: ${companyLink}.
+                            And in the third link we can finally add the link to the job post where the viewer can get more details and apply: ${jobPost.url}.
+                            As Threads messages are limited to 500 characters, you should be careful to not exceed this limit.
+                            For Linkedin we can use all the available information to create a post.
+                            The messages should be written in plain text. You can't use HTML or markdown.
                             The response should be a JSON following the example: ${JSON.stringify(socialMediaPostsExample)}.
                         `,
                     },
