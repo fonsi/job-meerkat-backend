@@ -54,6 +54,7 @@ import { NETLIFY_NAME, netlifyScrapper } from './netlify';
 import { CONFIANT_NAME, confiantScrapper } from './confiant';
 import { LIGHTDASH_NAME, lightdashScrapper } from './lightdash';
 import { POSTSCRIPT_NAME, postscriptScrapper } from './postscript';
+import { SOURCEGRAPH_NAME, sourcegraphScrapper } from './sourcegraph';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -184,6 +185,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return lightdashScrapper;
         case POSTSCRIPT_NAME:
             return postscriptScrapper;
+        case SOURCEGRAPH_NAME:
+            return sourcegraphScrapper;
     }
 
     return null;
