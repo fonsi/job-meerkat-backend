@@ -56,6 +56,7 @@ import { LIGHTDASH_NAME, lightdashScrapper } from './lightdash';
 import { POSTSCRIPT_NAME, postscriptScrapper } from './postscript';
 import { SOURCEGRAPH_NAME, sourcegraphScrapper } from './sourcegraph';
 import { DOCKER_NAME, dockerScrapper } from './docker';
+import { ONE_PASSWORD_NAME, onePasswordScrapper } from './1password';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -190,6 +191,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return sourcegraphScrapper;
         case DOCKER_NAME:
             return dockerScrapper;
+        case ONE_PASSWORD_NAME:
+            return onePasswordScrapper;
     }
 
     return null;
