@@ -35,6 +35,10 @@ provider:
         ASSETS_URL: ${env:ASSETS_URL}
         ROLLBAR_ACCESS_TOKEN: ${env:ROLLBAR_ACCESS_TOKEN}
         THREADS_API_TOKEN: ${env:THREADS_API_TOKEN}
+        X_API_KEY: ${env:X_API_KEY}
+        X_API_SECRET: ${env:X_API_SECRET}
+        X_ACCESS_TOKEN: ${env:X_ACCESS_TOKEN}
+        X_ACCESS_TOKEN_SECRET: ${env:X_ACCESS_TOKEN_SECRET}
     logs:
         httpApi: true
     iamRoleStatements:
