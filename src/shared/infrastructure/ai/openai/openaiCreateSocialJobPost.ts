@@ -49,13 +49,18 @@ export const openaiSocialMediaPostsCreator = async ({
                         text: `
                             At Jobmeerkat we have listed a job post with the following data ${JSON.stringify(jobPost)} at the following company: ${company.name}.
                             We are not the ones who offers the job, we just list it. We are a job board that helps people to find job offers.
-                            We would like to create a social media post to promote this job offer. Starting with the twitter thread:
-                            In the first tweet you can talk about the offer (category, workplace and salary). If any of the data is missing, you can omit it.
-                            In the second tweet you can introduce the company: ${company.name}.
-                            In third tweet encourage to take a look to the offer details and add the link to the offer (${jobPost.url}).
-                            In fourth tweet you can suggest to see more ${company.name} offers at ${companyLink}.
-                            And in the fifth tweet you can suggest to explore more job offers at ${jobmeerkatLink} and add some related hastags as #remoteWork, #jobSeach, something related to the job category, etc. Don't add the company name as a hashtag.
-                            The content should be adjusted to fit in the character limit.
+                            We would like to create a social media post to promote this job offer.
+                            Starting with the twitter thread:
+                            I want to publish a single tweet with the job offer description and a link to the offer (${jobPost.url}). Do not use icons or emojis.
+                            ${
+                                ''
+                                /*In the first tweet you can talk about the offer (category, workplace and salary). If any of the data is missing, you can omit it.
+                                In the second tweet you can introduce the company: ${company.name}.
+                                In third tweet encourage to take a look to the offer details and add the link to the offer (${jobPost.url}).
+                                In fourth tweet you can suggest to see more ${company.name} offers at ${companyLink}.
+                                And in the fifth tweet you can suggest to explore more job offers at ${jobmeerkatLink} and add some related hastags as #remoteWork, #jobSeach, something related to the job category, etc. Don't add the company name as a hashtag.*/
+                            }
+                            The content should be adjusted to fit in the 280 character limit.
                             For Meta Threads I want to have a different content than for twitter. In the first message I prefer to put the job post description (with location and salary, if available) and in a next line a text indicating that the job offer link is inside the thread. Then, in another line, don't forget to add a text and the link to Jobmeerkat (${jobmeerkatLink}) encouraging users to visit for more job posts.
                             In the second message we can add the company's description with the link to the company's page at Jobmeerkat where viewers can discover more company's open job posts: ${companyLink}.
                             And in the third link we can finally add the link to the job post where the viewer can get more details and apply: ${jobPost.url}.
