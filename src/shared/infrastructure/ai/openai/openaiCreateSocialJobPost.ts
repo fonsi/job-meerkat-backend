@@ -48,7 +48,7 @@ export const openaiSocialMediaPostsCreator = async ({
                         type: 'text',
                         text: `
                             At Jobmeerkat we have listed a job post with the following data ${JSON.stringify(jobPost)} at the following company: ${company.name}.
-                            We are not the ones who offers the job, we just list it. We are a job board that helps people to find job offers.
+                            We are not the ones who offers the job, we just list it. Be sure not to say that you are the ones who offers the job or we are hiring. We are a job board that helps people to find job offers.
                             We would like to create a social media post to promote this job offer.
                             Starting with the twitter thread:
                             I want to publish a single tweet with the job offer description and a link to the offer (${jobPost.url}). Do not use icons or emojis.
