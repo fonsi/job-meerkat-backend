@@ -51,7 +51,9 @@ export const openaiSocialMediaPostsCreator = async ({
                             We are not the ones who offers the job, we just list it. Be sure not to say that you are the ones who offers the job or we are hiring. We are a job board that helps people to find job offers.
                             We would like to create a social media post to promote this job offer.
                             Starting with the twitter thread:
-                            I want to publish a single tweet with the job offer description and a link to the offer (${jobPost.url}). Do not use icons or emojis.
+                            I want to publish a thread with 2 tweets.
+                            The first with the job offer description (category, workplace and salary). Do not use icons or emojis.
+                            The second with the link to the job offer (${jobPost.url}), a link to the company's page at Jobmeerkat where viewers can discover more company's open job posts: ${companyLink} and a link to Jobmeerkat (${jobmeerkatLink}) encouraging users to visit for more job posts.
                             ${
                                 ''
                                 /*In the first tweet you can talk about the offer (category, workplace and salary). If any of the data is missing, you can omit it.
