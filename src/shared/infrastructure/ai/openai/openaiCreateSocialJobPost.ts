@@ -62,6 +62,7 @@ export const openaiSocialMediaPostsCreator = async ({
                                 In fourth tweet you can suggest to see more ${company.name} offers at ${companyLink}.
                                 And in the fifth tweet you can suggest to explore more job offers at ${jobmeerkatLink} and add some related hastags as #remoteWork, #jobSeach, something related to the job category, etc. Don't add the company name as a hashtag.*/
                             }
+                            Try to add some hashtags to the content if you think it's relevant or can help to reach more people. Don't add the company name as a hashtag.
                             The content should be adjusted to fit in the 280 character limit.
                             For Meta Threads I want to have a different content than for twitter. In the first message I prefer to put the job post description (with location and salary, if available) and in a next line a text indicating that the job offer link is inside the thread. Then, in another line, don't forget to add a text and the link to Jobmeerkat (${jobmeerkatLink}) encouraging users to visit for more job posts.
                             In the second message we can add the company's description with the link to the company's page at Jobmeerkat where viewers can discover more company's open job posts: ${companyLink}.
