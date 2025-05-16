@@ -57,6 +57,7 @@ import { POSTSCRIPT_NAME, postscriptScrapper } from './postscript';
 import { SOURCEGRAPH_NAME, sourcegraphScrapper } from './sourcegraph';
 import { DOCKER_NAME, dockerScrapper } from './docker';
 import { ONE_PASSWORD_NAME, onePasswordScrapper } from './1password';
+import { LIMITLESS_NAME, limitlessScrapper } from './limitless';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -193,6 +194,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return dockerScrapper;
         case ONE_PASSWORD_NAME:
             return onePasswordScrapper;
+        case LIMITLESS_NAME:
+            return limitlessScrapper;
     }
 
     return null;
