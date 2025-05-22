@@ -59,6 +59,7 @@ import { DOCKER_NAME, dockerScrapper } from './docker';
 import { ONE_PASSWORD_NAME, onePasswordScrapper } from './1password';
 import { LIMITLESS_NAME, limitlessScrapper } from './limitless';
 import { REPLIT_NAME, replitScrapper } from './replit';
+import { STRAVA_NAME, stravaScrapper } from './strava';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -199,6 +200,8 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return limitlessScrapper;
         case REPLIT_NAME:
             return replitScrapper;
+        case STRAVA_NAME:
+            return stravaScrapper;
     }
 
     return null;
