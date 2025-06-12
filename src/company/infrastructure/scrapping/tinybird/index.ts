@@ -52,13 +52,19 @@ export const tinybirdScrapper: CompanyScrapperFn = async ({ companyId }) => {
         .toArray()
         .map((jobPost) => {
             const url = `${BASE_URL}${$(jobPost).attr('href')}`;
+            const title = $('span span', jobPost).first().text();
 
             return {
                 id: url.split('/').filter(Boolean).pop(),
                 url,
-                title: $('span span', jobPost).first().text(),
+                title,
             };
-        });
+        })
+        .filter(
+            (jobPost) =>
+                jobPost.title !== '' &&
+                !jobPost.title.toLowerCase().includes('open application'),
+        );
 
     const data: ScrappedJobPost[] = [];
     for (let i = 0; i < jobPosts.length; i++) {
