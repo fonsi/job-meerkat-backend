@@ -1,4 +1,3 @@
-import { fromURL } from 'cheerio';
 import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
 import {
     OpenaiJobPost,
@@ -6,14 +5,14 @@ import {
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
 import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
+import { getAshbyJobPostContent } from '../ashbyGraphQLRequest';
 
 export const ONE_PASSWORD_NAME = '1password';
 const ONE_PASSWORD_INITIAL_URL =
-    'https://api.lever.co/v0/postings/1password?mode=json';
+    'https://api.ashbyhq.com/posting-api/job-board/1password';
 
 type ScrapJobPostData = {
     id: string;
-    url: string;
 };
 
 type JobPostsListItem = {
@@ -23,18 +22,16 @@ type JobPostsListItem = {
     createdAt: number;
 };
 
-const JOB_CONTENT_SELECTOR = '.content';
-
 const scrapJobPost = async ({
     id,
-    url,
 }: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
-        const $ = await fromURL(url);
+        const jobsData = await getAshbyJobPostContent({
+            companyName: ONE_PASSWORD_NAME,
+            jobPostId: id,
+        });
 
-        const jobPostContent = $(JOB_CONTENT_SELECTOR).text();
-
-        return openaiJobPostAnalyzer(jobPostContent);
+        return openaiJobPostAnalyzer(JSON.stringify(jobsData));
     } catch (e) {
         const error = errorWithPrefix(
             e,
@@ -50,15 +47,20 @@ export const onePasswordScrapper: CompanyScrapperFn = async ({ companyId }) => {
     const response = await fetch(ONE_PASSWORD_INITIAL_URL);
     const jobsData = await response.json();
 
-    const jobPosts: JobPostsListItem[] = jobsData.map((jobData) => {
-        const url = jobData.hostedUrl;
+    const jobPosts: JobPostsListItem[] = [];
 
-        return {
-            id: jobData.id,
-            url,
-            title: jobData.text,
-            createdAt: jobData.createdAt,
-        };
+    jobsData.jobs.forEach((jobData) => {
+        const url = jobData.jobUrl;
+        const title = jobData.title;
+
+        if (jobData.isListed && !title.toLowerCase().includes('intern')) {
+            jobPosts.push({
+                id: jobData.id,
+                url,
+                title,
+                createdAt: new Date(jobData.publishedAt).getTime(),
+            });
+        }
     });
 
     const data: ScrappedJobPost[] = [];
@@ -71,13 +73,13 @@ export const onePasswordScrapper: CompanyScrapperFn = async ({ companyId }) => {
 
             const jobPostData = await scrapJobPost({
                 id: jobPost.id,
-                url: jobPost.url,
             });
 
             data.push({
                 ...jobPostData,
                 originalId: jobPost.id,
                 url: jobPost.url,
+                title: jobPost.title,
                 companyId,
                 createdAt: jobPost.createdAt,
             });
