@@ -1,4 +1,3 @@
-import { fromURL } from 'cheerio';
 import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
 import {
     OpenaiJobPost,
@@ -6,41 +5,33 @@ import {
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
 import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
+import { getAshbyJobPostContent } from '../ashbyGraphQLRequest';
 
 export const SUPERHUMAN_NAME = 'superhuman';
 const SUPERHUMAN_INITIAL_URL =
-    'https://boards-api.greenhouse.io/v1/boards/superhuman/jobs';
+    'https://api.ashbyhq.com/posting-api/job-board/superhuman';
 
 type ScrapJobPostData = {
-    id: number;
+    id: string;
 };
 
 type JobPostsListItem = {
-    id: number;
+    id: string;
     url: string;
     title: string;
     createdAt: number;
 };
 
-const JOB_HEADER_SELECTOR = '.job__header';
-const JOB_CONTENT_SELECTOR = '.job__description';
-const JOB_LOCATION_SELECTOR = '.job__location';
-
 const scrapJobPost = async ({
     id,
 }: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
-        const $ = await fromURL(
-            `https://job-boards.greenhouse.io/embed/job_app?for=superhuman&token=${id}`,
-        );
+        const jobsData = await getAshbyJobPostContent({
+            companyName: SUPERHUMAN_NAME,
+            jobPostId: id,
+        });
 
-        const jobPostHeader = $(JOB_HEADER_SELECTOR).text();
-        const jobPostContent = $(JOB_CONTENT_SELECTOR).text();
-        const jobPostLocation = $(JOB_LOCATION_SELECTOR).text();
-
-        return openaiJobPostAnalyzer(
-            `Location: ${jobPostLocation}. ${jobPostHeader} ${jobPostContent}`,
-        );
+        return openaiJobPostAnalyzer(JSON.stringify(jobsData));
     } catch (e) {
         const error = errorWithPrefix(
             e,
@@ -56,15 +47,19 @@ export const superhumanScrapper: CompanyScrapperFn = async ({ companyId }) => {
     const response = await fetch(SUPERHUMAN_INITIAL_URL);
     const jobsData = await response.json();
 
-    const jobPosts: JobPostsListItem[] = jobsData.jobs.map((jobData) => {
-        const url = jobData.absolute_url;
+    const jobPosts: JobPostsListItem[] = [];
 
-        return {
-            id: jobData.id,
-            url,
-            title: jobData.title,
-            createdAt: new Date(jobData.first_published).getTime(),
-        };
+    jobsData.jobs.forEach((jobData) => {
+        const url = jobData.jobUrl;
+
+        if (jobData.isListed) {
+            jobPosts.push({
+                id: jobData.id,
+                url,
+                title: jobData.title,
+                createdAt: new Date(jobData.publishedAt).getTime(),
+            });
+        }
     });
 
     const data: ScrappedJobPost[] = [];
@@ -81,8 +76,9 @@ export const superhumanScrapper: CompanyScrapperFn = async ({ companyId }) => {
 
             data.push({
                 ...jobPostData,
-                originalId: jobPost.id.toString(),
+                originalId: jobPost.id,
                 url: jobPost.url,
+                title: jobPost.title,
                 companyId,
                 createdAt: jobPost.createdAt,
             });
