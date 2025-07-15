@@ -9,21 +9,22 @@ import { logger } from 'shared/infrastructure/logger/logger';
 
 export const HAPPY_MONEY_NAME = 'happy money';
 const HAPPY_MONEY_INITIAL_URL =
-    'https://api.lever.co/v0/postings/happymoney?mode=json';
+    'https://boards-api.greenhouse.io/v1/boards/happymoney/departments';
 
 type ScrapJobPostData = {
-    id: string;
+    id: number;
     url: string;
 };
 
 type JobPostsListItem = {
-    id: string;
+    id: number;
     url: string;
     title: string;
     createdAt: number;
 };
 
-const JOB_CONTENT_SELECTOR = '.content';
+const JOB_TITLE_SELECTOR = '.job__title';
+const JOB_DESCRIPTION_SELECTOR = '.job__description';
 
 const scrapJobPost = async ({
     id,
@@ -32,9 +33,10 @@ const scrapJobPost = async ({
     try {
         const $ = await fromURL(url);
 
-        const jobPostContent = $(JOB_CONTENT_SELECTOR).text();
+        const jobPostTitle = $(JOB_TITLE_SELECTOR).text();
+        const jobPostDescription = $(JOB_DESCRIPTION_SELECTOR).text();
 
-        return openaiJobPostAnalyzer(jobPostContent);
+        return openaiJobPostAnalyzer(`${jobPostTitle} ${jobPostDescription}`);
     } catch (e) {
         const error = errorWithPrefix(
             e,
@@ -50,15 +52,24 @@ export const happyMoneyScrapper: CompanyScrapperFn = async ({ companyId }) => {
     const response = await fetch(HAPPY_MONEY_INITIAL_URL);
     const jobsData = await response.json();
 
-    const jobPosts: JobPostsListItem[] = jobsData.map((jobData) => {
-        const url = jobData.hostedUrl;
+    const jobPosts: JobPostsListItem[] = [];
 
-        return {
-            id: jobData.id,
-            url,
-            title: jobData.text,
-            createdAt: jobData.createdAt,
-        };
+    jobsData.departments.forEach((department) => {
+        department.jobs.forEach((jobData) => {
+            const url = jobData.absolute_url;
+            const title = jobData.title;
+
+            if (title.toLowerCase().includes('general application')) {
+                return;
+            }
+
+            jobPosts.push({
+                id: jobData.id,
+                url,
+                title,
+                createdAt: new Date(jobData.updated_at).getTime(),
+            });
+        });
     });
 
     const data: ScrappedJobPost[] = [];
@@ -76,7 +87,7 @@ export const happyMoneyScrapper: CompanyScrapperFn = async ({ companyId }) => {
 
             data.push({
                 ...jobPostData,
-                originalId: jobPost.id,
+                originalId: jobPost.id.toString(),
                 url: jobPost.url,
                 companyId,
                 createdAt: jobPost.createdAt,
