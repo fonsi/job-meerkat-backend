@@ -154,8 +154,6 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return zapierScrapper;
         case MAGIC_SCHOOL_NAME:
             return magicSchoolScrapper;
-        case RAMP_NAME:
-            return rampScrapper;
         case AMONDO_NAME:
             return amondoScrapper;
         case CLOSE_NAME:
@@ -202,6 +200,29 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return replitScrapper;
         case STRAVA_NAME:
             return stravaScrapper;
+    }
+
+    return null;
+};
+
+export type ListedJobPostsData = {
+    id: string;
+    url: string;
+    title: string;
+    createdAt?: number;
+};
+
+export type NewCompanyScrapper = ({ companyId }: { companyId: CompanyId }) => {
+    getListedJobPostsData: () => Promise<ListedJobPostsData[]>;
+    scrapJobPost: (
+        jobPostData: ListedJobPostsData[],
+    ) => Promise<ScrappedJobPost[]>;
+};
+
+export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
+    switch (company.name?.toLowerCase()) {
+        case RAMP_NAME:
+            return rampScrapper;
     }
 
     return null;

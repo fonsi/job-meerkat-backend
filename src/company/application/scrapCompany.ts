@@ -1,5 +1,4 @@
-import { CompanyId } from 'company/domain/company';
-import { companyRepository } from 'company/infrastructure/persistance/dynamodb/dynamodbCompanyRepository';
+import { Company } from 'company/domain/company';
 import {
     buildCompanyScrapper,
     ScrappedJobPost,
@@ -7,18 +6,12 @@ import {
 import { logger } from 'shared/infrastructure/logger/logger';
 
 type ScrappeCompanyCommand = {
-    companyId: CompanyId;
+    company: Company;
 };
 
 export const scrapCompany = async ({
-    companyId,
+    company,
 }: ScrappeCompanyCommand): Promise<ScrappedJobPost[]> => {
-    const company = await companyRepository.getById(companyId);
-
-    if (!company) {
-        throw new Error(`Company not found - ${companyId}`);
-    }
-
     const scrap = buildCompanyScrapper({ company });
 
     const scrappedJobPosts = await scrap();

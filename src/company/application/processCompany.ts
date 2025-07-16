@@ -1,11 +1,17 @@
-import { CompanyId } from 'company/domain/company';
+import { Company, CompanyId } from 'company/domain/company';
 import { scrapCompany } from './scrapCompany';
 import { createJobPost } from 'jobPost/application/createJobPost';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
 import { JobPost } from 'jobPost/domain/jobPost';
-import { ScrappedJobPost } from 'company/infrastructure/scrapping/companyScrapper';
+import {
+    getNewCompanyScrapper,
+    NewCompanyScrapper,
+    ListedJobPostsData,
+    ScrappedJobPost,
+} from 'company/infrastructure/scrapping/companyScrapper';
 import { closeJobPost } from 'jobPost/application/closeJobPost';
 import { companyRepository } from 'company/infrastructure/persistance/dynamodb/dynamodbCompanyRepository';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 type ProcessCompanyCommand = {
     companyId: CompanyId;
@@ -16,9 +22,30 @@ type GetNewAndClosedJobPostsData = {
     openJobPosts: JobPost[];
 };
 
+type NewGetNewAndClosedJobPostsData = {
+    listedJobPostsData: ListedJobPostsData[];
+    openJobPosts: JobPost[];
+};
+
 type NewAndClosedJobPosts = {
     newJobPosts: ScrappedJobPost[];
     closedJobPosts: JobPost[];
+};
+
+type NewNewAndClosedJobPosts = {
+    newJobPosts: ListedJobPostsData[];
+    closedJobPosts: JobPost[];
+};
+
+type NewScrapperData = {
+    companyId: CompanyId;
+    company: Company;
+    scrapper: NewCompanyScrapper;
+};
+
+type OldScrapperData = {
+    companyId: CompanyId;
+    company: Company;
 };
 
 const getNewAndClosedJobPosts = ({
@@ -46,13 +73,11 @@ const getNewAndClosedJobPosts = ({
     };
 };
 
-export const processCompany = async ({
+const scrapUsingOldScrapper = async ({
     companyId,
-}: ProcessCompanyCommand): Promise<void> => {
-    console.log('[PROCESS COMPANY]', companyId);
-
-    const company = await companyRepository.getById(companyId);
-    const scrappedJobPosts = await scrapCompany({ companyId });
+    company,
+}: OldScrapperData): Promise<void> => {
+    const scrappedJobPosts = await scrapCompany({ company });
     const openJobPosts =
         await jobPostRepository.getAllOpenByCompanyId(companyId);
 
@@ -76,4 +101,93 @@ export const processCompany = async ({
         closedJobPosts.map(closeJobPost);
 
     await Promise.all([...createJobPostsPromises, ...closeJobPostsPromises]);
+};
+
+const newGetNewAndClosedJobPosts = ({
+    listedJobPostsData,
+    openJobPosts,
+}: NewGetNewAndClosedJobPostsData): NewNewAndClosedJobPosts => {
+    const newJobPosts = listedJobPostsData.filter(
+        (listedJobPostsData) =>
+            !openJobPosts.find(
+                (openJobPosts) =>
+                    openJobPosts.originalId === listedJobPostsData.id,
+            ),
+    );
+    const closedJobPosts = openJobPosts.filter(
+        (openJobPost) =>
+            !listedJobPostsData.find(
+                (listedJobPostsData) =>
+                    listedJobPostsData.id === openJobPost.originalId,
+            ),
+    );
+
+    return {
+        newJobPosts,
+        closedJobPosts,
+    };
+};
+
+const scrapUsingNewScrapper = async ({
+    companyId,
+    company,
+    scrapper,
+}: NewScrapperData): Promise<void> => {
+    const builtScrapper = scrapper({ companyId });
+    const listedJobPostsData = await builtScrapper.getListedJobPostsData();
+    const openJobPosts =
+        await jobPostRepository.getAllOpenByCompanyId(companyId);
+
+    if (listedJobPostsData.length === 0) {
+        logger.info(`No open positions in ${company.name}`);
+    }
+
+    const { newJobPosts, closedJobPosts } = newGetNewAndClosedJobPosts({
+        listedJobPostsData,
+        openJobPosts,
+    });
+
+    const scrappedJobPosts = await builtScrapper.scrapJobPost(newJobPosts);
+
+    console.log(
+        `[LISTED: ${listedJobPostsData.length}] [OPEN: ${openJobPosts.length}] [NEW: ${newJobPosts.length}] [CLOSED: ${closedJobPosts.length}]`,
+    );
+
+    const createJobPostsPromises: Promise<JobPost>[] = scrappedJobPosts.map(
+        (jobPost) =>
+            createJobPost({
+                ...jobPost,
+                company,
+            }),
+    );
+    const closeJobPostsPromises: Promise<void>[] =
+        closedJobPosts.map(closeJobPost);
+
+    await Promise.all([...createJobPostsPromises, ...closeJobPostsPromises]);
+};
+
+export const processCompany = async ({
+    companyId,
+}: ProcessCompanyCommand): Promise<void> => {
+    console.log('[PROCESS COMPANY]', companyId);
+
+    const company = await companyRepository.getById(companyId);
+
+    if (!company) {
+        throw new Error(`Company not found - ${companyId}`);
+    }
+
+    const newScrapper = getNewCompanyScrapper(company);
+
+    if (newScrapper) {
+        console.log('[NEW SCRAPPER]');
+        await scrapUsingNewScrapper({
+            companyId,
+            company,
+            scrapper: newScrapper,
+        });
+    } else {
+        console.log('[OLD SCRAPPER]');
+        await scrapUsingOldScrapper({ companyId, company });
+    }
 };
