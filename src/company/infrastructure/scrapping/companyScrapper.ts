@@ -192,8 +192,6 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return sourcegraphScrapper;
         case DOCKER_NAME:
             return dockerScrapper;
-        case ONE_PASSWORD_NAME:
-            return onePasswordScrapper;
         case LIMITLESS_NAME:
             return limitlessScrapper;
         case REPLIT_NAME:
@@ -221,6 +219,8 @@ export type NewCompanyScrapper = ({ companyId }: { companyId: CompanyId }) => {
 
 export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
     switch (company.name?.toLowerCase()) {
+        case ONE_PASSWORD_NAME:
+            return onePasswordScrapper;
         case RAMP_NAME:
             return rampScrapper;
     }

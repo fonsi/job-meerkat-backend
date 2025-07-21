@@ -1,4 +1,8 @@
-import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
+import {
+    ListedJobPostsData,
+    NewCompanyScrapper,
+    ScrappedJobPost,
+} from '../companyScrapper';
 import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
@@ -43,56 +47,70 @@ const scrapJobPost = async ({
     }
 };
 
-export const onePasswordScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const response = await fetch(ONE_PASSWORD_INITIAL_URL);
-    const jobsData = await response.json();
+export const onePasswordScrapper: NewCompanyScrapper = ({ companyId }) => {
+    return {
+        getListedJobPostsData: async () => {
+            const response = await fetch(ONE_PASSWORD_INITIAL_URL);
+            const jobsData = await response.json();
 
-    const jobPosts: JobPostsListItem[] = [];
+            const jobPosts: JobPostsListItem[] = [];
 
-    jobsData.jobs.forEach((jobData) => {
-        const url = jobData.jobUrl;
-        const title = jobData.title;
+            jobsData.jobs.forEach((jobData) => {
+                const url = jobData.jobUrl;
+                const title = jobData.title;
 
-        if (jobData.isListed && !title.toLowerCase().includes('intern')) {
-            jobPosts.push({
-                id: jobData.id,
-                url,
-                title,
-                createdAt: new Date(jobData.publishedAt).getTime(),
-            });
-        }
-    });
-
-    const data: ScrappedJobPost[] = [];
-    for (let i = 0; i < jobPosts.length; i++) {
-        try {
-            const jobPost = jobPosts[i];
-            console.log(
-                `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
-            );
-
-            const jobPostData = await scrapJobPost({
-                id: jobPost.id,
+                if (
+                    jobData.isListed &&
+                    !title.toLowerCase().includes('intern')
+                ) {
+                    jobPosts.push({
+                        id: jobData.id,
+                        url,
+                        title,
+                        createdAt: new Date(jobData.publishedAt).getTime(),
+                    });
+                }
             });
 
-            data.push({
-                ...jobPostData,
-                originalId: jobPost.id,
-                url: jobPost.url,
-                title: jobPost.title,
-                companyId,
-                createdAt: jobPost.createdAt,
-            });
-        } catch (e) {
-            const error = errorWithPrefix(
-                e,
-                `[Error processing ${ONE_PASSWORD_NAME}]`,
-            );
+            return jobPosts;
+        },
 
-            console.log(error);
-            logger.error(error);
-        }
-    }
+        scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
+            const data: ScrappedJobPost[] = [];
 
-    return data;
+            for (let i = 0; i < jobPosts.length; i++) {
+                try {
+                    const jobPost = jobPosts[i];
+
+                    console.log(
+                        `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
+                    );
+
+                    const jobPostData = await scrapJobPost({
+                        ...jobPost,
+                        id: jobPost.id,
+                    });
+
+                    data.push({
+                        ...jobPostData,
+                        originalId: jobPost.id,
+                        url: jobPost.url,
+                        title: jobPost.title,
+                        companyId,
+                        createdAt: jobPost.createdAt,
+                    });
+                } catch (e) {
+                    const error = errorWithPrefix(
+                        e,
+                        `Error processing ${ONE_PASSWORD_NAME}`,
+                    );
+
+                    console.log(error);
+                    logger.error(error);
+                }
+            }
+
+            return data;
+        },
+    };
 };
