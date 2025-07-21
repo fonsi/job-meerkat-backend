@@ -1,4 +1,8 @@
-import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
+import {
+    ListedJobPostsData,
+    NewCompanyScrapper,
+    ScrappedJobPost,
+} from '../companyScrapper';
 import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
@@ -43,55 +47,63 @@ const scrapJobPost = async ({
     }
 };
 
-export const krakenScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const response = await fetch(KRAKEN_INITIAL_URL);
-    const jobsData = await response.json();
+export const krakenScrapper: NewCompanyScrapper = ({ companyId }) => {
+    return {
+        getListedJobPostsData: async () => {
+            const response = await fetch(KRAKEN_INITIAL_URL);
+            const jobsData = await response.json();
 
-    const jobPosts: JobPostsListItem[] = [];
+            const jobPosts: JobPostsListItem[] = jobsData.jobs.map(
+                (jobData) => {
+                    const url = jobData.jobUrl;
 
-    jobsData.jobs.forEach((jobData) => {
-        const url = jobData.jobUrl;
-
-        if (jobData.isListed) {
-            jobPosts.push({
-                id: jobData.id,
-                url,
-                title: jobData.title,
-                createdAt: new Date(jobData.publishedAt).getTime(),
-            });
-        }
-    });
-
-    const data: ScrappedJobPost[] = [];
-    for (let i = 0; i < jobPosts.length; i++) {
-        try {
-            const jobPost = jobPosts[i];
-            console.log(
-                `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
+                    return {
+                        id: jobData.id,
+                        url,
+                        title: jobData.title,
+                        createdAt: new Date(jobData.publishedAt).getTime(),
+                    };
+                },
             );
 
-            const jobPostData = await scrapJobPost({
-                id: jobPost.id,
-            });
+            return jobPosts;
+        },
 
-            data.push({
-                ...jobPostData,
-                originalId: jobPost.id,
-                url: jobPost.url,
-                title: jobPost.title,
-                companyId,
-                createdAt: jobPost.createdAt,
-            });
-        } catch (e) {
-            const error = errorWithPrefix(
-                e,
-                `[Error processing ${KRAKEN_NAME}]`,
-            );
+        scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
+            const data: ScrappedJobPost[] = [];
 
-            console.log(error);
-            logger.error(error);
-        }
-    }
+            for (let i = 0; i < jobPosts.length; i++) {
+                try {
+                    const jobPost = jobPosts[i];
 
-    return data;
+                    console.log(
+                        `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
+                    );
+
+                    const jobPostData = await scrapJobPost({
+                        id: jobPost.id,
+                    });
+
+                    data.push({
+                        ...jobPostData,
+                        originalId: jobPost.id,
+                        url: jobPost.url,
+                        title: jobPost.title,
+                        companyId,
+                        createdAt: jobPost.createdAt,
+                    });
+                } catch (e) {
+                    const error = errorWithPrefix(
+                        e,
+                        `Error processing ${KRAKEN_NAME}`,
+                    );
+
+                    console.log(error);
+                    logger.error(error);
+                }
+            }
+
+            return data;
+        },
+    };
 };
