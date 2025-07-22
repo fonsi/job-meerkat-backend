@@ -124,8 +124,6 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return happyMoneyScrapper;
         case CIRCLE_NAME:
             return circleScrapper;
-        case INVISIBLE_NAME:
-            return invisibleScrapper;
         case PHOTOROOM_NAME:
             return photoroomScrapper;
         case HELPSCOUT_NAME:
@@ -218,6 +216,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return federatoScrapper;
         case HIGHTOUCH_NAME:
             return hightouchScrapper;
+        case INVISIBLE_NAME:
+            return invisibleScrapper;
         case KRAKEN_NAME:
             return krakenScrapper;
         case ONE_PASSWORD_NAME:
