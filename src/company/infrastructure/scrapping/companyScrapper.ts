@@ -122,8 +122,6 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return tinybirdScrapper;
         case HAPPY_MONEY_NAME:
             return happyMoneyScrapper;
-        case ASTRONOMER_NAME:
-            return astronomerScrapper;
         case CIRCLE_NAME:
             return circleScrapper;
         case INVISIBLE_NAME:
@@ -202,6 +200,7 @@ export type ListedJobPostsData = {
     url: string;
     title: string;
     createdAt?: number;
+    locationText?: string;
 };
 
 export type NewCompanyScrapper = ({ companyId }: { companyId: CompanyId }) => {
@@ -213,6 +212,8 @@ export type NewCompanyScrapper = ({ companyId }: { companyId: CompanyId }) => {
 
 export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
     switch (company.name?.toLowerCase()) {
+        case ASTRONOMER_NAME:
+            return astronomerScrapper;
         case DISCORD_NAME:
             return discordScrapper;
         case HIGHTOUCH_NAME:
