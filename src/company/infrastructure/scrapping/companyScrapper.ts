@@ -180,8 +180,6 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return limitlessScrapper;
         case REPLIT_NAME:
             return replitScrapper;
-        case STRAVA_NAME:
-            return stravaScrapper;
     }
 
     return null;
@@ -224,6 +222,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return phantomScrapper;
         case RAMP_NAME:
             return rampScrapper;
+        case STRAVA_NAME:
+            return stravaScrapper;
     }
 
     return null;
