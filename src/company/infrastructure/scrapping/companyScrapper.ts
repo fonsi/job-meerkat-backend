@@ -92,8 +92,6 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return cherreScrapper;
         case ALL_TRAILS_NAME:
             return allTrailsScrapper;
-        case PULUMI_NAME:
-            return pulumiScrapper;
         case PLANET_SCALE_NAME:
             return planetScaleScrapper;
         case STREAK_NAME:
@@ -212,6 +210,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return onePasswordScrapper;
         case PHANTOM_NAME:
             return phantomScrapper;
+        case PULUMI_NAME:
+            return pulumiScrapper;
         case RAMP_NAME:
             return rampScrapper;
         case REPLIT_NAME:
