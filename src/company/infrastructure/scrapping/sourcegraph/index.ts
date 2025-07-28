@@ -1,5 +1,9 @@
 import { fromURL } from 'cheerio';
-import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
+import {
+    ListedJobPostsData,
+    NewCompanyScrapper,
+    ScrappedJobPost,
+} from '../companyScrapper';
 import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
@@ -14,12 +18,6 @@ const SOURCEGRAPH_INITIAL_URL =
 type ScrapJobPostData = {
     id: string;
     url: string;
-};
-
-type JobPostsListItem = {
-    id: string;
-    url: string;
-    title: string;
 };
 
 const JOB_POST_SELECTOR = '.job-post a';
@@ -49,57 +47,66 @@ const scrapJobPost = async ({
     }
 };
 
-export const sourcegraphScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const $ = await fromURL(SOURCEGRAPH_INITIAL_URL);
-    const jobPostsElements = $(JOB_POST_SELECTOR);
+export const sourcegraphScrapper: NewCompanyScrapper = ({ companyId }) => {
+    return {
+        getListedJobPostsData: async () => {
+            const $ = await fromURL(SOURCEGRAPH_INITIAL_URL);
+            const jobPostsElements = $(JOB_POST_SELECTOR);
 
-    const jobPosts: JobPostsListItem[] = jobPostsElements
-        .toArray()
-        .map((jobPost) => {
-            const url = $(jobPost).attr('href');
-            const title = $('p', jobPost).first().text();
+            const jobPosts: ListedJobPostsData[] = jobPostsElements
+                .toArray()
+                .map((jobPost) => {
+                    const url = $(jobPost).attr('href');
+                    const title = $('p', jobPost).first().text();
 
-            if (title.toLowerCase().includes('join our talent')) {
-                return;
+                    if (title.toLowerCase().includes('join our talent')) {
+                        return;
+                    }
+
+                    return {
+                        id: url.split('/').pop(),
+                        url,
+                        title,
+                    };
+                })
+                .filter(Boolean);
+
+            return jobPosts;
+        },
+
+        scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
+            const data: ScrappedJobPost[] = [];
+
+            for (let i = 0; i < jobPosts.length; i++) {
+                try {
+                    const jobPost = jobPosts[i];
+                    console.log(
+                        `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
+                    );
+
+                    const jobPostData = await scrapJobPost({
+                        id: jobPost.id,
+                        url: jobPost.url,
+                    });
+
+                    data.push({
+                        ...jobPostData,
+                        originalId: jobPost.id,
+                        url: jobPost.url,
+                        companyId,
+                    });
+                } catch (e) {
+                    const error = errorWithPrefix(
+                        e,
+                        `[Error processing ${SOURCEGRAPH_NAME}]`,
+                    );
+
+                    console.log(error);
+                    logger.error(error);
+                }
             }
 
-            return {
-                id: url.split('/').pop(),
-                url,
-                title,
-            };
-        })
-        .filter(Boolean);
-
-    const data: ScrappedJobPost[] = [];
-    for (let i = 0; i < jobPosts.length; i++) {
-        try {
-            const jobPost = jobPosts[i];
-            console.log(
-                `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
-            );
-
-            const jobPostData = await scrapJobPost({
-                id: jobPost.id,
-                url: jobPost.url,
-            });
-
-            data.push({
-                ...jobPostData,
-                originalId: jobPost.id,
-                url: jobPost.url,
-                companyId,
-            });
-        } catch (e) {
-            const error = errorWithPrefix(
-                e,
-                `[Error processing ${SOURCEGRAPH_NAME}]`,
-            );
-
-            console.log(error);
-            logger.error(error);
-        }
-    }
-
-    return data;
+            return data;
+        },
+    };
 };

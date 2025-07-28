@@ -168,8 +168,6 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return lightdashScrapper;
         case POSTSCRIPT_NAME:
             return postscriptScrapper;
-        case SOURCEGRAPH_NAME:
-            return sourcegraphScrapper;
         case DOCKER_NAME:
             return dockerScrapper;
         case LIMITLESS_NAME:
@@ -220,6 +218,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return rampScrapper;
         case RUNWAY_NAME:
             return runwayScrapper;
+        case SOURCEGRAPH_NAME:
+            return sourcegraphScrapper;
         case STRAVA_NAME:
             return stravaScrapper;
         case ZAPIER_NAME:
