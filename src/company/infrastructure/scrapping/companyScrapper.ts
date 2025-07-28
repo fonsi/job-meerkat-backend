@@ -82,8 +82,6 @@ export type CompanyScrapperFn = (
 
 const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
     switch (companyName?.toLowerCase()) {
-        case CUSTOMERIO_NAME:
-            return customerioScrapper;
         case FLOAT_NAME:
             return floatScrapper;
         case HUMAN_SIGNAL_NAME:
@@ -194,6 +192,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
     switch (company.name?.toLowerCase()) {
         case ASTRONOMER_NAME:
             return astronomerScrapper;
+        case CUSTOMERIO_NAME:
+            return customerioScrapper;
         case DISCORD_NAME:
             return discordScrapper;
         case FEDERATO_NAME:
