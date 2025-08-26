@@ -4,6 +4,7 @@ import { JobPostId } from 'jobPost/domain/jobPost';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
 import { openaiSocialMediaPostsCreator } from 'shared/infrastructure/ai/openai/openaiCreateSocialJobPost';
 import { logger } from 'shared/infrastructure/logger/logger';
+import { publishOnBluesky } from 'social/infrastructure/provider/bluesky/request';
 import { publishThread } from 'social/infrastructure/provider/meta/request';
 import { publishOnX } from 'social/infrastructure/provider/x/request';
 
@@ -47,4 +48,8 @@ export const publishSocialPost = async ({
     console.log('[PUBLISH POST]: start publishing in X');
     await publishOnX(socialMediaPosts.twitter);
     console.log('[PUBLISH POST]: published in X');
+
+    console.log('[PUBLISH POST]: start publishing in Bluesky');
+    await publishOnBluesky(socialMediaPosts.twitter);
+    console.log('[PUBLISH POST]: published in Bluesky');
 };
