@@ -39,6 +39,9 @@ provider:
         X_API_SECRET: ${env:X_API_SECRET}
         X_ACCESS_TOKEN: ${env:X_ACCESS_TOKEN}
         X_ACCESS_TOKEN_SECRET: ${env:X_ACCESS_TOKEN_SECRET}
+        BLUESKY_USER: ${env:BLUESKY_USER}
+        BLUESKY_PASSWORD: ${env:BLUESKY_PASSWORD}
+        BLUESKY_SERVICE: ${env:BLUESKY_SERVICE}
     logs:
         httpApi: true
     iamRoleStatements:
