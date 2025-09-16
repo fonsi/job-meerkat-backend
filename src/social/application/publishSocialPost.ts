@@ -5,7 +5,6 @@ import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/d
 import { openaiSocialMediaPostsCreator } from 'shared/infrastructure/ai/openai/openaiCreateSocialJobPost';
 import { logger } from 'shared/infrastructure/logger/logger';
 import { publishOnBluesky } from 'social/infrastructure/provider/bluesky/request';
-import { publishThread } from 'social/infrastructure/provider/meta/request';
 import { publishOnX } from 'social/infrastructure/provider/x/request';
 
 type PublishSocialPostsData = {
@@ -40,10 +39,6 @@ export const publishSocialPost = async ({
         jobPost,
         company,
     });
-
-    console.log('[PUBLISH POST]: start publishing in Threads');
-    await publishThread(socialMediaPosts.threads);
-    console.log('[PUBLISH POST]: published in Threads');
 
     console.log('[PUBLISH POST]: start publishing in X');
     await publishOnX(socialMediaPosts.twitter);
