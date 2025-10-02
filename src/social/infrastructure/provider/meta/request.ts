@@ -1,3 +1,5 @@
+import { logger } from 'shared/infrastructure/logger/logger';
+
 const THREADS_API_BASE_URL = 'https://graph.threads.net/v1.0';
 const THREADS_API_TOKEN = process.env.THREADS_API_TOKEN;
 const TEXT_TYPE = 'TEXT';
@@ -139,8 +141,9 @@ export const publishThread = async (posts: string[]): Promise<void> => {
                 await waitFor(10000); // wait to first post to be published to be able to reply to it
             }
         } catch (error) {
-            console.error('Error creating and publishing thread:', error);
-            throw error;
+            const errorText = 'Error creating and publishing thread:';
+            console.log(errorText, error);
+            logger.error(new Error(errorText), error);
         }
     }
 };

@@ -146,8 +146,9 @@ export const publishOnX = async (posts: string[]): Promise<void> => {
                 );
             }
         } catch (error) {
-            logger.error(new Error('Error publishing tweet:'), error);
-            throw error;
+            const errorText = 'Error publishing tweet:';
+            console.log(errorText, error);
+            logger.error(new Error(errorText), error);
         }
     }
 };

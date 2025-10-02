@@ -1,4 +1,5 @@
 import { AtpAgent, RichText } from '@atproto/api';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 const BLUESKY_USER = process.env.BLUESKY_USER;
 const BLUESKY_PASSWORD = process.env.BLUESKY_PASSWORD;
@@ -63,11 +64,9 @@ export const publishOnBluesky = async (posts: string[]): Promise<void> => {
             lastPostCid = post.cid;
             lastPostUri = post.uri;
         } catch (error) {
-            console.error(
-                '[BLUESKY] Error creating and publishing thread',
-                error,
-            );
-            throw error;
+            const errorText = 'Error creating and publishing in bluesky';
+            console.log(errorText, error);
+            logger.error(new Error(errorText), error);
         }
     }
 };
