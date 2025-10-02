@@ -60,6 +60,7 @@ import { ONE_PASSWORD_NAME, onePasswordScrapper } from './1password';
 import { LIMITLESS_NAME, limitlessScrapper } from './limitless';
 import { REPLIT_NAME, replitScrapper } from './replit';
 import { STRAVA_NAME, stravaScrapper } from './strava';
+import { HORIZON_3_NAME, horizon3Scrapper } from './horizon3';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -198,6 +199,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return federatoScrapper;
         case HIGHTOUCH_NAME:
             return hightouchScrapper;
+        case HORIZON_3_NAME:
+            return horizon3Scrapper;
         case INVISIBLE_NAME:
             return invisibleScrapper;
         case KIT_NAME:
