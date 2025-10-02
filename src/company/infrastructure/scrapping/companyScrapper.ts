@@ -61,6 +61,7 @@ import { LIMITLESS_NAME, limitlessScrapper } from './limitless';
 import { REPLIT_NAME, replitScrapper } from './replit';
 import { STRAVA_NAME, stravaScrapper } from './strava';
 import { HORIZON_3_NAME, horizon3Scrapper } from './horizon3';
+import { PROTONAI_NAME, protonaiScrapper } from './protonai';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -213,6 +214,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return onePasswordScrapper;
         case PHANTOM_NAME:
             return phantomScrapper;
+        case PROTONAI_NAME:
+            return protonaiScrapper;
         case PULUMI_NAME:
             return pulumiScrapper;
         case RAMP_NAME:
