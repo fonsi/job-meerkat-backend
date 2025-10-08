@@ -5,6 +5,7 @@ import { JobPost } from 'jobPost/domain/jobPost';
 export type SocialMediaPosts = {
     linkedin: string;
     twitter: string[];
+    bluesky: string[];
     threads: string[];
 };
 
@@ -32,6 +33,7 @@ const cleanUrlsInObject = (obj: unknown): unknown => {
 const socialMediaPostsExample: SocialMediaPosts = {
     linkedin: 'linkedin post',
     twitter: ['tweet 1', 'tweet 2'],
+    bluesky: ['bluesky post 1', 'bluesky post 2'],
     threads: ['thread 1', 'thread 2'],
 };
 
@@ -72,19 +74,12 @@ export const openaiSocialMediaPostsCreator = async ({
                             I want to publish a thread with 2 tweets.
                             The first with the job offer description (category, workplace and salary). Be sure to mention the company name. Do not use icons or emojis.
                             The second with the link to the job offer (${jobPost.url}), a link to the company's page at Jobmeerkat where viewers can discover more company's open job posts: ${companyLink} and a link to Jobmeerkat (${jobmeerkatLink}) encouraging users to visit for more job posts.
-                            ${
-                                ''
-                                /*In the first tweet you can talk about the offer (category, workplace and salary). If any of the data is missing, you can omit it.
-                                In the second tweet you can introduce the company: ${company.name}.
-                                In third tweet encourage to take a look to the offer details and add the link to the offer (${jobPost.url}).
-                                In fourth tweet you can suggest to see more ${company.name} offers at ${companyLink}.
-                                And in the fifth tweet you can suggest to explore more job offers at ${jobmeerkatLink} and add some related hastags as #remoteWork, #jobSeach, something related to the job category, etc. Don't add the company name as a hashtag.*/
-                            }
                             Try to add some hashtags to the content if you think are relevant or can help to reach more people. Don't add the company name as a hashtag.
                             The content should be adjusted to fit in the 280 character limit.
-                            For Meta Threads I want to have different content than for twitter. In the first message I prefer to put the job post description (with location and salary, if available) and in a next line a text indicating that the job offer link is inside the thread. Be sure to mention the company name. Then, in another line, don't forget to add a text and the link to Jobmeerkat (${jobmeerkatLink}) encouraging users to visit for more job posts.
+                            For Bluesky we can use the same as for twitter but taking into account that the character limit is 299. It wouldn't be a problem if you split the content in two or more posts.
+                            For Meta Threads I want to have different content than for twitter. In the first message I prefer to put the job post description (with location and salary, if available) and in a next line a text indicating that the job offer link is inside the thread. Be sure to mention the company name. Then, in another line, don't forget to add a text and the link to Jobmeerkat (${jobmeerkatLink}) encouraging users to visit for more job posts. At the end of the thread you can add only one hashtag to the content if you think is relevant or can help to reach more people. Don't add the company name as a hashtag.
                             In the second message we can add the company's description with the link to the company's page at Jobmeerkat where viewers can discover more company's open job posts: ${companyLink}.
-                            And in the third link we can finally add the link to the job post where the viewer can get more details and apply: ${jobPost.url}.
+                            And in the third message we can finally add the link to the job post where the viewer can get more details and apply: ${jobPost.url}.
                             As Threads messages are limited to 500 characters, you should be careful to not exceed this limit.
                             For Linkedin we can use all the available information to create a post.
                             The response should be a JSON following the example: ${JSON.stringify(socialMediaPostsExample)}.

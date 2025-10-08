@@ -46,7 +46,7 @@ export const publishSocialPost = async ({
     console.log('[PUBLISH POST]: published in Threads');
 
     console.log('[PUBLISH POST]: start publishing in Bluesky');
-    await publishOnBluesky(socialMediaPosts.twitter);
+    await publishOnBluesky(socialMediaPosts.bluesky);
     console.log('[PUBLISH POST]: published in Bluesky');
 
     console.log('[PUBLISH POST]: start publishing in X');
