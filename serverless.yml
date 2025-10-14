@@ -10,15 +10,18 @@ params:
         processCompanyQueueVisibilityTimeout: 310
         publishSocialPostsTimeout: 120
         publishSocialPostsQueueVisibilityTimeout: 130
+        sendReportTimeout: 120
+        sendReportQueueVisibilityTimeout: 130
     dev:
         processCompanySchedule: cron(0 0 1 1 ? 1970) # never
         socialPostsSchedule: cron(0 0 1 1 ? 1970) # never
+        reportsSchedule: cron(0 0 1 1 ? 1970) # never
         socialPostsCheck: cron(0 0 1 1 ? 1970) # never
     production:
         processCompanySchedule: cron(0 0 ? * * *) # every day at 0 am
         socialPostsSchedule: cron(0 2 ? * * *) # every day at 2 am
         socialPostsCheck: cron(0 * ? * * *) # every day every hour
-
+        reportsSchedule: cron(0 5 ? * * *) # every day at 5 am
 provider:
     name: aws
     runtime: nodejs20.x
@@ -29,8 +32,10 @@ provider:
         DYNAMODB_COMPANY_TABLE_NAME: ${sls:stage}-company
         DYNAMODB_JOB_POST_TABLE_NAME: ${sls:stage}-job-post
         DYNAMODB_SCHEDULED_SOCIAL_POST_TABLE_NAME: ${sls:stage}-scheduled-social-post
+        DYNAMODB_REPORT_TABLE_NAME: ${sls:stage}-report
         PROCESS_COMPANY_QUEUE_NAME: ${sls:stage}-process-company-sqs-queue.fifo
         PUBLISH_SOCIAL_POST_QUEUE_NAME: ${sls:stage}-publish-social-post-sqs-queue
+        SEND_REPORT_QUEUE_NAME: ${sls:stage}-send-report-sqs-queue
         OPENAI_API_KEY: ${env:OPENAI_API_KEY}
         ASSETS_URL: ${env:ASSETS_URL}
         ROLLBAR_ACCESS_TOKEN: ${env:ROLLBAR_ACCESS_TOKEN}
@@ -42,6 +47,9 @@ provider:
         BLUESKY_USER: ${env:BLUESKY_USER}
         BLUESKY_PASSWORD: ${env:BLUESKY_PASSWORD}
         BLUESKY_SERVICE: ${env:BLUESKY_SERVICE}
+        MAILGUN_DOMAIN: ${env:MAILGUN_DOMAIN}
+        MAILGUN_URL: ${env:MAILGUN_URL}
+        MAILGUN_API_KEY: ${env:MAILGUN_API_KEY}
     logs:
         httpApi: true
     iamRoleStatements:
@@ -56,6 +64,7 @@ provider:
           Resource:
               - Fn::GetAtt: [processCompanyQueue, Arn]
               - Fn::GetAtt: [publishSocialPostQueue, Arn]
+              - Fn::GetAtt: [sendReportQueue, Arn]
 
 resources:
     Resources:
@@ -107,6 +116,19 @@ resources:
                 ProvisionedThroughput:
                     ReadCapacityUnits: 1
                     WriteCapacityUnits: 1
+        reportsTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+                TableName: ${self:provider.environment.DYNAMODB_REPORT_TABLE_NAME}
+                AttributeDefinitions:
+                    - AttributeName: id
+                      AttributeType: S
+                KeySchema:
+                    - AttributeName: id
+                      KeyType: HASH
+                ProvisionedThroughput:
+                    ReadCapacityUnits: 1
+                    WriteCapacityUnits: 1
         processCompanyQueue:
             Type: 'AWS::SQS::Queue'
             Properties:
@@ -118,6 +140,11 @@ resources:
             Properties:
                 QueueName: ${self:provider.environment.PUBLISH_SOCIAL_POST_QUEUE_NAME}
                 VisibilityTimeout: ${param:publishSocialPostsQueueVisibilityTimeout}
+        sendReportQueue:
+            Type: 'AWS::SQS::Queue'
+            Properties:
+                QueueName: ${self:provider.environment.SEND_REPORT_QUEUE_NAME}
+                VisibilityTimeout: ${param:sendReportQueueVisibilityTimeout}
 
 functions:
     devScrapCompany:
@@ -186,3 +213,18 @@ functions:
                           - publishSocialPostQueue
                           - Arn
                   batchSize: 1
+    sendReport:
+        handler: src/report/infrastructure/queue/sqs/consumer/handler.index
+        maximumRetryAttempts: 1
+        timeout: ${param:sendReportTimeout}
+        events:
+            - sqs:
+                  arn:
+                      Fn::GetAtt:
+                          - sendReportQueue
+                          - Arn
+                  batchSize: 1
+    scheduleReports:
+        handler: src/report/infrastructure/api/schedule/handler.index
+        events:
+            - schedule: ${param:reportsSchedule}
