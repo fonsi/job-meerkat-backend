@@ -123,8 +123,6 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return helpscoutScrapper;
         case MATTERMOST_NAME:
             return mattermostScrapper;
-        case HUMAN_INTEREST_NAME:
-            return humanInterestScrapper;
         case GUIDELINE_NAME:
             return guidelineScrapper;
         case LATTICE_NAME:
@@ -199,6 +197,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return hightouchScrapper;
         case HORIZON_3_NAME:
             return horizon3Scrapper;
+        case HUMAN_INTEREST_NAME:
+            return humanInterestScrapper;
         case INVISIBLE_NAME:
             return invisibleScrapper;
         case KIT_NAME:
