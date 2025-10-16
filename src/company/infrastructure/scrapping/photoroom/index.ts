@@ -1,5 +1,9 @@
 import { fromURL } from 'cheerio';
-import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
+import {
+    ListedJobPostsData,
+    NewCompanyScrapper,
+    ScrappedJobPost,
+} from '../companyScrapper';
 import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
@@ -51,54 +55,63 @@ const scrapJobPost = async ({
     }
 };
 
-export const photoroomScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const $ = await fromURL(PHOTOROOM_INITIAL_URL);
-    const jobPostsElements = $(JOB_POST_SELECTOR);
+export const photoroomScrapper: NewCompanyScrapper = ({ companyId }) => {
+    return {
+        getListedJobPostsData: async () => {
+            const $ = await fromURL(PHOTOROOM_INITIAL_URL);
+            const jobPostsElements = $(JOB_POST_SELECTOR);
 
-    const jobPosts: JobPostsListItem[] = jobPostsElements
-        .toArray()
-        .map((jobPost) => {
-            const url = $(jobPost).attr('href');
-            const locationText = $(jobPost).text().split(',').pop();
+            const jobPosts: JobPostsListItem[] = jobPostsElements
+                .toArray()
+                .map((jobPost) => {
+                    const url = $(jobPost).attr('href');
+                    const locationText = $(jobPost).text().split(',').pop();
 
-            return {
-                id: url.split('/').pop(),
-                url,
-                title: $('span', jobPost).first().text(),
-                locationText,
-            };
-        });
+                    return {
+                        id: url.split('/').pop(),
+                        url,
+                        title: $('span', jobPost).first().text(),
+                        locationText,
+                    };
+                });
 
-    const data: ScrappedJobPost[] = [];
-    for (let i = 0; i < jobPosts.length; i++) {
-        try {
-            const jobPost = jobPosts[i];
-            console.log(
-                `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
-            );
+            return jobPosts;
+        },
 
-            const jobPostData = await scrapJobPost({
-                id: jobPost.id,
-                url: jobPost.url,
-                locationText: jobPost.locationText,
-            });
+        scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
+            const data: ScrappedJobPost[] = [];
 
-            data.push({
-                ...jobPostData,
-                originalId: jobPost.id,
-                url: jobPost.url,
-                companyId,
-            });
-        } catch (e) {
-            const error = errorWithPrefix(
-                e,
-                `[Error processing ${PHOTOROOM_NAME}]`,
-            );
+            for (let i = 0; i < jobPosts.length; i++) {
+                try {
+                    const jobPost = jobPosts[i];
+                    console.log(
+                        `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
+                    );
 
-            console.log(error);
-            logger.error(error);
-        }
-    }
+                    const jobPostData = await scrapJobPost({
+                        id: jobPost.id,
+                        url: jobPost.url,
+                        locationText: jobPost.locationText,
+                    });
 
-    return data;
+                    data.push({
+                        ...jobPostData,
+                        originalId: jobPost.id,
+                        url: jobPost.url,
+                        companyId,
+                    });
+                } catch (e) {
+                    const error = errorWithPrefix(
+                        e,
+                        `[Error processing ${PHOTOROOM_NAME}]`,
+                    );
+
+                    console.log(error);
+                    logger.error(error);
+                }
+            }
+
+            return data;
+        },
+    };
 };
