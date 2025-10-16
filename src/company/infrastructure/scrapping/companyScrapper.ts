@@ -145,8 +145,6 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return heardScrapper;
         case V7_NAME:
             return v7Scrapper;
-        case MAZE_NAME:
-            return mazeScrapper;
         case NETLIFY_NAME:
             return netlifyScrapper;
         case CONFIANT_NAME:
@@ -207,6 +205,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return limitlessScrapper;
         case MAGIC_SCHOOL_NAME:
             return magicSchoolScrapper;
+        case MAZE_NAME:
+            return mazeScrapper;
         case ONE_PASSWORD_NAME:
             return onePasswordScrapper;
         case PHANTOM_NAME:
