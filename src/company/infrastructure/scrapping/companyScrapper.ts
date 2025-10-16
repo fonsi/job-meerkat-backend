@@ -62,6 +62,7 @@ import { REPLIT_NAME, replitScrapper } from './replit';
 import { STRAVA_NAME, stravaScrapper } from './strava';
 import { HORIZON_3_NAME, horizon3Scrapper } from './horizon3';
 import { PROTONAI_NAME, protonaiScrapper } from './protonai';
+import { BLUESKY_NAME, blueskyScrapper } from './bluesky';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -190,6 +191,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
     switch (company.name?.toLowerCase()) {
         case ASTRONOMER_NAME:
             return astronomerScrapper;
+        case BLUESKY_NAME:
+            return blueskyScrapper;
         case CODE_SIGNAL_NAME:
             return codeSignalScrapper;
         case CUSTOMERIO_NAME:
