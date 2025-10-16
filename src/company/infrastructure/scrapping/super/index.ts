@@ -1,5 +1,9 @@
 import { fromURL } from 'cheerio';
-import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
+import {
+    ListedJobPostsData,
+    NewCompanyScrapper,
+    ScrappedJobPost,
+} from '../companyScrapper';
 import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
@@ -44,54 +48,64 @@ const scrapJobPost = async ({
     }
 };
 
-export const superScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const $ = await fromURL(SUPER_INITIAL_URL);
-    const jobPostsElements = $(JOB_POST_SELECTOR);
+export const superScrapper: NewCompanyScrapper = ({ companyId }) => {
+    return {
+        getListedJobPostsData: async () => {
+            const $ = await fromURL(SUPER_INITIAL_URL);
+            const jobPostsElements = $(JOB_POST_SELECTOR);
 
-    const jobPosts: JobPostsListItem[] = jobPostsElements
-        .toArray()
-        .map((jobPost) => {
-            const url = $(jobPost).attr('href');
+            const jobPosts: JobPostsListItem[] = jobPostsElements
+                .toArray()
+                .map((jobPost) => {
+                    const url = $(jobPost).attr('href');
 
-            return {
-                id: url.split('/').pop(),
-                url,
-                title: $('h5', jobPost).text(),
-            };
-        })
-        .filter(
-            (jobPost) => !jobPost.title.toLocaleLowerCase().includes(' intern'),
-        );
+                    return {
+                        id: url.split('/').pop(),
+                        url,
+                        title: $('h5', jobPost).text(),
+                    };
+                })
+                .filter(
+                    (jobPost) =>
+                        !jobPost.title.toLocaleLowerCase().includes(' intern'),
+                );
 
-    const data: ScrappedJobPost[] = [];
-    for (let i = 0; i < jobPosts.length; i++) {
-        try {
-            const jobPost = jobPosts[i];
-            console.log(
-                `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
-            );
+            return jobPosts;
+        },
 
-            const jobPostData = await scrapJobPost({
-                id: jobPost.id,
-                url: jobPost.url,
-            });
+        scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
+            const data: ScrappedJobPost[] = [];
 
-            data.push({
-                ...jobPostData,
-                originalId: jobPost.id,
-                url: jobPost.url,
-                companyId,
-            });
-        } catch (e) {
-            const error = errorWithPrefix(
-                e,
-                `[Error processing ${SUPER_NAME}]`,
-            );
+            for (let i = 0; i < jobPosts.length; i++) {
+                try {
+                    const jobPost = jobPosts[i];
+                    console.log(
+                        `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
+                    );
 
-            console.log(error);
-            logger.error(error);
-        }
-    }
+                    const jobPostData = await scrapJobPost({
+                        id: jobPost.id,
+                        url: jobPost.url,
+                    });
 
-    return data;
+                    data.push({
+                        ...jobPostData,
+                        originalId: jobPost.id,
+                        url: jobPost.url,
+                        companyId,
+                    });
+                } catch (e) {
+                    const error = errorWithPrefix(
+                        e,
+                        `[Error processing ${SUPER_NAME}]`,
+                    );
+
+                    console.log(error);
+                    logger.error(error);
+                }
+            }
+
+            return data;
+        },
+    };
 };
