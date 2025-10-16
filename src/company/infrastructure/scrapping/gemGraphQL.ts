@@ -5,6 +5,7 @@ type GetJobPostsParams = {
 type JobPost = {
     atsId: string;
     title: string;
+    publishedDateTs: number;
 };
 
 type GetJobPostsResponse = JobPost[];
@@ -19,7 +20,7 @@ const GEM_GRAPHQL_ENDPOINT = 'https://jobs.gem.com/api/public/graphql/batch';
 export const getGemJobPosts = async ({
     companyName,
 }: GetJobPostsParams): Promise<GetJobPostsResponse> => {
-    const body = `[{"operationName":"JobBoardList","variables":{"boardId":"${companyName}"},"query":"query JobBoardList($boardId: String!) { publicJobPostings(externalId: $boardId) { jobPostings { id atsId title locations { id city atsId isRemote __typename } publicJob { id department { id name atsId __typename } locationType __typename } __typename } count __typename } publicJobPostingsFilters(externalId: $boardId) { type displayName rawValue value count __typename } jobBoardExternal(vanityUrlPath: $boardId) { id teamDisplayName descriptionHtml pageTitle __typename } } "}]`;
+    const body = `[{"operationName":"JobBoardList","variables":{"boardId":"${companyName}"},"query":"query JobBoardList($boardId: String!) { publicJobPostings(externalId: $boardId) { jobPostings { id atsId publishedDateTs title locations { id city atsId isRemote __typename } publicJob { id department { id name atsId __typename } locationType __typename } __typename } count __typename } publicJobPostingsFilters(externalId: $boardId) { type displayName rawValue value count __typename } jobBoardExternal(vanityUrlPath: $boardId) { id teamDisplayName descriptionHtml pageTitle __typename } } "}]`;
     const response = await fetch(GEM_GRAPHQL_ENDPOINT, {
         method: 'POST',
         body,
@@ -33,6 +34,7 @@ export const getGemJobPosts = async ({
         (jobPost) => ({
             atsId: jobPost.atsId.toString(),
             title: jobPost.title,
+            publishedDateTs: jobPost.publishedDateTs,
         }),
     );
 
