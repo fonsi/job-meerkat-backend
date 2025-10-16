@@ -159,8 +159,6 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return lightdashScrapper;
         case POSTSCRIPT_NAME:
             return postscriptScrapper;
-        case LIMITLESS_NAME:
-            return limitlessScrapper;
     }
 
     return null;
@@ -207,6 +205,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return kitScrapper;
         case KRAKEN_NAME:
             return krakenScrapper;
+        case LIMITLESS_NAME:
+            return limitlessScrapper;
         case MAGIC_SCHOOL_NAME:
             return magicSchoolScrapper;
         case ONE_PASSWORD_NAME:
