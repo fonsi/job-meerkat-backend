@@ -122,8 +122,6 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return photoroomScrapper;
         case HELPSCOUT_NAME:
             return helpscoutScrapper;
-        case CODE_SIGNAL_NAME:
-            return codeSignalScrapper;
         case MATTERMOST_NAME:
             return mattermostScrapper;
         case HUMAN_INTEREST_NAME:
@@ -192,6 +190,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
     switch (company.name?.toLowerCase()) {
         case ASTRONOMER_NAME:
             return astronomerScrapper;
+        case CODE_SIGNAL_NAME:
+            return codeSignalScrapper;
         case CUSTOMERIO_NAME:
             return customerioScrapper;
         case DISCORD_NAME:

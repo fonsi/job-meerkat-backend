@@ -1,4 +1,8 @@
-import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
+import {
+    ListedJobPostsData,
+    NewCompanyScrapper,
+    ScrappedJobPost,
+} from '../companyScrapper';
 import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
@@ -18,6 +22,7 @@ type JobPostsListItem = {
     id: string;
     url: string;
     title: string;
+    createdAt?: number;
 };
 
 const scrapJobPost = async ({
@@ -50,47 +55,63 @@ const scrapJobPost = async ({
     }
 };
 
-export const codeSignalScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const jobsData = await getGemJobPosts({ companyName: CODE_SIGNAL_NAME });
-
-    const jobPosts: JobPostsListItem[] = jobsData.map((jobData) => {
-        const url = `${CODE_SIGNAL_JOB_POST_URL}/${jobData.atsId}`;
-
-        return {
-            id: jobData.atsId,
-            url,
-            title: jobData.title,
-        };
-    });
-
-    const data: ScrappedJobPost[] = [];
-    for (let i = 0; i < jobPosts.length; i++) {
-        try {
-            const jobPost = jobPosts[i];
-            console.log(
-                `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
-            );
-
-            const jobPostData = await scrapJobPost({
-                id: jobPost.id,
+export const codeSignalScrapper: NewCompanyScrapper = ({ companyId }) => {
+    return {
+        getListedJobPostsData: async () => {
+            const jobsData = await getGemJobPosts({
+                companyName: CODE_SIGNAL_NAME,
             });
 
-            data.push({
-                ...jobPostData,
-                originalId: jobPost.id,
-                url: jobPost.url,
-                companyId,
+            const jobPosts: JobPostsListItem[] = jobsData.map((jobData) => {
+                const url = `${CODE_SIGNAL_JOB_POST_URL}/${jobData.atsId}`;
+
+                return {
+                    id: jobData.atsId,
+                    url,
+                    title: jobData.title,
+                    createdAt: jobData.publishedDateTs
+                        ? (jobData.publishedDateTs as number) * 1000
+                        : undefined,
+                };
             });
-        } catch (e) {
-            const error = errorWithPrefix(
-                e,
-                `[Error processing ${CODE_SIGNAL_NAME}]`,
-            );
 
-            console.log(error);
-            logger.error(error);
-        }
-    }
+            return jobPosts;
+        },
 
-    return data;
+        scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
+            const data: ScrappedJobPost[] = [];
+
+            for (let i = 0; i < jobPosts.length; i++) {
+                try {
+                    const jobPost = jobPosts[i];
+                    console.log(
+                        `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
+                    );
+
+                    const jobPostData = await scrapJobPost({
+                        id: jobPost.id,
+                    });
+
+                    data.push({
+                        ...jobPostData,
+                        originalId: jobPost.id,
+                        url: jobPost.url,
+                        title: jobPost.title,
+                        companyId,
+                        createdAt: jobPost.createdAt,
+                    });
+                } catch (e) {
+                    const error = errorWithPrefix(
+                        e,
+                        `Error processing ${CODE_SIGNAL_NAME}`,
+                    );
+
+                    console.log(error);
+                    logger.error(error);
+                }
+            }
+
+            return data;
+        },
+    };
 };
