@@ -123,7 +123,7 @@ const getLatest: GetLatest = async () => {
     try {
         const allOpenItems = await getAllOpen();
         const latestItems = allOpenItems
-            .filter((jobPost) => jobPost.createdAt > Date.now() - FROM_WHEN * 2) // remove 2
+            .filter((jobPost) => jobPost.createdAt > Date.now() - FROM_WHEN)
             .sort((a, b) => b.createdAt - a.createdAt);
 
         return latestItems;
