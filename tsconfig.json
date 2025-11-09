@@ -11,6 +11,7 @@
         "esModuleInterop": true,
         "outDir": ".build",
         "baseUrl": "src/",
+        "jsx": "preserve",
         "paths": {
             "company/*": ["company/*"],
             "jobPost/*": ["jobPost/*"],
@@ -19,7 +20,7 @@
             "shared/*": ["shared/*"]
         }
     },
-    "include": ["./**/*.ts"],
+    "include": ["./**/*.ts", "./**/*.tsx"],
     "exclude": [
         "node_modules/**/*",
         ".serverless/**/*",
