@@ -131,8 +131,6 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return axiosHqScrapper;
         case PROOF_NAME:
             return proofScrapper;
-        case SUPERHUMAN_NAME:
-            return superhumanScrapper;
         case ASSEMBLY_AI_NAME:
             return assemblyAiScrapper;
         case HEARD_NAME:
@@ -227,6 +225,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return stravaScrapper;
         case SUPER_NAME:
             return superScrapper;
+        case SUPERHUMAN_NAME:
+            return superhumanScrapper;
         case TINYBIRD_NAME:
             return tinybirdScrapper;
         case ZAPIER_NAME:
