@@ -1,5 +1,9 @@
 import { fromURL } from 'cheerio';
-import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
+import {
+    ListedJobPostsData,
+    NewCompanyScrapper,
+    ScrappedJobPost,
+} from '../companyScrapper';
 import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
@@ -14,12 +18,6 @@ const TINYBIRD_INITIAL_URL = `${BASE_URL}/about`;
 type ScrapJobPostData = {
     id: string;
     url: string;
-};
-
-type JobPostsListItem = {
-    id: string;
-    url: string;
-    title: string;
 };
 
 const JOB_POST_SELECTOR = 'a[href*="/job-offers"]';
@@ -44,57 +42,68 @@ const scrapJobPost = async ({
     }
 };
 
-export const tinybirdScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const $ = await fromURL(TINYBIRD_INITIAL_URL);
-    const jobPostsElements = $(JOB_POST_SELECTOR);
+export const tinybirdScrapper: NewCompanyScrapper = ({ companyId }) => {
+    return {
+        getListedJobPostsData: async () => {
+            const $ = await fromURL(TINYBIRD_INITIAL_URL);
+            const jobPostsElements = $(JOB_POST_SELECTOR);
 
-    const jobPosts: JobPostsListItem[] = jobPostsElements
-        .toArray()
-        .map((jobPost) => {
-            const url = `${BASE_URL}${$(jobPost).attr('href')}`;
-            const title = $('span span', jobPost).first().text();
+            const jobPosts: ListedJobPostsData[] = jobPostsElements
+                .toArray()
+                .map((jobPost) => {
+                    const url = `${BASE_URL}${$(jobPost).attr('href')}`;
+                    const title = $('p.text-h5', $(jobPost).parent()).text();
 
-            return {
-                id: url.split('/').filter(Boolean).pop(),
-                url,
-                title,
-            };
-        })
-        .filter(
-            (jobPost) =>
-                jobPost.title !== '' &&
-                !jobPost.title.toLowerCase().includes('open application'),
-        );
+                    return {
+                        id: url.split('/').filter(Boolean).pop(),
+                        url,
+                        title,
+                    };
+                })
+                .filter(
+                    (jobPost) =>
+                        jobPost.title !== '' &&
+                        !jobPost.title
+                            .toLowerCase()
+                            .includes('open application'),
+                );
 
-    const data: ScrappedJobPost[] = [];
-    for (let i = 0; i < jobPosts.length; i++) {
-        try {
-            const jobPost = jobPosts[i];
-            console.log(
-                `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
-            );
+            return jobPosts;
+        },
 
-            const jobPostData = await scrapJobPost({
-                id: jobPost.id,
-                url: jobPost.url,
-            });
+        scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
+            const data: ScrappedJobPost[] = [];
 
-            data.push({
-                ...jobPostData,
-                originalId: jobPost.id,
-                url: jobPost.url,
-                companyId,
-            });
-        } catch (e) {
-            const error = errorWithPrefix(
-                e,
-                `[Error processing ${TINYBIRD_NAME}]`,
-            );
+            for (let i = 0; i < jobPosts.length; i++) {
+                try {
+                    const jobPost = jobPosts[i];
+                    console.log(
+                        `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
+                    );
 
-            console.log(error);
-            logger.error(error);
-        }
-    }
+                    const jobPostData = await scrapJobPost({
+                        id: jobPost.id,
+                        url: jobPost.url,
+                    });
 
-    return data;
+                    data.push({
+                        ...jobPostData,
+                        originalId: jobPost.id,
+                        url: jobPost.url,
+                        companyId,
+                    });
+                } catch (e) {
+                    const error = errorWithPrefix(
+                        e,
+                        `[Error processing ${TINYBIRD_NAME}]`,
+                    );
+
+                    console.log(error);
+                    logger.error(error);
+                }
+            }
+
+            return data;
+        },
+    };
 };
