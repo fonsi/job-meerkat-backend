@@ -141,8 +141,6 @@ const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
             return v7Scrapper;
         case NETLIFY_NAME:
             return netlifyScrapper;
-        case CONFIANT_NAME:
-            return confiantScrapper;
         case LIGHTDASH_NAME:
             return lightdashScrapper;
         case POSTSCRIPT_NAME:
@@ -175,6 +173,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return blueskyScrapper;
         case CODE_SIGNAL_NAME:
             return codeSignalScrapper;
+        case CONFIANT_NAME:
+            return confiantScrapper;
         case CUSTOMERIO_NAME:
             return customerioScrapper;
         case DISCORD_NAME:
