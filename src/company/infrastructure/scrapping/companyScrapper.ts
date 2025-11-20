@@ -64,6 +64,7 @@ import { STRAVA_NAME, stravaScrapper } from './strava';
 import { HORIZON_3_NAME, horizon3Scrapper } from './horizon3';
 import { PROTONAI_NAME, protonaiScrapper } from './protonai';
 import { BLUESKY_NAME, blueskyScrapper } from './bluesky';
+import { BUBBLE_NAME, bubbleScrapper } from './bubble';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -170,6 +171,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return astronomerScrapper;
         case BLUESKY_NAME:
             return blueskyScrapper;
+        case BUBBLE_NAME:
+            return bubbleScrapper;
         case CODE_SIGNAL_NAME:
             return codeSignalScrapper;
         case CONFIANT_NAME:
