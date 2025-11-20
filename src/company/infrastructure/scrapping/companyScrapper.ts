@@ -33,6 +33,7 @@ import { HUMAN_INTEREST_NAME, humanInterestScrapper } from './humanInterest';
 import { GUIDELINE_NAME, guidelineScrapper } from './guideline';
 import { LATTICE_NAME, latticeScrapper } from './lattice';
 import { FEDERATO_NAME, federatoScrapper } from './federato';
+import { FULLSTORY_NAME, fullstoryScrapper } from './fullstory';
 import { CINDER_NAME, cinderScrapper } from './cinder';
 import { ZAPIER_NAME, zapierScrapper } from './zapier';
 import { MAGIC_SCHOOL_NAME, magicSchoolScrapper } from './magicSchool';
@@ -181,6 +182,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return dockerScrapper;
         case FEDERATO_NAME:
             return federatoScrapper;
+        case FULLSTORY_NAME:
+            return fullstoryScrapper;
         case HIGHTOUCH_NAME:
             return hightouchScrapper;
         case HORIZON_3_NAME:
