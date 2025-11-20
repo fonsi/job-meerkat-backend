@@ -52,7 +52,16 @@ const DailyReportTemplate = ({ jobPostsByCompany, totalJobPosts, totalCompanies 
                             <Section key={company.id}>
                                 <Row style={{ backgroundColor: '#333', padding: '4px 8px', borderRadius: '4px', marginTop: '24px' }}>
                                     <Column width="60px">
-                                        <Img src={company.logo.url} alt={company.name} width={40} height={40} />
+                                        <Img 
+                                            src={company.logo.url} 
+                                            alt={company.name} 
+                                            width={50}
+                                            style={{ 
+                                                width: '50px',
+                                                height: 'auto',
+                                                display: 'block'
+                                            }} 
+                                        />
                                     </Column>
                                     <Column>
                                         <Text style={{ fontSize: '20px', fontWeight: '600', color: '#fefefe' }}>{company.name}</Text>
@@ -61,19 +70,25 @@ const DailyReportTemplate = ({ jobPostsByCompany, totalJobPosts, totalCompanies 
                                 {jobPosts.map((jobPost) => (
                                     <Row style={{ marginTop: '16px', padding: '8px 12px', borderRadius: '4px', border: '1px solid #ddd' }} key={jobPost.id}>
                                         <Link style={{ textDecoration: 'none', color: '#333', fontSize: '24px', fontWeight: '600' }} href={jobPost.url}>{jobPost.title}</Link>
-                                        <Text style={{ fontSize: '14px', margin: '2px 0' }}>{jobPost.location}</Text>
-                                        <Text style={{ fontSize: '14px', margin: '2px 0' }}>{jobPost.category}</Text>
-                                        <Text style={{ fontSize: '14px', margin: '2px 0' }}>{jobPost.workplace}</Text>
-                                        <Text style={{ fontSize: '16px', fontWeight: '600', margin: '2px 0' }}>{jobPost.salaryRange?.min ? `${jobPost.salaryRange.min}-${jobPost.salaryRange.max} ${jobPost.salaryRange.currency}/${jobPost.salaryRange.period}` : ''}</Text>
+                                        {jobPost.location && (
+                                            <Text style={{ fontSize: '14px', margin: '2px 0 1px' }}>📍 {jobPost.location}</Text>
+                                        )}
+                                        {jobPost.category && (
+                                            <Text style={{ fontSize: '14px', margin: '1px 0' }}>🏷️ {jobPost.category}</Text>
+                                        )}
+                                        {jobPost.workplace && (
+                                            <Text style={{ fontSize: '14px', margin: '1px 0' }}>💼 {jobPost.workplace}</Text>
+                                        )}
+                                        <Text style={{ fontSize: '18px', fontWeight: '600', margin: '2px 0' }}>{jobPost.salaryRange?.min ? `${jobPost.salaryRange.min}-${jobPost.salaryRange.max} ${jobPost.salaryRange.currency}/${jobPost.salaryRange.period}` : ''}</Text>
                                     </Row>
                                 ))}
                             </Section>
                         ))}
                     </Section>
                     <Section style={{ marginTop: '24px' }}>
-                        <Text style={{ textAlign: 'center', color: '#d9d9d9', margin: '4px 0' }}>Thank you for using JobMeerkat! 🎯</Text>
-                        <Text style={{ textAlign: 'center', color: '#d9d9d9', margin: '4px 0' }}>This email was sent because you subscribed to our daily job reports.</Text>
-                        <Text style={{ textAlign: 'center', color: '#d9d9d9', margin: '4px 0' }}>If you have any questions or feedback, please contact us at <Link href="mailto:jobmeerkat@gmail.com">jobmeerkat@gmail.com</Link></Text>
+                        <Text style={{ textAlign: 'center', color: '#c1c1c1', margin: '4px 0' }}>Thank you for using JobMeerkat! 🎯</Text>
+                        <Text style={{ textAlign: 'center', color: '#c1c1c1', margin: '4px 0' }}>This email was sent because you subscribed to our daily job reports.</Text>
+                        <Text style={{ textAlign: 'center', color: '#c1c1c1', margin: '4px 0' }}>If you have any questions or feedback, please contact us at <Link href="mailto:jobmeerkat@gmail.com">jobmeerkat@gmail.com</Link></Text>
                     </Section>
                 </Container>
             </Body>
