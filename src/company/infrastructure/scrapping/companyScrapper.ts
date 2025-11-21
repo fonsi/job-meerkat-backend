@@ -62,6 +62,7 @@ import { DUOLINGO_NAME, duolingoScrapper } from './duolingo';
 import { ONE_PASSWORD_NAME, onePasswordScrapper } from './1password';
 import { LIMITLESS_NAME, limitlessScrapper } from './limitless';
 import { REPLIT_NAME, replitScrapper } from './replit';
+import { RETOOL_NAME, retoolScrapper } from './retool';
 import { STRAVA_NAME, stravaScrapper } from './strava';
 import { HORIZON_3_NAME, horizon3Scrapper } from './horizon3';
 import { PROTONAI_NAME, protonaiScrapper } from './protonai';
@@ -230,6 +231,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return ravioScrapper;
         case REPLIT_NAME:
             return replitScrapper;
+        case RETOOL_NAME:
+            return retoolScrapper;
         case RUNWAY_NAME:
             return runwayScrapper;
         case SOURCEGRAPH_NAME:
