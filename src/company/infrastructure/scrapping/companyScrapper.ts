@@ -58,6 +58,7 @@ import { LIGHTDASH_NAME, lightdashScrapper } from './lightdash';
 import { POSTSCRIPT_NAME, postscriptScrapper } from './postscript';
 import { SOURCEGRAPH_NAME, sourcegraphScrapper } from './sourcegraph';
 import { DOCKER_NAME, dockerScrapper } from './docker';
+import { DUOLINGO_NAME, duolingoScrapper } from './duolingo';
 import { ONE_PASSWORD_NAME, onePasswordScrapper } from './1password';
 import { LIMITLESS_NAME, limitlessScrapper } from './limitless';
 import { REPLIT_NAME, replitScrapper } from './replit';
@@ -157,6 +158,7 @@ export type ListedJobPostsData = {
     title: string;
     createdAt?: number;
     locationText?: string;
+    content?: string;
 };
 
 export type NewCompanyScrapper = ({ companyId }: { companyId: CompanyId }) => {
@@ -186,6 +188,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return discordScrapper;
         case DOCKER_NAME:
             return dockerScrapper;
+        case DUOLINGO_NAME:
+            return duolingoScrapper;
         case FEDERATO_NAME:
             return federatoScrapper;
         case FULLSTORY_NAME:
