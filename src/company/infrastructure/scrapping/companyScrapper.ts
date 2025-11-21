@@ -21,6 +21,7 @@ import { CHORUS_ONE_NAME, chorusOneScrapper } from './chorusOne';
 import { ZERO_X_NAME, zeroXScrapper } from './0x';
 import { TINYBIRD_NAME, tinybirdScrapper } from './tinybird';
 import { HAPPY_MONEY_NAME, happyMoneyScrapper } from './happyMoney';
+import { AIRBNB_NAME, airbnbScrapper } from './airbnb';
 import { ASTRONOMER_NAME, astronomerScrapper } from './astronomer';
 import { CIRCLE_NAME, circleScrapper } from './circle';
 import { INVISIBLE_NAME, invisibleScrapper } from './invisible';
@@ -167,6 +168,8 @@ export type NewCompanyScrapper = ({ companyId }: { companyId: CompanyId }) => {
 
 export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
     switch (company.name?.toLowerCase()) {
+        case AIRBNB_NAME:
+            return airbnbScrapper;
         case ASTRONOMER_NAME:
             return astronomerScrapper;
         case BLUESKY_NAME:
