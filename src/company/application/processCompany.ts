@@ -48,6 +48,8 @@ type OldScrapperData = {
     company: Company;
 };
 
+const MAX_JOB_POSTS_TO_SCRAP = 50;
+
 const getNewAndClosedJobPosts = ({
     scrappedJobPosts,
     openJobPosts,
@@ -147,7 +149,16 @@ const scrapUsingNewScrapper = async ({
         openJobPosts,
     });
 
-    const scrappedJobPosts = await builtScrapper.scrapJobPost(newJobPosts);
+    if (newJobPosts.length > MAX_JOB_POSTS_TO_SCRAP) {
+        logger.info(
+            `Too many new job posts to scrap for ${company.name}, scraping only ${MAX_JOB_POSTS_TO_SCRAP} of ${newJobPosts.length}`,
+        );
+    }
+
+    const newJobPostsToScrap = newJobPosts.slice(0, MAX_JOB_POSTS_TO_SCRAP);
+
+    const scrappedJobPosts =
+        await builtScrapper.scrapJobPost(newJobPostsToScrap);
 
     console.log(
         `[LISTED: ${listedJobPostsData.length}] [OPEN: ${openJobPosts.length}] [NEW: ${newJobPosts.length}] [CLOSED: ${closedJobPosts.length}]`,
