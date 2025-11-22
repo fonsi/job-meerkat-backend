@@ -176,23 +176,43 @@ export const query = (
     });
 };
 
-export const scan = (
+export const scan = async (
     table: string,
     query: Omit<ScanInput, 'TableName'>,
 ): Promise<ScanOutput> => {
-    return new Promise((resolve, reject) => {
-        const dynamodb = new DynamoDB();
+    const dynamodb = new DynamoDB();
+    const allItems: Record<string, AttributeValue>[] = [];
+    let lastEvaluatedKey: Record<string, AttributeValue> | undefined =
+        undefined;
+
+    do {
         const input: ScanInput = {
             TableName: table,
             ...query,
+            ExclusiveStartKey: lastEvaluatedKey,
         };
 
-        dynamodb.scan(input, (err, data) => {
-            if (err) {
-                reject(err);
-            }
+        const data = await new Promise<ScanOutput>((resolve, reject) => {
+            dynamodb.scan(input, (err, data) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
 
-            resolve(data);
+                resolve(data);
+            });
         });
-    });
+
+        if (data.Items) {
+            allItems.push(...data.Items);
+        }
+
+        lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    return {
+        Items: allItems,
+        Count: allItems.length,
+        ScannedCount: allItems.length,
+    };
 };
