@@ -12,6 +12,7 @@ params:
         publishSocialPostsQueueVisibilityTimeout: 130
         sendReportTimeout: 120
         sendReportQueueVisibilityTimeout: 130
+        companyEndpointTimeout: 30
     dev:
         processCompanySchedule: cron(0 0 1 1 ? 1970) # never
         socialPostsSchedule: cron(0 0 1 1 ? 1970) # never
@@ -158,6 +159,7 @@ functions:
                   method: any
     company:
         handler: src/company/infrastructure/api/handler.index
+        timeout: ${param:companyEndpointTimeout}
         events:
             - httpApi:
                   path: /company
