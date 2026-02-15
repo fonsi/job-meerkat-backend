@@ -1,4 +1,3 @@
-import { fromURL } from 'cheerio';
 import {
     ListedJobPostsData,
     NewCompanyScrapper,
@@ -8,32 +7,43 @@ import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
-import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { getGemJobPostContent, getGemJobPosts } from '../gemGraphQL';
 
 export const RETOOL_NAME = 'retool';
-const RETOOL_INITIAL_URL =
-    'https://api.greenhouse.io/v1/boards/retool/jobs?content=true';
+const RETOOL_JOB_POST_URL = 'https://jobs.gem.com/retool';
 
 type ScrapJobPostData = {
     id: string;
-    url: string;
 };
 
-const JOB_HEADER_SELECTOR = '.job__header';
-const JOB_CONTENT_SELECTOR = '.job__description';
+type JobPostsListItem = {
+    id: string;
+    url: string;
+    title: string;
+    createdAt?: number;
+};
 
 const scrapJobPost = async ({
     id,
-    url,
 }: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
-        const $ = await fromURL(url);
+        const jobPostContent = await getGemJobPostContent({
+            companyName: RETOOL_NAME,
+            atsId: id,
+        });
+        const createdAt = jobPostContent.publishedDateTs
+            ? (jobPostContent.publishedDateTs as number) * 1000
+            : undefined;
+        const analyzedJobPost = await openaiJobPostAnalyzer(
+            JSON.stringify(jobPostContent),
+        );
 
-        const jobPostHeader = $(JOB_HEADER_SELECTOR).text();
-        const jobPostContent = $(JOB_CONTENT_SELECTOR).text();
-
-        return openaiJobPostAnalyzer(`${jobPostHeader} ${jobPostContent}`);
+        return {
+            ...analyzedJobPost,
+            createdAt,
+        };
     } catch (e) {
         const error = errorWithPrefix(
             e,
@@ -48,21 +58,22 @@ const scrapJobPost = async ({
 export const retoolScrapper: NewCompanyScrapper = ({ companyId }) => {
     return {
         getListedJobPostsData: async () => {
-            const response = await fetch(RETOOL_INITIAL_URL);
-            const jobsData = await response.json();
+            const jobsData = await getGemJobPosts({
+                companyName: RETOOL_NAME,
+            });
 
-            const jobPosts: ListedJobPostsData[] = jobsData.jobs.map(
-                (jobData) => {
-                    const url = jobData.absolute_url;
+            const jobPosts: JobPostsListItem[] = jobsData.map((jobData) => {
+                const url = `${RETOOL_JOB_POST_URL}/${jobData.atsId}`;
 
-                    return {
-                        id: jobData.id.toString(),
-                        url,
-                        title: jobData.title,
-                        createdAt: new Date(jobData.updated_at).getTime(),
-                    };
-                },
-            );
+                return {
+                    id: jobData.atsId,
+                    url,
+                    title: jobData.title,
+                    createdAt: jobData.publishedDateTs
+                        ? (jobData.publishedDateTs as number) * 1000
+                        : undefined,
+                };
+            });
 
             return jobPosts;
         },
@@ -73,20 +84,19 @@ export const retoolScrapper: NewCompanyScrapper = ({ companyId }) => {
             for (let i = 0; i < jobPosts.length; i++) {
                 try {
                     const jobPost = jobPosts[i];
-
                     console.log(
                         `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
                     );
 
                     const jobPostData = await scrapJobPost({
                         id: jobPost.id,
-                        url: jobPost.url,
                     });
 
                     data.push({
                         ...jobPostData,
-                        originalId: jobPost.id.toString(),
+                        originalId: jobPost.id,
                         url: jobPost.url,
+                        title: jobPost.title,
                         companyId,
                         createdAt: jobPost.createdAt,
                     });
