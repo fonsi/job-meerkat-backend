@@ -12,7 +12,7 @@ const getEventData = (record): ReportEventData => {
     }
 };
 
-export const index = async (event, _, callback) => {
+export const index = async (event) => {
     try {
         initializeLogger();
 
@@ -53,7 +53,7 @@ export const index = async (event, _, callback) => {
         logger.error(errorWithPrefix(error, 'Error processing SQS event'));
     } finally {
         await logger.wait();
-
-        callback(null, '[SEND REPORT] Done');
     }
+
+    return '[SEND REPORT] Done';
 };

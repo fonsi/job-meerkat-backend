@@ -25,7 +25,7 @@ params:
         reportsSchedule: cron(0 5 ? * * *) # every day at 5 am
 provider:
     name: aws
-    runtime: nodejs20.x
+    runtime: nodejs24.x
     profile: ${env:PROFILE}
     region: ${env:REGION}
     environment:
