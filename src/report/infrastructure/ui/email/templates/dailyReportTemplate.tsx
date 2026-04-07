@@ -1,6 +1,7 @@
 import React from 'react';
 import { Body, Container, Head, Heading, Html, Row, Column, Section, Img, Text, Link, render, toPlainText } from '@react-email/components';
 import { JobPostsByCompanyType } from 'report/application/sendDailyReport';
+import { buildJobPostPageUrl } from 'shared/infrastructure/url/buildJobPostPageUrl';
 
 type BuildDailyReportTemplate = (props: DailyReportTemplateProps) => Promise<{
     html: string;
@@ -69,7 +70,7 @@ const DailyReportTemplate = ({ jobPostsByCompany, totalJobPosts, totalCompanies 
                                 </Row>
                                 {jobPosts.map((jobPost) => (
                                     <Row style={{ marginTop: '16px', padding: '8px 12px', borderRadius: '4px', border: '1px solid #ddd' }} key={jobPost.id}>
-                                        <Link style={{ textDecoration: 'none', color: '#333', fontSize: '24px', fontWeight: '600' }} href={jobPost.url}>{jobPost.title}</Link>
+                                        <Link style={{ textDecoration: 'none', color: '#333', fontSize: '24px', fontWeight: '600' }} href={buildJobPostPageUrl(jobPost.slug)}>{jobPost.title}</Link>
                                         {jobPost.location && (
                                             <Text style={{ fontSize: '14px', margin: '2px 0 1px' }}>📍 {jobPost.location}</Text>
                                         )}

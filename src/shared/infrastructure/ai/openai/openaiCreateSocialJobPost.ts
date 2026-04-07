@@ -1,6 +1,10 @@
 import OpenAI from 'openai';
 import { Company } from 'company/domain/company';
 import { JobPost } from 'jobPost/domain/jobPost';
+import {
+    buildJobPostPageUrl,
+    getPublicSiteBaseUrl,
+} from 'shared/infrastructure/url/buildJobPostPageUrl';
 
 export type SocialMediaPosts = {
     linkedin: string;
@@ -46,8 +50,11 @@ export const openaiSocialMediaPostsCreator = async ({
     jobPost,
     company,
 }: OpenaiSocialMediaPostsCreator): Promise<SocialMediaPosts> => {
-    const companyLink = `https://jobmeerkat.com/company/${company.id}`;
-    const jobmeerkatLink = 'https://jobmeerkat.com';
+    const baseUrl = getPublicSiteBaseUrl();
+    const companyLink = `${baseUrl}/company/${company.id}`;
+    const jobmeerkatLink = baseUrl;
+    const jobPageUrl = buildJobPostPageUrl(jobPost.slug);
+    const jobPostForPrompt: JobPost = { ...jobPost, url: jobPageUrl };
 
     const completion = await openai.chat.completions.create({
         model: OPENAI_MODEL,
@@ -66,20 +73,20 @@ export const openaiSocialMediaPostsCreator = async ({
                     {
                         type: 'text',
                         text: `
-                            At Jobmeerkat we have listed a job post with the following data ${JSON.stringify(jobPost)} at the following company: ${company.name}.
+                            At Jobmeerkat we have listed a job post with the following data ${JSON.stringify(jobPostForPrompt)} at the following company: ${company.name}.
                             We are not the ones who offers the job, we just list it. Be sure not to say that you are the ones who offers the job or we are hiring. We are a job board that helps people to find job offers.
                             We would like to create a social media post to promote this job offer.
                             The messages should be written in plain text. You can't use HTML or markdown.
                             Starting with the twitter thread:
                             I want to publish a thread with 2 tweets.
                             The first with the job offer description (category, workplace and salary). Be sure to mention the company name. Do not use icons or emojis.
-                            The second with the link to the job offer (${jobPost.url}), a link to the company's page at Jobmeerkat where viewers can discover more company's open job posts: ${companyLink} and a link to Jobmeerkat (${jobmeerkatLink}) encouraging users to visit for more job posts.
+                            The second with the link to the job offer (${jobPageUrl}), a link to the company's page at Jobmeerkat where viewers can discover more company's open job posts: ${companyLink} and a link to Jobmeerkat (${jobmeerkatLink}) encouraging users to visit for more job posts.
                             Try to add some hashtags to the content if you think are relevant or can help to reach more people. Don't add the company name as a hashtag.
                             The content should be adjusted to fit in the 280 character limit.
                             For Bluesky we can use the same as for twitter but taking into account that the character limit is 299. It wouldn't be a problem if you split the content in two or more posts.
                             For Meta Threads I want to have different content than for twitter. In the first message I prefer to put the job post description (with location and salary, if available) and in a next line a text indicating that the job offer link is inside the thread. Be sure to mention the company name. Then, in another line, don't forget to add a text and the link to Jobmeerkat (${jobmeerkatLink}) encouraging users to visit for more job posts. At the end of the thread you can add only one hashtag to the content if you think is relevant or can help to reach more people. Don't add the company name as a hashtag.
                             In the second message we can add the company's description with the link to the company's page at Jobmeerkat where viewers can discover more company's open job posts: ${companyLink}.
-                            And in the third message we can finally add the link to the job post where the viewer can get more details and apply: ${jobPost.url}.
+                            And in the third message we can finally add the link to the job post where the viewer can get more details and apply: ${jobPageUrl}.
                             As Threads messages are limited to 500 characters, you should be careful to not exceed this limit.
                             For Linkedin we can use all the available information to create a post.
                             The response should be a JSON following the example: ${JSON.stringify(socialMediaPostsExample)}.
