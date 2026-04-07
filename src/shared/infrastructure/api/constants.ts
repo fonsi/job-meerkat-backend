@@ -13,6 +13,8 @@ export enum HTTP_METHOD {
 
 export const RESPONSE_CODE = {
     SUCCESS: 200,
+    BAD_REQUEST: 400,
+    UNAUTHORIZED: 401,
     NOT_FOUND: 404,
     METHOD_NOT_ALLOWED: 405,
     INTERNAL_ERROR: 500,
@@ -32,6 +34,18 @@ export const SUCCESS_RESPONSE: APIGatewayProxyResult = {
 export const NOT_FOUND_RESPONSE: APIGatewayProxyResult = {
     statusCode: RESPONSE_CODE.NOT_FOUND,
     body: 'not found',
+    headers: RESPONSE_HEADERS,
+};
+
+export const BAD_REQUEST_RESPONSE: APIGatewayProxyResult = {
+    statusCode: RESPONSE_CODE.BAD_REQUEST,
+    body: 'bad request',
+    headers: RESPONSE_HEADERS,
+};
+
+export const UNAUTHORIZED_RESPONSE: APIGatewayProxyResult = {
+    statusCode: RESPONSE_CODE.UNAUTHORIZED,
+    body: 'unauthorized',
     headers: RESPONSE_HEADERS,
 };
 

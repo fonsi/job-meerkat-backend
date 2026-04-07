@@ -13,6 +13,7 @@ params:
         sendReportTimeout: 120
         sendReportQueueVisibilityTimeout: 130
         companyEndpointTimeout: 30
+        newsletterEndpointTimeout: 30
     dev:
         processCompanySchedule: cron(0 0 1 1 ? 1970) # never
         socialPostsSchedule: cron(0 0 1 1 ? 1970) # never
@@ -34,6 +35,7 @@ provider:
         DYNAMODB_JOB_POST_TABLE_NAME: ${sls:stage}-job-post
         DYNAMODB_SCHEDULED_SOCIAL_POST_TABLE_NAME: ${sls:stage}-scheduled-social-post
         DYNAMODB_REPORT_TABLE_NAME: ${sls:stage}-report
+        DYNAMODB_MAGIC_LINK_TABLE_NAME: ${sls:stage}-magic-link
         PROCESS_COMPANY_QUEUE_NAME: ${sls:stage}-process-company-sqs-queue.fifo
         PUBLISH_SOCIAL_POST_QUEUE_NAME: ${sls:stage}-publish-social-post-sqs-queue
         SEND_REPORT_QUEUE_NAME: ${sls:stage}-send-report-sqs-queue
@@ -51,6 +53,8 @@ provider:
         MAILGUN_DOMAIN: ${env:MAILGUN_DOMAIN}
         MAILGUN_URL: ${env:MAILGUN_URL}
         MAILGUN_API_KEY: ${env:MAILGUN_API_KEY}
+        MAGIC_LINK_PEPPER: ${env:MAGIC_LINK_PEPPER, ''}
+        NEWSLETTER_SETTINGS_BASE_URL: ${env:NEWSLETTER_SETTINGS_BASE_URL, ''}
     logs:
         httpApi: true
     iamRoleStatements:
@@ -130,6 +134,26 @@ resources:
                 ProvisionedThroughput:
                     ReadCapacityUnits: 1
                     WriteCapacityUnits: 1
+        magicLinkTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+                TableName: ${self:provider.environment.DYNAMODB_MAGIC_LINK_TABLE_NAME}
+                AttributeDefinitions:
+                    - AttributeName: tokenHash
+                      AttributeType: S
+                    - AttributeName: subjectPurposeKey
+                      AttributeType: S
+                KeySchema:
+                    - AttributeName: tokenHash
+                      KeyType: HASH
+                BillingMode: PAY_PER_REQUEST
+                GlobalSecondaryIndexes:
+                    - IndexName: subjectPurpose-index
+                      KeySchema:
+                          - AttributeName: subjectPurposeKey
+                            KeyType: HASH
+                      Projection:
+                          ProjectionType: ALL
         processCompanyQueue:
             Type: 'AWS::SQS::Queue'
             Properties:
@@ -230,3 +254,16 @@ functions:
         handler: src/report/infrastructure/api/schedule/handler.index
         events:
             - schedule: ${param:reportsSchedule}
+    newsletter:
+        handler: src/newsletter/infrastructure/api/handler.index
+        timeout: ${param:newsletterEndpointTimeout}
+        events:
+            - httpApi:
+                  path: /newsletter/request-link
+                  method: POST
+            - httpApi:
+                  path: /newsletter/preferences
+                  method: GET
+            - httpApi:
+                  path: /newsletter/preferences
+                  method: PUT

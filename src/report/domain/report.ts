@@ -1,3 +1,5 @@
+import { NewsletterPreferences } from './newsletterPreferences';
+
 export type ReportId = string;
 export type ReportType = 'daily';
 
@@ -6,4 +8,5 @@ export type Report = {
     type: ReportType;
     email: string;
     createdAt: number;
+    preferences?: NewsletterPreferences;
 };

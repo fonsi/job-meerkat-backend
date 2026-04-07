@@ -17,7 +17,9 @@
             "jobPost/*": ["jobPost/*"],
             "report/*": ["report/*"],
             "social/*": ["social/*"],
-            "shared/*": ["shared/*"]
+            "shared/*": ["shared/*"],
+            "magicLink/*": ["magicLink/*"],
+            "newsletter/*": ["newsletter/*"]
         }
     },
     "include": ["./**/*.ts", "./**/*.tsx"],
