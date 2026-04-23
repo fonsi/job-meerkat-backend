@@ -1,5 +1,9 @@
 import { fromURL } from 'cheerio';
-import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
+import {
+    ListedJobPostsData,
+    NewCompanyScrapper,
+    ScrappedJobPost,
+} from '../companyScrapper';
 import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
@@ -13,13 +17,6 @@ const CHERRE_INITIAL_URL = 'https://api.lever.co/v0/postings/cherre?mode=json';
 type ScrapJobPostData = {
     id: string;
     url: string;
-};
-
-type JobPostsListItem = {
-    id: string;
-    url: string;
-    title: string;
-    createdAt: number;
 };
 
 const JOB_CONTENT_SELECTOR = '.content';
@@ -45,51 +42,59 @@ const scrapJobPost = async ({
     }
 };
 
-export const cherreScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const response = await fetch(CHERRE_INITIAL_URL);
-    const jobsData = await response.json();
+export const cherreScrapper: NewCompanyScrapper = ({ companyId }) => {
+    return {
+        getListedJobPostsData: async () => {
+            const response = await fetch(CHERRE_INITIAL_URL);
+            const jobsData = await response.json();
 
-    const jobPosts: JobPostsListItem[] = jobsData.map((jobData) => {
-        const url = jobData.hostedUrl;
+            const jobPosts: ListedJobPostsData[] = jobsData.map((jobData) => {
+                const url = jobData.hostedUrl;
 
-        return {
-            id: jobData.id,
-            url,
-            title: jobData.text,
-            createdAt: jobData.createdAt,
-        };
-    });
-
-    const data: ScrappedJobPost[] = [];
-    for (let i = 0; i < jobPosts.length; i++) {
-        try {
-            const jobPost = jobPosts[i];
-            console.log(
-                `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
-            );
-
-            const jobPostData = await scrapJobPost({
-                id: jobPost.id,
-                url: jobPost.url,
+                return {
+                    id: jobData.id,
+                    url,
+                    title: jobData.text,
+                    createdAt: jobData.createdAt,
+                };
             });
 
-            data.push({
-                ...jobPostData,
-                originalId: jobPost.id,
-                url: jobPost.url,
-                companyId,
-                createdAt: jobPost.createdAt,
-            });
-        } catch (e) {
-            const error = errorWithPrefix(
-                e,
-                `[Error processing ${CHERRE_NAME}]`,
-            );
+            return jobPosts;
+        },
 
-            console.log(error);
-            logger.error(error);
-        }
-    }
+        scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
+            const data: ScrappedJobPost[] = [];
+            for (let i = 0; i < jobPosts.length; i++) {
+                try {
+                    const jobPost = jobPosts[i];
+                    console.log(
+                        `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
+                    );
 
-    return data;
+                    const jobPostData = await scrapJobPost({
+                        id: jobPost.id,
+                        url: jobPost.url,
+                    });
+
+                    data.push({
+                        ...jobPostData,
+                        originalId: jobPost.id,
+                        url: jobPost.url,
+                        companyId,
+                        createdAt: jobPost.createdAt,
+                    });
+                } catch (e) {
+                    const error = errorWithPrefix(
+                        e,
+                        `[Error processing ${CHERRE_NAME}]`,
+                    );
+
+                    console.log(error);
+                    logger.error(error);
+                }
+            }
+
+            return data;
+        },
+    };
 };

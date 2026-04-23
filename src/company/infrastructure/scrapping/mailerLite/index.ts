@@ -1,5 +1,9 @@
 import { fromURL } from 'cheerio';
-import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
+import {
+    ListedJobPostsData,
+    NewCompanyScrapper,
+    ScrappedJobPost,
+} from '../companyScrapper';
 import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
@@ -14,12 +18,6 @@ const MAILER_LITE_INITIAL_URL = `${MAILER_LITE_BASE_URL}/jobs`;
 type ScrapJobPostData = {
     id: string;
     url: string;
-};
-
-type JobPostsListItem = {
-    id: string;
-    url: string;
-    title: string;
 };
 
 const JOB_POST_SELECTOR = 'div.flex > a[href*="/jobs/"]';
@@ -45,51 +43,59 @@ const scrapJobPost = async ({
     }
 };
 
-export const mailerLiteScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const $ = await fromURL(MAILER_LITE_INITIAL_URL);
-    const jobPostsElements = $(JOB_POST_SELECTOR);
+export const mailerLiteScrapper: NewCompanyScrapper = ({ companyId }) => {
+    return {
+        getListedJobPostsData: async () => {
+            const $ = await fromURL(MAILER_LITE_INITIAL_URL);
+            const jobPostsElements = $(JOB_POST_SELECTOR);
 
-    const jobPosts: JobPostsListItem[] = jobPostsElements
-        .toArray()
-        .map((jobPost) => {
-            const url = `${MAILER_LITE_BASE_URL}${$(jobPost).attr('href')}`;
+            const jobPosts: ListedJobPostsData[] = jobPostsElements
+                .toArray()
+                .map((jobPost) => {
+                    const url = `${MAILER_LITE_BASE_URL}${$(jobPost).attr('href')}`;
 
-            return {
-                id: url.split('/').pop(),
-                url,
-                title: $(jobPost).text().trim(),
-            };
-        });
+                    return {
+                        id: url.split('/').pop(),
+                        url,
+                        title: $(jobPost).text().trim(),
+                    };
+                });
 
-    const data: ScrappedJobPost[] = [];
-    for (let i = 0; i < jobPosts.length; i++) {
-        try {
-            const jobPost = jobPosts[i];
-            console.log(
-                `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
-            );
+            return jobPosts;
+        },
 
-            const jobPostData = await scrapJobPost({
-                id: jobPost.id,
-                url: jobPost.url,
-            });
+        scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
+            const data: ScrappedJobPost[] = [];
+            for (let i = 0; i < jobPosts.length; i++) {
+                try {
+                    const jobPost = jobPosts[i];
+                    console.log(
+                        `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
+                    );
 
-            data.push({
-                ...jobPostData,
-                originalId: jobPost.id,
-                url: jobPost.url,
-                companyId,
-            });
-        } catch (e) {
-            const error = errorWithPrefix(
-                e,
-                `[Error processing ${MAILER_LITE_NAME}]`,
-            );
+                    const jobPostData = await scrapJobPost({
+                        id: jobPost.id,
+                        url: jobPost.url,
+                    });
 
-            console.log(error);
-            logger.error(error);
-        }
-    }
+                    data.push({
+                        ...jobPostData,
+                        originalId: jobPost.id,
+                        url: jobPost.url,
+                        companyId,
+                    });
+                } catch (e) {
+                    const error = errorWithPrefix(
+                        e,
+                        `[Error processing ${MAILER_LITE_NAME}]`,
+                    );
 
-    return data;
+                    console.log(error);
+                    logger.error(error);
+                }
+            }
+
+            return data;
+        },
+    };
 };

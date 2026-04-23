@@ -1,5 +1,9 @@
 import { fromURL } from 'cheerio';
-import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
+import {
+    ListedJobPostsData,
+    NewCompanyScrapper,
+    ScrappedJobPost,
+} from '../companyScrapper';
 import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
@@ -15,12 +19,6 @@ const STREAK_INITIAL_URL = `${STREAK_DOMAIN}/careers`;
 type ScrapJobPostData = {
     title: string;
     url: string;
-};
-
-type JobPostsListItem = {
-    id: string;
-    url: string;
-    title: string;
 };
 
 const JOB_POST_SELECTOR = '.careers a[href*="/careers"]';
@@ -46,53 +44,64 @@ const scrapJobPost = async ({
     }
 };
 
-export const streakScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const $ = await fromURL(STREAK_INITIAL_URL);
-    const jobPostsElements = $(JOB_POST_SELECTOR);
+export const streakScrapper: NewCompanyScrapper = ({ companyId }) => {
+    return {
+        getListedJobPostsData: async () => {
+            const $ = await fromURL(STREAK_INITIAL_URL);
+            const jobPostsElements = $(JOB_POST_SELECTOR);
 
-    const jobPosts: JobPostsListItem[] = jobPostsElements
-        .toArray()
-        .map((jobPost) => {
-            const url = `${STREAK_DOMAIN}${$(jobPost).attr('href')}`;
-            const title = $('.career-filter-listing-text', jobPost).text();
-            const id = hash('md5', title); // hash generated from the title because there isn't any job post id
+            const jobPosts: ListedJobPostsData[] = jobPostsElements
+                .toArray()
+                .map((jobPost) => {
+                    const url = `${STREAK_DOMAIN}${$(jobPost).attr('href')}`;
+                    const title = $(
+                        '.career-filter-listing-text',
+                        jobPost,
+                    ).text();
+                    const id = hash('md5', title); // hash generated from the title because there isn't any job post id
 
-            return {
-                id,
-                url,
-                title,
-            };
-        });
+                    return {
+                        id,
+                        url,
+                        title,
+                    };
+                });
 
-    const data: ScrappedJobPost[] = [];
-    for (let i = 0; i < jobPosts.length; i++) {
-        try {
-            const jobPost = jobPosts[i];
-            console.log(
-                `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
-            );
+            return jobPosts;
+        },
 
-            const jobPostData = await scrapJobPost({
-                title: jobPost.title,
-                url: jobPost.url,
-            });
+        scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
+            const data: ScrappedJobPost[] = [];
+            for (let i = 0; i < jobPosts.length; i++) {
+                try {
+                    const jobPost = jobPosts[i];
+                    console.log(
+                        `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
+                    );
 
-            data.push({
-                ...jobPostData,
-                originalId: jobPost.id,
-                url: jobPost.url,
-                companyId,
-            });
-        } catch (e) {
-            const error = errorWithPrefix(
-                e,
-                `[Error processing ${STREAK_NAME}]`,
-            );
+                    const jobPostData = await scrapJobPost({
+                        title: jobPost.title,
+                        url: jobPost.url,
+                    });
 
-            console.log(error);
-            logger.error(error);
-        }
-    }
+                    data.push({
+                        ...jobPostData,
+                        originalId: jobPost.id,
+                        url: jobPost.url,
+                        companyId,
+                    });
+                } catch (e) {
+                    const error = errorWithPrefix(
+                        e,
+                        `[Error processing ${STREAK_NAME}]`,
+                    );
 
-    return data;
+                    console.log(error);
+                    logger.error(error);
+                }
+            }
+
+            return data;
+        },
+    };
 };

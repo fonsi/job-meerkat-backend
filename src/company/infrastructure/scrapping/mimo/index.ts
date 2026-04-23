@@ -1,5 +1,9 @@
 import { fromURL } from 'cheerio';
-import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
+import {
+    ListedJobPostsData,
+    NewCompanyScrapper,
+    ScrappedJobPost,
+} from '../companyScrapper';
 import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
@@ -12,11 +16,6 @@ export const MIMO_NAME = 'mimo';
 const MIMO_INITIAL_URL = 'https://jobs.mimo.org';
 
 type ScrapJobPostData = {
-    id: string;
-    url: string;
-};
-
-type JobPostsListItem = {
     id: string;
     url: string;
 };
@@ -45,57 +44,69 @@ const scrapJobPost = async ({
     }
 };
 
-export const mimoScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const $ = await fromURL(MIMO_INITIAL_URL);
-    const jobPostsElements = $(JOB_POST_SELECTOR);
+export const mimoScrapper: NewCompanyScrapper = ({ companyId }) => {
+    return {
+        getListedJobPostsData: async () => {
+            const $ = await fromURL(MIMO_INITIAL_URL);
+            const jobPostsElements = $(JOB_POST_SELECTOR);
 
-    // we don't have a good selector for the job offer links so we select all the job offer like links
-    // and add to a Set to avoid duplicates
-    const jobPostsUrls = new Set<string>();
+            // we don't have a good selector for the job offer links so we select all the job offer like links
+            // and add to a Set to avoid duplicates
+            const jobPostsUrls = new Set<string>();
 
-    jobPostsElements.toArray().map((jobPost) => {
-        const url = $(jobPost).attr('href');
+            jobPostsElements.toArray().map((jobPost) => {
+                const url = $(jobPost).attr('href');
 
-        jobPostsUrls.add(`${MIMO_INITIAL_URL}${url}`);
-    });
-
-    const jobPosts: JobPostsListItem[] = [];
-
-    jobPostsUrls.forEach((url) => {
-        const id = hash('md5', url); // hash generated from the url because there isn't any job post id
-
-        jobPosts.push({
-            id,
-            url,
-        });
-    });
-
-    const data: ScrappedJobPost[] = [];
-    for (let i = 0; i < jobPosts.length; i++) {
-        try {
-            const jobPost = jobPosts[i];
-            console.log(
-                `Analyzing: "${jobPost.url}" (${i + 1} / ${jobPosts.length})`,
-            );
-
-            const jobPostData = await scrapJobPost({
-                id: jobPost.id,
-                url: jobPost.url,
+                jobPostsUrls.add(`${MIMO_INITIAL_URL}${url}`);
             });
 
-            data.push({
-                ...jobPostData,
-                originalId: jobPost.id,
-                url: jobPost.url,
-                companyId,
+            const jobPosts: ListedJobPostsData[] = [];
+
+            jobPostsUrls.forEach((url) => {
+                const id = hash('md5', url); // hash generated from the url because there isn't any job post id
+
+                jobPosts.push({
+                    id,
+                    url,
+                    title: url,
+                });
             });
-        } catch (e) {
-            const error = errorWithPrefix(e, `[Error processing ${MIMO_NAME}]`);
 
-            console.log(error);
-            logger.error(error);
-        }
-    }
+            return jobPosts;
+        },
 
-    return data;
+        scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
+            const data: ScrappedJobPost[] = [];
+            for (let i = 0; i < jobPosts.length; i++) {
+                try {
+                    const jobPost = jobPosts[i];
+                    console.log(
+                        `Analyzing: "${jobPost.url}" (${i + 1} / ${jobPosts.length})`,
+                    );
+
+                    const jobPostData = await scrapJobPost({
+                        id: jobPost.id,
+                        url: jobPost.url,
+                    });
+
+                    data.push({
+                        ...jobPostData,
+                        originalId: jobPost.id,
+                        url: jobPost.url,
+                        companyId,
+                    });
+                } catch (e) {
+                    const error = errorWithPrefix(
+                        e,
+                        `[Error processing ${MIMO_NAME}]`,
+                    );
+
+                    console.log(error);
+                    logger.error(error);
+                }
+            }
+
+            return data;
+        },
+    };
 };

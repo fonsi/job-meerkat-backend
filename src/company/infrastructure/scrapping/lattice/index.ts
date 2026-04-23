@@ -1,5 +1,9 @@
 import { fromURL } from 'cheerio';
-import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
+import {
+    ListedJobPostsData,
+    NewCompanyScrapper,
+    ScrappedJobPost,
+} from '../companyScrapper';
 import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
@@ -12,14 +16,7 @@ const LATTICE_INITIAL_URL =
     'https://boards-api.greenhouse.io/v1/boards/lattice/jobs';
 
 type ScrapJobPostData = {
-    id: number;
-};
-
-type JobPostsListItem = {
-    id: number;
-    url: string;
-    title: string;
-    createdAt: number;
+    id: string | number;
 };
 
 const JOB_HEADER_SELECTOR = '.job__header';
@@ -52,50 +49,60 @@ const scrapJobPost = async ({
     }
 };
 
-export const latticeScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const response = await fetch(LATTICE_INITIAL_URL);
-    const jobsData = await response.json();
+export const latticeScrapper: NewCompanyScrapper = ({ companyId }) => {
+    return {
+        getListedJobPostsData: async () => {
+            const response = await fetch(LATTICE_INITIAL_URL);
+            const jobsData = await response.json();
 
-    const jobPosts: JobPostsListItem[] = jobsData.jobs.map((jobData) => {
-        const url = jobData.absolute_url;
+            const jobPosts: ListedJobPostsData[] = jobsData.jobs.map(
+                (jobData) => {
+                    const url = jobData.absolute_url;
 
-        return {
-            id: jobData.id,
-            url,
-            title: jobData.title,
-            createdAt: new Date(jobData.updated_at).getTime(),
-        };
-    });
-
-    const data: ScrappedJobPost[] = [];
-    for (let i = 0; i < jobPosts.length; i++) {
-        try {
-            const jobPost = jobPosts[i];
-            console.log(
-                `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
+                    return {
+                        id: jobData.id,
+                        url,
+                        title: jobData.title,
+                        createdAt: new Date(jobData.updated_at).getTime(),
+                    };
+                },
             );
 
-            const jobPostData = await scrapJobPost({
-                id: jobPost.id,
-            });
+            return jobPosts;
+        },
 
-            data.push({
-                ...jobPostData,
-                originalId: jobPost.id.toString(),
-                url: jobPost.url,
-                companyId,
-                createdAt: jobPost.createdAt,
-            });
-        } catch (e) {
-            const error = errorWithPrefix(
-                e,
-                `[Error processing ${LATTICE_NAME}]`,
-            );
+        scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
+            const data: ScrappedJobPost[] = [];
+            for (let i = 0; i < jobPosts.length; i++) {
+                try {
+                    const jobPost = jobPosts[i];
+                    console.log(
+                        `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
+                    );
 
-            console.log(error);
-            logger.error(error);
-        }
-    }
+                    const jobPostData = await scrapJobPost({
+                        id: jobPost.id,
+                    });
 
-    return data;
+                    data.push({
+                        ...jobPostData,
+                        originalId: jobPost.id.toString(),
+                        url: jobPost.url,
+                        companyId,
+                        createdAt: jobPost.createdAt,
+                    });
+                } catch (e) {
+                    const error = errorWithPrefix(
+                        e,
+                        `[Error processing ${LATTICE_NAME}]`,
+                    );
+
+                    console.log(error);
+                    logger.error(error);
+                }
+            }
+
+            return data;
+        },
+    };
 };

@@ -1,4 +1,3 @@
-import { fromURL } from 'cheerio';
 import {
     ListedJobPostsData,
     NewCompanyScrapper,
@@ -10,40 +9,33 @@ import {
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
 import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
+import { getAshbyJobPostContent } from '../ashbyGraphQLRequest';
 
 export const ASTRONOMER_NAME = 'astronomer';
-const ASTRONOMER_INITIAL_URL = 'https://www.astronomer.io/careers';
+const ASTRONOMER_INITIAL_URL =
+    'https://api.ashbyhq.com/posting-api/job-board/astronomer';
 
 type ScrapJobPostData = {
     id: string;
-    url: string;
-    locationText: string;
 };
 
 type JobPostsListItem = {
     id: string;
     url: string;
     title: string;
-    locationText: string;
+    createdAt: number;
 };
-
-const JOB_POST_SELECTOR = 'a[class*="_job"]';
 
 const scrapJobPost = async ({
     id,
-    url,
-    locationText,
 }: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
-        const $ = await fromURL(url);
+        const jobsData = await getAshbyJobPostContent({
+            companyName: ASTRONOMER_NAME,
+            jobPostId: id,
+        });
 
-        const metaDescriptionContent = $('meta[name="description"]').attr(
-            'content',
-        );
-
-        return openaiJobPostAnalyzer(
-            `Location: ${locationText}. ${metaDescriptionContent}`,
-        );
+        return openaiJobPostAnalyzer(JSON.stringify(jobsData));
     } catch (e) {
         const error = errorWithPrefix(
             e,
@@ -58,22 +50,27 @@ const scrapJobPost = async ({
 export const astronomerScrapper: NewCompanyScrapper = ({ companyId }) => {
     return {
         getListedJobPostsData: async () => {
-            const $ = await fromURL(ASTRONOMER_INITIAL_URL);
-            const jobPostsElements = $(JOB_POST_SELECTOR);
+            const response = await fetch(ASTRONOMER_INITIAL_URL);
+            const jobsData = await response.json();
 
-            const jobPosts: JobPostsListItem[] = jobPostsElements
-                .toArray()
-                .map((jobPost) => {
-                    const url = $(jobPost).attr('href');
-                    const texts = $('span', jobPost).toArray();
+            const jobPosts: JobPostsListItem[] = [];
 
-                    return {
-                        id: url.split('/').pop(),
+            jobsData.jobs.forEach((jobData) => {
+                const url = jobData.jobUrl;
+                const title = jobData.title;
+
+                if (
+                    jobData.isListed &&
+                    !title.toLowerCase().includes('intern')
+                ) {
+                    jobPosts.push({
+                        id: jobData.id,
                         url,
-                        title: $(texts[1]).text(),
-                        locationText: $(texts[2]).text()?.split('-')[0].trim(),
-                    };
-                });
+                        title,
+                        createdAt: new Date(jobData.publishedAt).getTime(),
+                    });
+                }
+            });
 
             return jobPosts;
         },
@@ -84,14 +81,14 @@ export const astronomerScrapper: NewCompanyScrapper = ({ companyId }) => {
             for (let i = 0; i < jobPosts.length; i++) {
                 try {
                     const jobPost = jobPosts[i];
+
                     console.log(
                         `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
                     );
 
                     const jobPostData = await scrapJobPost({
+                        ...jobPost,
                         id: jobPost.id,
-                        url: jobPost.url,
-                        locationText: jobPost.locationText,
                     });
 
                     data.push({
@@ -100,11 +97,12 @@ export const astronomerScrapper: NewCompanyScrapper = ({ companyId }) => {
                         url: jobPost.url,
                         title: jobPost.title,
                         companyId,
+                        createdAt: jobPost.createdAt,
                     });
                 } catch (e) {
                     const error = errorWithPrefix(
                         e,
-                        `[Error processing ${ASTRONOMER_NAME}]`,
+                        `Error processing ${ASTRONOMER_NAME}`,
                     );
 
                     console.log(error);

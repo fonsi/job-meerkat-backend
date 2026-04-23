@@ -1,5 +1,9 @@
 import { fromURL } from 'cheerio';
-import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
+import {
+    ListedJobPostsData,
+    NewCompanyScrapper,
+    ScrappedJobPost,
+} from '../companyScrapper';
 import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
@@ -12,15 +16,8 @@ const HAPPY_MONEY_INITIAL_URL =
     'https://boards-api.greenhouse.io/v1/boards/happymoney/departments';
 
 type ScrapJobPostData = {
-    id: number;
+    id: string | number;
     url: string;
-};
-
-type JobPostsListItem = {
-    id: number;
-    url: string;
-    title: string;
-    createdAt: number;
 };
 
 const JOB_TITLE_SELECTOR = '.job__title';
@@ -48,60 +45,68 @@ const scrapJobPost = async ({
     }
 };
 
-export const happyMoneyScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const response = await fetch(HAPPY_MONEY_INITIAL_URL);
-    const jobsData = await response.json();
+export const happyMoneyScrapper: NewCompanyScrapper = ({ companyId }) => {
+    return {
+        getListedJobPostsData: async () => {
+            const response = await fetch(HAPPY_MONEY_INITIAL_URL);
+            const jobsData = await response.json();
 
-    const jobPosts: JobPostsListItem[] = [];
+            const jobPosts: ListedJobPostsData[] = [];
 
-    jobsData.departments.forEach((department) => {
-        department.jobs.forEach((jobData) => {
-            const url = jobData.absolute_url;
-            const title = jobData.title;
+            jobsData.departments.forEach((department) => {
+                department.jobs.forEach((jobData) => {
+                    const url = jobData.absolute_url;
+                    const title = jobData.title;
 
-            if (title.toLowerCase().includes('general application')) {
-                return;
+                    if (title.toLowerCase().includes('general application')) {
+                        return;
+                    }
+
+                    jobPosts.push({
+                        id: jobData.id,
+                        url,
+                        title,
+                        createdAt: new Date(jobData.updated_at).getTime(),
+                    });
+                });
+            });
+
+            return jobPosts;
+        },
+
+        scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
+            const data: ScrappedJobPost[] = [];
+            for (let i = 0; i < jobPosts.length; i++) {
+                try {
+                    const jobPost = jobPosts[i];
+                    console.log(
+                        `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
+                    );
+
+                    const jobPostData = await scrapJobPost({
+                        id: jobPost.id,
+                        url: jobPost.url,
+                    });
+
+                    data.push({
+                        ...jobPostData,
+                        originalId: jobPost.id.toString(),
+                        url: jobPost.url,
+                        companyId,
+                        createdAt: jobPost.createdAt,
+                    });
+                } catch (e) {
+                    const error = errorWithPrefix(
+                        e,
+                        `[Error processing ${HAPPY_MONEY_NAME}]`,
+                    );
+
+                    console.log(error);
+                    logger.error(error);
+                }
             }
 
-            jobPosts.push({
-                id: jobData.id,
-                url,
-                title,
-                createdAt: new Date(jobData.updated_at).getTime(),
-            });
-        });
-    });
-
-    const data: ScrappedJobPost[] = [];
-    for (let i = 0; i < jobPosts.length; i++) {
-        try {
-            const jobPost = jobPosts[i];
-            console.log(
-                `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
-            );
-
-            const jobPostData = await scrapJobPost({
-                id: jobPost.id,
-                url: jobPost.url,
-            });
-
-            data.push({
-                ...jobPostData,
-                originalId: jobPost.id.toString(),
-                url: jobPost.url,
-                companyId,
-                createdAt: jobPost.createdAt,
-            });
-        } catch (e) {
-            const error = errorWithPrefix(
-                e,
-                `[Error processing ${HAPPY_MONEY_NAME}]`,
-            );
-
-            console.log(error);
-            logger.error(error);
-        }
-    }
-
-    return data;
+            return data;
+        },
+    };
 };

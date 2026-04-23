@@ -1,5 +1,9 @@
 import { fromURL } from 'cheerio';
-import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
+import {
+    ListedJobPostsData,
+    NewCompanyScrapper,
+    ScrappedJobPost,
+} from '../companyScrapper';
 import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
@@ -13,12 +17,6 @@ const ASSEMBLY_AI_INITIAL_URL = 'https://job-boards.greenhouse.io/assemblyai';
 type ScrapJobPostData = {
     id: string;
     url: string;
-};
-
-type JobPostsListItem = {
-    id: string;
-    url: string;
-    title: string;
 };
 
 const JOB_POST_SELECTOR = '.job-post a';
@@ -48,51 +46,59 @@ const scrapJobPost = async ({
     }
 };
 
-export const assemblyAiScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const $ = await fromURL(ASSEMBLY_AI_INITIAL_URL);
-    const jobPostsElements = $(JOB_POST_SELECTOR);
+export const assemblyAiScrapper: NewCompanyScrapper = ({ companyId }) => {
+    return {
+        getListedJobPostsData: async () => {
+            const $ = await fromURL(ASSEMBLY_AI_INITIAL_URL);
+            const jobPostsElements = $(JOB_POST_SELECTOR);
 
-    const jobPosts: JobPostsListItem[] = jobPostsElements
-        .toArray()
-        .map((jobPost) => {
-            const url = $(jobPost).attr('href');
+            const jobPosts: ListedJobPostsData[] = jobPostsElements
+                .toArray()
+                .map((jobPost) => {
+                    const url = $(jobPost).attr('href');
 
-            return {
-                id: url.split('/').pop(),
-                url,
-                title: $('p', jobPost).first().text(),
-            };
-        });
+                    return {
+                        id: url.split('/').pop(),
+                        url,
+                        title: $('p', jobPost).first().text(),
+                    };
+                });
 
-    const data: ScrappedJobPost[] = [];
-    for (let i = 0; i < jobPosts.length; i++) {
-        try {
-            const jobPost = jobPosts[i];
-            console.log(
-                `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
-            );
+            return jobPosts;
+        },
 
-            const jobPostData = await scrapJobPost({
-                id: jobPost.id,
-                url: jobPost.url,
-            });
+        scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
+            const data: ScrappedJobPost[] = [];
+            for (let i = 0; i < jobPosts.length; i++) {
+                try {
+                    const jobPost = jobPosts[i];
+                    console.log(
+                        `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
+                    );
 
-            data.push({
-                ...jobPostData,
-                originalId: jobPost.id,
-                url: jobPost.url,
-                companyId,
-            });
-        } catch (e) {
-            const error = errorWithPrefix(
-                e,
-                `[Error processing ${ASSEMBLY_AI_NAME}]`,
-            );
+                    const jobPostData = await scrapJobPost({
+                        id: jobPost.id,
+                        url: jobPost.url,
+                    });
 
-            console.log(error);
-            logger.error(error);
-        }
-    }
+                    data.push({
+                        ...jobPostData,
+                        originalId: jobPost.id,
+                        url: jobPost.url,
+                        companyId,
+                    });
+                } catch (e) {
+                    const error = errorWithPrefix(
+                        e,
+                        `[Error processing ${ASSEMBLY_AI_NAME}]`,
+                    );
 
-    return data;
+                    console.log(error);
+                    logger.error(error);
+                }
+            }
+
+            return data;
+        },
+    };
 };

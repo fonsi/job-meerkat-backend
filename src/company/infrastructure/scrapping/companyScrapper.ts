@@ -89,67 +89,7 @@ export type CompanyScrapperFn = (
 ) => Promise<ScrappedJobPost[]>;
 
 const getCompanyScrapperFn = (companyName: string): CompanyScrapperFn => {
-    switch (companyName?.toLowerCase()) {
-        case FLOAT_NAME:
-            return floatScrapper;
-        case HUMAN_SIGNAL_NAME:
-            return humanSignalScrapper;
-        case CHERRE_NAME:
-            return cherreScrapper;
-        case ALL_TRAILS_NAME:
-            return allTrailsScrapper;
-        case STREAK_NAME:
-            return streakScrapper;
-        case MIMO_NAME:
-            return mimoScrapper;
-        case FEELD_NAME:
-            return feeldScrapper;
-        case REVENUE_CAT_NAME:
-            return revenueCatScrapper;
-        case DUCK_DUCK_GO_NAME:
-            return duckDuckGoScrapper;
-        case REC_ROOM_NAME:
-            return recRoomScrapper;
-        case CHORUS_ONE_NAME:
-            return chorusOneScrapper;
-        case HAPPY_MONEY_NAME:
-            return happyMoneyScrapper;
-        case CIRCLE_NAME:
-            return circleScrapper;
-        case HELPSCOUT_NAME:
-            return helpscoutScrapper;
-        case MATTERMOST_NAME:
-            return mattermostScrapper;
-        case GUIDELINE_NAME:
-            return guidelineScrapper;
-        case LATTICE_NAME:
-            return latticeScrapper;
-        case CINDER_NAME:
-            return cinderScrapper;
-        case AMONDO_NAME:
-            return amondoScrapper;
-        case CLOSE_NAME:
-            return closeScrapper;
-        case MAILER_LITE_NAME:
-            return mailerLiteScrapper;
-        case AXIOS_HQ_NAME:
-            return axiosHqScrapper;
-        case PROOF_NAME:
-            return proofScrapper;
-        case ASSEMBLY_AI_NAME:
-            return assemblyAiScrapper;
-        case HEARD_NAME:
-            return heardScrapper;
-        case V7_NAME:
-            return v7Scrapper;
-        case NETLIFY_NAME:
-            return netlifyScrapper;
-        case LIGHTDASH_NAME:
-            return lightdashScrapper;
-        case POSTSCRIPT_NAME:
-            return postscriptScrapper;
-    }
-
+    void companyName;
     return null;
 };
 
@@ -160,6 +100,7 @@ export type ListedJobPostsData = {
     createdAt?: number;
     locationText?: string;
     content?: string;
+    data?: Record<string, unknown>;
 };
 
 export type NewCompanyScrapper = ({ companyId }: { companyId: CompanyId }) => {
@@ -173,16 +114,34 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
     switch (company.name?.toLowerCase()) {
         case AIRBNB_NAME:
             return airbnbScrapper;
+        case ALL_TRAILS_NAME:
+            return allTrailsScrapper;
+        case AMONDO_NAME:
+            return amondoScrapper;
+        case ASSEMBLY_AI_NAME:
+            return assemblyAiScrapper;
         case ASTRONOMER_NAME:
             return astronomerScrapper;
+        case AXIOS_HQ_NAME:
+            return axiosHqScrapper;
         case BLUESKY_NAME:
             return blueskyScrapper;
         case BUBBLE_NAME:
             return bubbleScrapper;
+        case CHERRE_NAME:
+            return cherreScrapper;
+        case CHORUS_ONE_NAME:
+            return chorusOneScrapper;
+        case CINDER_NAME:
+            return cinderScrapper;
+        case CIRCLE_NAME:
+            return circleScrapper;
         case CODE_SIGNAL_NAME:
             return codeSignalScrapper;
         case CONFIANT_NAME:
             return confiantScrapper;
+        case CLOSE_NAME:
+            return closeScrapper;
         case CUSTOMERIO_NAME:
             return customerioScrapper;
         case DISCORD_NAME:
@@ -191,16 +150,32 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return dockerScrapper;
         case DUOLINGO_NAME:
             return duolingoScrapper;
+        case DUCK_DUCK_GO_NAME:
+            return duckDuckGoScrapper;
         case FEDERATO_NAME:
             return federatoScrapper;
+        case FEELD_NAME:
+            return feeldScrapper;
+        case FLOAT_NAME:
+            return floatScrapper;
         case FULLSTORY_NAME:
             return fullstoryScrapper;
+        case GUIDELINE_NAME:
+            return guidelineScrapper;
+        case HAPPY_MONEY_NAME:
+            return happyMoneyScrapper;
+        case HEARD_NAME:
+            return heardScrapper;
+        case HELPSCOUT_NAME:
+            return helpscoutScrapper;
         case HIGHTOUCH_NAME:
             return hightouchScrapper;
         case HORIZON_3_NAME:
             return horizon3Scrapper;
         case HUMAN_INTEREST_NAME:
             return humanInterestScrapper;
+        case HUMAN_SIGNAL_NAME:
+            return humanSignalScrapper;
         case INVISIBLE_NAME:
             return invisibleScrapper;
         case KIT_NAME:
@@ -209,10 +184,20 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return krakenScrapper;
         case LIMITLESS_NAME:
             return limitlessScrapper;
+        case LATTICE_NAME:
+            return latticeScrapper;
         case MAGIC_SCHOOL_NAME:
             return magicSchoolScrapper;
         case MAZE_NAME:
             return mazeScrapper;
+        case MAILER_LITE_NAME:
+            return mailerLiteScrapper;
+        case MATTERMOST_NAME:
+            return mattermostScrapper;
+        case MIMO_NAME:
+            return mimoScrapper;
+        case NETLIFY_NAME:
+            return netlifyScrapper;
         case ONE_PASSWORD_NAME:
             return onePasswordScrapper;
         case PHANTOM_NAME:
@@ -223,12 +208,20 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return planetScaleScrapper;
         case PROTONAI_NAME:
             return protonaiScrapper;
+        case POSTSCRIPT_NAME:
+            return postscriptScrapper;
+        case PROOF_NAME:
+            return proofScrapper;
         case PULUMI_NAME:
             return pulumiScrapper;
         case RAMP_NAME:
             return rampScrapper;
         case RAVIO_NAME:
             return ravioScrapper;
+        case REC_ROOM_NAME:
+            return recRoomScrapper;
+        case REVENUE_CAT_NAME:
+            return revenueCatScrapper;
         case REPLIT_NAME:
             return replitScrapper;
         case RETOOL_NAME:
@@ -237,12 +230,18 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return runwayScrapper;
         case SOURCEGRAPH_NAME:
             return sourcegraphScrapper;
+        case STREAK_NAME:
+            return streakScrapper;
         case STRAVA_NAME:
             return stravaScrapper;
         case SUPER_NAME:
             return superScrapper;
         case SUPERHUMAN_NAME:
             return superhumanScrapper;
+        case V7_NAME:
+            return v7Scrapper;
+        case LIGHTDASH_NAME:
+            return lightdashScrapper;
         case TINYBIRD_NAME:
             return tinybirdScrapper;
         case ZAPIER_NAME:

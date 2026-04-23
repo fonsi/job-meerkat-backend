@@ -1,4 +1,8 @@
-import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
+import {
+    ListedJobPostsData,
+    NewCompanyScrapper,
+    ScrappedJobPost,
+} from '../companyScrapper';
 import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
@@ -12,12 +16,6 @@ const FLOAT_INITIAL_URL =
 
 type ScrapJobPostData = {
     id: string;
-};
-
-type JobPostsListItem = {
-    id: string;
-    url: string;
-    title: string;
 };
 
 const scrapJobPost = async ({
@@ -48,52 +46,60 @@ const scrapJobPost = async ({
     }
 };
 
-export const floatScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const url = FLOAT_INITIAL_URL;
-    const response = await fetch(url, {
-        method: 'POST',
-    });
-    const jobsData = (await response.json()).results;
+export const floatScrapper: NewCompanyScrapper = ({ companyId }) => {
+    return {
+        getListedJobPostsData: async () => {
+            const url = FLOAT_INITIAL_URL;
+            const response = await fetch(url, {
+                method: 'POST',
+            });
+            const jobsData = (await response.json()).results;
 
-    const jobPosts: JobPostsListItem[] = jobsData.map((jobData) => {
-        const id = jobData.shortcode;
-        const url = `https://apply.workable.com/floatjobs/j/${id}`;
+            const jobPosts: ListedJobPostsData[] = jobsData.map((jobData) => {
+                const id = jobData.shortcode;
+                const url = `https://apply.workable.com/floatjobs/j/${id}`;
 
-        return {
-            id,
-            url,
-            title: jobData.title,
-        };
-    });
-
-    const data: ScrappedJobPost[] = [];
-    for (let i = 0; i < jobPosts.length; i++) {
-        try {
-            const jobPost = jobPosts[i];
-            console.log(
-                `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
-            );
-
-            const jobPostData = await scrapJobPost({
-                id: jobPost.id,
+                return {
+                    id,
+                    url,
+                    title: jobData.title,
+                };
             });
 
-            data.push({
-                ...jobPostData,
-                originalId: jobPost.id,
-                url: jobPost.url,
-                companyId,
-            });
-        } catch (e) {
-            const error = errorWithPrefix(
-                e,
-                `[Error processing ${FLOAT_NAME}]`,
-            );
+            return jobPosts;
+        },
 
-            console.log(error);
-            logger.error(error);
-        }
-    }
+        scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
+            const data: ScrappedJobPost[] = [];
+            for (let i = 0; i < jobPosts.length; i++) {
+                try {
+                    const jobPost = jobPosts[i];
+                    console.log(
+                        `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
+                    );
 
-    return data;
+                    const jobPostData = await scrapJobPost({
+                        id: jobPost.id,
+                    });
+
+                    data.push({
+                        ...jobPostData,
+                        originalId: jobPost.id,
+                        url: jobPost.url,
+                        companyId,
+                    });
+                } catch (e) {
+                    const error = errorWithPrefix(
+                        e,
+                        `[Error processing ${FLOAT_NAME}]`,
+                    );
+
+                    console.log(error);
+                    logger.error(error);
+                }
+            }
+
+            return data;
+        },
+    };
 };

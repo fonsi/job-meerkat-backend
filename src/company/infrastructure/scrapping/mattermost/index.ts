@@ -1,5 +1,9 @@
 import { fromURL } from 'cheerio';
-import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
+import {
+    ListedJobPostsData,
+    NewCompanyScrapper,
+    ScrappedJobPost,
+} from '../companyScrapper';
 import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
@@ -8,7 +12,8 @@ import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
 
 export const MATTERMOST_NAME = 'mattermost';
-const MATTERMOST_INITIAL_URL = 'https://jobs.lever.co/mattermost';
+const MATTERMOST_INITIAL_URL =
+    'https://api.greenhouse.io/v1/boards/mattermost/jobs?content=true';
 
 type ScrapJobPostData = {
     id: string;
@@ -19,10 +24,11 @@ type JobPostsListItem = {
     id: string;
     url: string;
     title: string;
+    createdAt: number;
 };
 
-const JOB_POST_SELECTOR = '.posting-title';
-const CONTENT_SELECTOR = '.content';
+const JOB_HEADER_SELECTOR = '.job__header';
+const JOB_CONTENT_SELECTOR = '.job__description';
 
 const scrapJobPost = async ({
     id,
@@ -30,9 +36,11 @@ const scrapJobPost = async ({
 }: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
         const $ = await fromURL(url);
-        const jobPostContent = $(CONTENT_SELECTOR).text();
 
-        return openaiJobPostAnalyzer(jobPostContent);
+        const jobPostHeader = $(JOB_HEADER_SELECTOR).text();
+        const jobPostContent = $(JOB_CONTENT_SELECTOR).text();
+
+        return openaiJobPostAnalyzer(`${jobPostHeader} ${jobPostContent}`);
     } catch (e) {
         const error = errorWithPrefix(
             e,
@@ -44,51 +52,63 @@ const scrapJobPost = async ({
     }
 };
 
-export const mattermostScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const $ = await fromURL(MATTERMOST_INITIAL_URL);
-    const jobPostsElements = $(JOB_POST_SELECTOR);
+export const mattermostScrapper: NewCompanyScrapper = ({ companyId }) => {
+    return {
+        getListedJobPostsData: async () => {
+            const response = await fetch(MATTERMOST_INITIAL_URL);
+            const jobsData = await response.json();
 
-    const jobPosts: JobPostsListItem[] = jobPostsElements
-        .toArray()
-        .map((jobPost) => {
-            const url = $(jobPost).attr('href');
+            const jobPosts: JobPostsListItem[] = jobsData.jobs.map(
+                (jobData) => {
+                    const url = jobData.absolute_url;
 
-            return {
-                id: url.split('/').pop(),
-                url,
-                title: $('h5', jobPost).text(),
-            };
-        });
-
-    const data: ScrappedJobPost[] = [];
-    for (let i = 0; i < jobPosts.length; i++) {
-        try {
-            const jobPost = jobPosts[i];
-            console.log(
-                `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
+                    return {
+                        id: jobData.id.toString(),
+                        url,
+                        title: jobData.title,
+                        createdAt: new Date(jobData.updated_at).getTime(),
+                    };
+                },
             );
 
-            const jobPostData = await scrapJobPost({
-                id: jobPost.id,
-                url: jobPost.url,
-            });
+            return jobPosts;
+        },
 
-            data.push({
-                ...jobPostData,
-                originalId: jobPost.id,
-                url: jobPost.url,
-                companyId,
-            });
-        } catch (e) {
-            const error = errorWithPrefix(
-                e,
-                `[Error processing ${MATTERMOST_NAME}]`,
-            );
+        scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
+            const data: ScrappedJobPost[] = [];
 
-            console.log(error);
-            logger.error(error);
-        }
-    }
+            for (let i = 0; i < jobPosts.length; i++) {
+                try {
+                    const jobPost = jobPosts[i];
 
-    return data;
+                    console.log(
+                        `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
+                    );
+
+                    const jobPostData = await scrapJobPost({
+                        id: jobPost.id,
+                        url: jobPost.url,
+                    });
+
+                    data.push({
+                        ...jobPostData,
+                        originalId: jobPost.id.toString(),
+                        url: jobPost.url,
+                        companyId,
+                        createdAt: jobPost.createdAt,
+                    });
+                } catch (e) {
+                    const error = errorWithPrefix(
+                        e,
+                        `Error processing ${MATTERMOST_NAME}`,
+                    );
+
+                    console.log(error);
+                    logger.error(error);
+                }
+            }
+
+            return data;
+        },
+    };
 };

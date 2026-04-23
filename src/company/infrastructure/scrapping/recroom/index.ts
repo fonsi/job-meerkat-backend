@@ -1,5 +1,9 @@
 import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
-import { CompanyScrapperFn, ScrappedJobPost } from '../companyScrapper';
+import {
+    ListedJobPostsData,
+    NewCompanyScrapper,
+    ScrappedJobPost,
+} from '../companyScrapper';
 import {
     OpenaiJobPost,
     openaiJobPostAnalyzer,
@@ -11,17 +15,8 @@ const REC_ROOM_INITIAL_URL =
     'https://boards-api.greenhouse.io/v1/boards/recroom/jobs?content=true';
 
 type ScrapJobPostData = {
-    id: number;
+    id: string | number;
     content: string;
-};
-
-type JobPostsListItem = {
-    id: number;
-    url: string;
-    title: string;
-    content: string;
-    createdAt: number;
-    location: string;
 };
 
 const scrapJobPost = async ({
@@ -41,56 +36,67 @@ const scrapJobPost = async ({
     }
 };
 
-export const recRoomScrapper: CompanyScrapperFn = async ({ companyId }) => {
-    const response = await fetch(REC_ROOM_INITIAL_URL);
-    const jobsData = await response.json();
+export const recRoomScrapper: NewCompanyScrapper = ({ companyId }) => {
+    return {
+        getListedJobPostsData: async () => {
+            const response = await fetch(REC_ROOM_INITIAL_URL);
+            const jobsData = await response.json();
+            const listedJobs = Array.isArray(jobsData?.jobs)
+                ? jobsData.jobs
+                : [];
 
-    const jobPosts: JobPostsListItem[] = [];
+            const jobPosts: ListedJobPostsData[] = [];
 
-    jobsData.jobs.forEach((jobData) => {
-        const url = jobData.absolute_url;
+            listedJobs.forEach((jobData) => {
+                const url = jobData.absolute_url;
 
-        jobPosts.push({
-            id: jobData.internal_job_id,
-            url,
-            title: jobData.title,
-            createdAt: new Date(jobData.updated_at).getTime(),
-            content: jobData.content,
-            location: jobData.location?.name,
-        });
-    });
-
-    const data: ScrappedJobPost[] = [];
-    for (let i = 0; i < jobPosts.length; i++) {
-        try {
-            const jobPost = jobPosts[i];
-            console.log(
-                `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
-            );
-
-            const jobPostData = await scrapJobPost({
-                id: jobPost.id,
-                content: jobPost.content,
+                jobPosts.push({
+                    id: jobData.internal_job_id,
+                    url,
+                    title: jobData.title,
+                    createdAt: new Date(jobData.updated_at).getTime(),
+                    content: jobData.content,
+                    locationText: jobData.location?.name,
+                });
             });
 
-            data.push({
-                ...jobPostData,
-                originalId: jobPost.id.toString(),
-                url: jobPost.url,
-                companyId,
-                createdAt: jobPost.createdAt,
-                location: jobPost.location || jobPostData.location,
-            });
-        } catch (e) {
-            const error = errorWithPrefix(
-                e,
-                `[Error processing ${REC_ROOM_NAME}]`,
-            );
+            return jobPosts;
+        },
 
-            console.log(error);
-            logger.error(error);
-        }
-    }
+        scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
+            const data: ScrappedJobPost[] = [];
+            for (let i = 0; i < jobPosts.length; i++) {
+                try {
+                    const jobPost = jobPosts[i];
+                    console.log(
+                        `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
+                    );
 
-    return data;
+                    const jobPostData = await scrapJobPost({
+                        id: jobPost.id,
+                        content: jobPost.content,
+                    });
+
+                    data.push({
+                        ...jobPostData,
+                        originalId: jobPost.id.toString(),
+                        url: jobPost.url,
+                        companyId,
+                        createdAt: jobPost.createdAt,
+                        location: jobPost.locationText || jobPostData.location,
+                    });
+                } catch (e) {
+                    const error = errorWithPrefix(
+                        e,
+                        `[Error processing ${REC_ROOM_NAME}]`,
+                    );
+
+                    console.log(error);
+                    logger.error(error);
+                }
+            }
+
+            return data;
+        },
+    };
 };
