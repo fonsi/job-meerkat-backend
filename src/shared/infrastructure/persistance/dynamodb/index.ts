@@ -16,6 +16,9 @@ import {
     QueryOutput,
     ScanInput,
     ScanOutput,
+    TransactWriteItem,
+    TransactWriteItemsInput,
+    TransactWriteItemsOutput,
     UpdateItemInput,
     UpdateItemOutput,
 } from '@aws-sdk/client-dynamodb';
@@ -215,4 +218,23 @@ export const scan = async (
         Count: allItems.length,
         ScannedCount: allItems.length,
     };
+};
+
+export const transactWriteItems = (
+    transactItems: TransactWriteItem[],
+): Promise<TransactWriteItemsOutput> => {
+    return new Promise((resolve, reject) => {
+        const dynamodb = new DynamoDB();
+        const input: TransactWriteItemsInput = {
+            TransactItems: transactItems,
+        };
+
+        dynamodb.transactWriteItems(input, (err, data) => {
+            if (err) {
+                reject(err);
+            }
+
+            resolve(data);
+        });
+    });
 };

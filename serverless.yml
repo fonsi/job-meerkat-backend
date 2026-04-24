@@ -19,11 +19,13 @@ params:
         socialPostsSchedule: cron(0 0 1 1 ? 1970) # never
         reportsSchedule: cron(0 0 1 1 ? 1970) # never
         socialPostsCheck: cron(0 0 1 1 ? 1970) # never
+        archiveClosedJobPostsSchedule: cron(0 0 1 1 ? 1970) # never
     production:
         processCompanySchedule: cron(0 0 ? * * *) # every day at 0 am
         socialPostsSchedule: cron(0 2 ? * * *) # every day at 2 am
         socialPostsCheck: cron(0 * ? * * *) # every day every hour
         reportsSchedule: cron(0 5 ? * * *) # every day at 5 am
+        archiveClosedJobPostsSchedule: cron(0 6 ? * SUN *) # every Sunday at 6 am
 provider:
     name: aws
     runtime: nodejs24.x
@@ -33,6 +35,7 @@ provider:
         STAGE: ${sls:stage}
         DYNAMODB_COMPANY_TABLE_NAME: ${sls:stage}-company
         DYNAMODB_JOB_POST_TABLE_NAME: ${sls:stage}-job-post
+        DYNAMODB_CLOSED_JOB_POST_TABLE_NAME: ${sls:stage}-closed-job-post
         DYNAMODB_SCHEDULED_SOCIAL_POST_TABLE_NAME: ${sls:stage}-scheduled-social-post
         DYNAMODB_REPORT_TABLE_NAME: ${sls:stage}-report
         DYNAMODB_MAGIC_LINK_TABLE_NAME: ${sls:stage}-magic-link
@@ -108,6 +111,21 @@ resources:
                             KeyType: HASH
                       Projection:
                           ProjectionType: ALL
+        closedJobPostTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+                TableName: ${self:provider.environment.DYNAMODB_CLOSED_JOB_POST_TABLE_NAME}
+                AttributeDefinitions:
+                    - AttributeName: id
+                      AttributeType: S
+                    - AttributeName: companyId
+                      AttributeType: S
+                KeySchema:
+                    - AttributeName: id
+                      KeyType: HASH
+                    - AttributeName: companyId
+                      KeyType: RANGE
+                BillingMode: PAY_PER_REQUEST
         scheduledSocialPostsTable:
             Type: AWS::DynamoDB::Table
             Properties:
@@ -254,6 +272,11 @@ functions:
         handler: src/report/infrastructure/api/schedule/handler.index
         events:
             - schedule: ${param:reportsSchedule}
+    archiveClosedJobPosts:
+        handler: src/jobPost/infrastructure/api/archive/handler.index
+        timeout: 30
+        events:
+            - schedule: ${param:archiveClosedJobPostsSchedule}
     newsletter:
         handler: src/newsletter/infrastructure/api/handler.index
         timeout: ${param:newsletterEndpointTimeout}

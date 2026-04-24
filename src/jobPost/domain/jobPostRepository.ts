@@ -21,6 +21,11 @@ export type Close = (
     closedAt: number,
 ) => Promise<JobPost>;
 export type GetBySlug = (slug: string) => Promise<JobPost>;
+export type GetAllClosedBefore = (closedBefore: number) => Promise<JobPost[]>;
+export type MoveClosedToArchive = (
+    jobPost: JobPost,
+    closedBefore: number,
+) => Promise<void>;
 
 export interface JobPostRepository {
     create: Create;
@@ -32,4 +37,6 @@ export interface JobPostRepository {
     getLatest: GetLatest;
     close: Close;
     getBySlug: GetBySlug;
+    getAllClosedBefore: GetAllClosedBefore;
+    moveClosedToArchive: MoveClosedToArchive;
 }

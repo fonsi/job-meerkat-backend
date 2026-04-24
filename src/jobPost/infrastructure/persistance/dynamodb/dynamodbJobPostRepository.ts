@@ -1,9 +1,11 @@
 import { marshall } from './marshall';
 import { unmarshall } from './unmarshall';
+import { TransactWriteItem } from '@aws-sdk/client-dynamodb';
 import {
     putItem,
     query,
     scan,
+    transactWriteItems,
     updateItem,
     UpdateItemExpression,
 } from 'shared/infrastructure/persistance/dynamodb';
@@ -20,10 +22,13 @@ import {
     GetLatest,
     FROM_WHEN,
     GetBySlug,
+    GetAllClosedBefore,
+    MoveClosedToArchive,
 } from 'jobPost/domain/jobPostRepository';
 import { isOpen } from 'jobPost/domain/jobPost';
 
 const JOB_POST_TABLE = process.env.DYNAMODB_JOB_POST_TABLE_NAME;
+const CLOSED_JOB_POST_TABLE = process.env.DYNAMODB_CLOSED_JOB_POST_TABLE_NAME;
 
 const create: Create = async (jobPost) => {
     try {
@@ -183,6 +188,72 @@ const getBySlug: GetBySlug = async (slug) => {
     }
 };
 
+const getAllClosedBefore: GetAllClosedBefore = async (closedBefore) => {
+    try {
+        const results = await scan(JOB_POST_TABLE, {
+            FilterExpression:
+                'attribute_exists(closedAt) AND closedAt <= :closedBefore',
+            ExpressionAttributeValues: {
+                ':closedBefore': {
+                    N: closedBefore.toString(),
+                },
+            },
+        });
+        const items = results.Items;
+
+        if (!items) {
+            return [];
+        }
+
+        return items.map(unmarshall);
+    } catch (e) {
+        throw new DynamodbError(e);
+    }
+};
+
+const moveClosedToArchive: MoveClosedToArchive = async (
+    jobPost,
+    closedBefore,
+) => {
+    const marshalledJobPost = marshall(jobPost);
+    const transactionItems: TransactWriteItem[] = [
+        {
+            Put: {
+                TableName: CLOSED_JOB_POST_TABLE,
+                Item: marshalledJobPost,
+                ConditionExpression:
+                    'attribute_not_exists(id) AND attribute_not_exists(companyId)',
+            },
+        },
+        {
+            Delete: {
+                TableName: JOB_POST_TABLE,
+                Key: {
+                    id: {
+                        S: jobPost.id,
+                    },
+                    companyId: {
+                        S: jobPost.companyId,
+                    },
+                },
+                ConditionExpression:
+                    'attribute_exists(closedAt) AND closedAt <= :closedBefore',
+                ExpressionAttributeValues: {
+                    ':closedBefore': {
+                        N: closedBefore.toString(),
+                    },
+                },
+            },
+        },
+    ];
+
+    try {
+        await transactWriteItems(transactionItems);
+    } catch (e) {
+        throw new DynamodbError(e);
+    }
+};
+
 export const jobPostRepository = {
     create,
     getAll,
@@ -193,4 +264,6 @@ export const jobPostRepository = {
     getBySlug,
     getLatest,
     close,
+    getAllClosedBefore,
+    moveClosedToArchive,
 } as JobPostRepository;
