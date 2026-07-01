@@ -1,0 +1,12 @@
+{
+    "mcpServers": {
+        "rollbar": {
+            "type": "stdio",
+            "command": "npx",
+            "args": ["-y", "@rollbar/mcp-server@latest"],
+            "env": {
+                "ROLLBAR_CONFIG_FILE": "${workspaceFolder}/.cursor/.rollbar-mcp.json"
+            }
+        }
+    }
+}

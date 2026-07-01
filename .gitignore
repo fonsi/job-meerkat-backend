@@ -21,3 +21,4 @@ jspm_packages
 .env
 .env.development
 .env.production
+.cursor/.rollbar-mcp.json
