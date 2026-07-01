@@ -20,6 +20,7 @@ export type Close = (
     companyId: CompanyId,
     closedAt: number,
 ) => Promise<JobPost>;
+export type Update = (jobPost: JobPost) => Promise<JobPost>;
 export type GetBySlug = (slug: string) => Promise<JobPost>;
 export type GetAllClosedBefore = (closedBefore: number) => Promise<JobPost[]>;
 export type MoveClosedToArchive = (
@@ -36,6 +37,7 @@ export interface JobPostRepository {
     getByIdAndCompanyId: GetByIdAndCompanyId;
     getLatest: GetLatest;
     close: Close;
+    update: Update;
     getBySlug: GetBySlug;
     getAllClosedBefore: GetAllClosedBefore;
     moveClosedToArchive: MoveClosedToArchive;

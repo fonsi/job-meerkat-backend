@@ -18,6 +18,7 @@ import {
     GetAllByCompanyId,
     GetByIdAndCompanyId,
     Close,
+    Update,
     GetAllOpen,
     GetLatest,
     FROM_WHEN,
@@ -165,6 +166,92 @@ const close: Close = async (jobPostId, companyId, closedAt) => {
     return unmarshall(item);
 };
 
+const update: Update = async (jobPost) => {
+    try {
+        const baseUpdateExpression =
+            'SET originalId = :originalId, #type = :type, #title = :title, #url = :url, #category = :category, workplace = :workplace, #location = :location, createdAt = :createdAt';
+        const salaryUpdateExpression = jobPost.salaryRange
+            ? ', salaryCurrency = :salaryCurrency, salaryPeriod = :salaryPeriod, salaryMin = :salaryMin, salaryMax = :salaryMax'
+            : '';
+        const salaryRemoveExpression = jobPost.salaryRange
+            ? ''
+            : ', salaryCurrency, salaryPeriod, salaryMin, salaryMax';
+
+        const updateExpression: UpdateItemExpression = {
+            Key: {
+                id: {
+                    S: jobPost.id,
+                },
+                companyId: {
+                    S: jobPost.companyId,
+                },
+            },
+            UpdateExpression: `${baseUpdateExpression}${salaryUpdateExpression} REMOVE closedAt${salaryRemoveExpression}`,
+            ExpressionAttributeNames: {
+                '#type': 'type',
+                '#title': 'title',
+                '#url': 'url',
+                '#category': 'category',
+                '#location': 'location',
+            },
+            ExpressionAttributeValues: {
+                ':originalId': {
+                    S: jobPost.originalId,
+                },
+                ':type': {
+                    S: jobPost.type,
+                },
+                ':title': {
+                    S: jobPost.title,
+                },
+                ':url': {
+                    S: jobPost.url,
+                },
+                ':category': {
+                    S: jobPost.category,
+                },
+                ':workplace': {
+                    S: jobPost.workplace,
+                },
+                ':location': {
+                    S: jobPost.location,
+                },
+                ':createdAt': {
+                    N: jobPost.createdAt.toString(),
+                },
+                ...(jobPost.salaryRange
+                    ? {
+                          ':salaryCurrency': {
+                              S: jobPost.salaryRange.currency,
+                          },
+                          ':salaryPeriod': {
+                              S: jobPost.salaryRange.period,
+                          },
+                          ':salaryMin': {
+                              N: jobPost.salaryRange.min?.toString() || '0',
+                          },
+                          ':salaryMax': {
+                              N: jobPost.salaryRange.max.toString(),
+                          },
+                      }
+                    : {}),
+            },
+            ReturnValues: 'ALL_NEW',
+        };
+
+        const result = await updateItem(JOB_POST_TABLE, updateExpression);
+        const item = result.Attributes;
+
+        if (!item) {
+            return null;
+        }
+
+        return unmarshall(item);
+    } catch (e) {
+        throw new DynamodbError(e);
+    }
+};
+
 const getBySlug: GetBySlug = async (slug) => {
     try {
         const results = await query(JOB_POST_TABLE, {
@@ -264,6 +351,7 @@ export const jobPostRepository = {
     getBySlug,
     getLatest,
     close,
+    update,
     getAllClosedBefore,
     moveClosedToArchive,
 } as JobPostRepository;

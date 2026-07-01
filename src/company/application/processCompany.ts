@@ -2,7 +2,7 @@ import { Company, CompanyId } from 'company/domain/company';
 import { scrapCompany } from './scrapCompany';
 import { createJobPost } from 'jobPost/application/createJobPost';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
-import { JobPost } from 'jobPost/domain/jobPost';
+import { isOpen, JobPost } from 'jobPost/domain/jobPost';
 import {
     getNewCompanyScrapper,
     NewCompanyScrapper,
@@ -137,8 +137,23 @@ const scrapUsingNewScrapper = async ({
 }: NewScrapperData): Promise<void> => {
     const builtScrapper = scrapper({ companyId });
     const listedJobPostsData = await builtScrapper.getListedJobPostsData();
-    const openJobPosts =
-        await jobPostRepository.getAllOpenByCompanyId(companyId);
+    const companyJobPosts =
+        await jobPostRepository.getAllByCompanyId(companyId);
+    const openJobPosts = companyJobPosts.filter(isOpen);
+    const closedJobPostByOriginalId = companyJobPosts
+        .filter((jobPost) => !isOpen(jobPost))
+        .reduce((currentMap, jobPost) => {
+            const existing = currentMap.get(jobPost.originalId);
+
+            if (
+                !existing ||
+                (existing.closedAt || 0) < (jobPost.closedAt || 0)
+            ) {
+                currentMap.set(jobPost.originalId, jobPost);
+            }
+
+            return currentMap;
+        }, new Map<string, JobPost>());
 
     if (listedJobPostsData.length === 0) {
         logger.info(`No open positions in ${company.name}`);
@@ -160,21 +175,50 @@ const scrapUsingNewScrapper = async ({
     const scrappedJobPosts =
         await builtScrapper.scrapJobPost(newJobPostsToScrap);
 
+    const createJobPosts: ScrappedJobPost[] = [];
+    const reopenJobPosts: JobPost[] = [];
+
+    scrappedJobPosts.forEach((scrappedJobPost) => {
+        const closedJobPost = closedJobPostByOriginalId.get(
+            scrappedJobPost.originalId,
+        );
+
+        if (!closedJobPost) {
+            createJobPosts.push(scrappedJobPost);
+            return;
+        }
+
+        reopenJobPosts.push({
+            ...closedJobPost,
+            ...scrappedJobPost,
+            originalId: closedJobPost.originalId,
+            closedAt: null,
+            createdAt: scrappedJobPost.createdAt || Date.now(),
+        });
+    });
+
     console.log(
-        `[LISTED: ${listedJobPostsData.length}] [OPEN: ${openJobPosts.length}] [NEW: ${newJobPosts.length}] [CLOSED: ${closedJobPosts.length}]`,
+        `[LISTED: ${listedJobPostsData.length}] [OPEN: ${openJobPosts.length}] [NEW: ${newJobPosts.length}] [REOPENED: ${reopenJobPosts.length}] [CREATED: ${createJobPosts.length}] [CLOSED: ${closedJobPosts.length}]`,
     );
 
-    const createJobPostsPromises: Promise<JobPost>[] = scrappedJobPosts.map(
+    const createJobPostsPromises: Promise<JobPost>[] = createJobPosts.map(
         (jobPost) =>
             createJobPost({
                 ...jobPost,
                 company,
             }),
     );
+    const reopenJobPostsPromises: Promise<JobPost>[] = reopenJobPosts.map(
+        (jobPost) => jobPostRepository.update(jobPost),
+    );
     const closeJobPostsPromises: Promise<void>[] =
         closedJobPosts.map(closeJobPost);
 
-    await Promise.all([...createJobPostsPromises, ...closeJobPostsPromises]);
+    await Promise.all([
+        ...createJobPostsPromises,
+        ...reopenJobPostsPromises,
+        ...closeJobPostsPromises,
+    ]);
 };
 
 export const processCompany = async ({
