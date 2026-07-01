@@ -1,4 +1,5 @@
 import { AtpAgent, RichText } from '@atproto/api';
+import { getErrorLogData } from 'shared/infrastructure/logger/getErrorLogData';
 import { logger } from 'shared/infrastructure/logger/logger';
 
 const BLUESKY_USER = process.env.BLUESKY_USER;
@@ -66,7 +67,14 @@ export const publishOnBluesky = async (posts: string[]): Promise<void> => {
         } catch (error) {
             const errorText = 'Error creating and publishing in bluesky';
             console.log(errorText, error);
-            logger.error(new Error(errorText), error);
+            logger.error(
+                new Error(errorText),
+                getErrorLogData(error, {
+                    platform: 'bluesky',
+                    postIndex: i,
+                    postCount: posts.length,
+                }),
+            );
         }
     }
 };

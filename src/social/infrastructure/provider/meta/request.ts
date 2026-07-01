@@ -1,3 +1,4 @@
+import { getErrorLogData } from 'shared/infrastructure/logger/getErrorLogData';
 import { logger } from 'shared/infrastructure/logger/logger';
 
 const THREADS_API_BASE_URL = 'https://graph.threads.net/v1.0';
@@ -143,7 +144,14 @@ export const publishThread = async (posts: string[]): Promise<void> => {
         } catch (error) {
             const errorText = 'Error creating and publishing thread:';
             console.log(errorText, error);
-            logger.error(new Error(errorText), error);
+            logger.error(
+                new Error(errorText),
+                getErrorLogData(error, {
+                    platform: 'threads',
+                    postIndex: i,
+                    postCount: posts.length,
+                }),
+            );
         }
     }
 };

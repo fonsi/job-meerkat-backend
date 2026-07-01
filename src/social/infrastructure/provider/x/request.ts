@@ -1,3 +1,4 @@
+import { getErrorLogData } from 'shared/infrastructure/logger/getErrorLogData';
 import { logger } from 'shared/infrastructure/logger/logger';
 import crypto from 'crypto';
 
@@ -96,32 +97,27 @@ const createTweet = async (
     text: string,
     replyToId?: string,
 ): Promise<string> => {
-    try {
-        const url = `${X_API_BASE_URL}${X_API_ENDPOINTS.TWEETS}`;
-        const body = JSON.stringify({
-            text,
-            ...(replyToId && { reply: { in_reply_to_tweet_id: replyToId } }),
-        });
+    const url = `${X_API_BASE_URL}${X_API_ENDPOINTS.TWEETS}`;
+    const body = JSON.stringify({
+        text,
+        ...(replyToId && { reply: { in_reply_to_tweet_id: replyToId } }),
+    });
 
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                Authorization: generateOAuth1Header('POST', url),
-                'Content-Type': 'application/json',
-            },
-            body,
-        });
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            Authorization: generateOAuth1Header('POST', url),
+            'Content-Type': 'application/json',
+        },
+        body,
+    });
 
-        if (!response.ok) {
-            throw new Error(`Error creating tweet: ${await response.text()}`);
-        }
-
-        const data = (await response.json()) as TweetResponse;
-        return data.data.id;
-    } catch (error) {
-        logger.error(new Error('Error creating tweet:'), error);
-        throw error;
+    if (!response.ok) {
+        throw new Error(`Error creating tweet: ${await response.text()}`);
     }
+
+    const data = (await response.json()) as TweetResponse;
+    return data.data.id;
 };
 
 export const publishOnX = async (posts: string[]): Promise<void> => {
@@ -148,7 +144,14 @@ export const publishOnX = async (posts: string[]): Promise<void> => {
         } catch (error) {
             const errorText = 'Error publishing tweet:';
             console.log(errorText, error);
-            logger.error(new Error(errorText), error);
+            logger.error(
+                new Error(errorText),
+                getErrorLogData(error, {
+                    platform: 'x',
+                    postIndex: i,
+                    postCount: posts.length,
+                }),
+            );
         }
     }
 };
