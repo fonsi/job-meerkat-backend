@@ -68,6 +68,30 @@ import { HORIZON_3_NAME, horizon3Scrapper } from './horizon3';
 import { PROTONAI_NAME, protonaiScrapper } from './protonai';
 import { BLUESKY_NAME, blueskyScrapper } from './bluesky';
 import { BUBBLE_NAME, bubbleScrapper } from './bubble';
+import { TWITCH_NAME, twitchScrapper } from './twitch';
+import { ASHBY_NAME, ashbyScrapper } from './ashby';
+import { ATTIO_NAME, attioScrapper } from './attio';
+import { BUFFER_NAME, bufferScrapper } from './buffer';
+import { CAMUNDA_NAME, camundaScrapper } from './camunda';
+import { CHECKLY_NAME, checklyScrapper } from './checkly';
+import { CHROMATIC_NAME, chromaticScrapper } from './chromatic';
+import { CONSENSYS_NAME, consensysScrapper } from './consensys';
+import { DUALENTRY_NAME, dualentryScrapper } from './dualentry';
+import { FINGERPRINT_NAME, fingerprintScrapper } from './fingerprint';
+import { FREEWILL_NAME, freewillScrapper } from './freewill';
+import { GEM_NAME, gemScrapper } from './gem';
+import { GUSTO_NAME, gustoScrapper } from './gusto';
+import { HOP_SKIP_DRIVE_NAME, hopSkipDriveScrapper } from './hopSkipDrive';
+import { ISTARI_DIGITAL_NAME, istariDigitalScrapper } from './istariDigital';
+import { MYSTEN_LABS_NAME, mystenLabsScrapper } from './mystenLabs';
+import { REGRELLO_NAME, regrelloScrapper } from './regrello';
+import { RIVER_NAME, riverScrapper } from './river';
+import { SANDBOX_AQ_NAME, sandboxAQScrapper } from './sandboxAQ';
+import { SENTRY_NAME, sentryScrapper } from './sentry';
+import { SUPERMOVE_NAME, supermoveScrapper } from './supermove';
+import { VERCEL_NAME, vercelScrapper } from './vercel';
+import { WAVE_NAME, waveScrapper } from './wave';
+import { WISPR_FLOW_NAME, wisprFlowScrapper } from './wisprFlow';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -120,6 +144,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return amondoScrapper;
         case ASSEMBLY_AI_NAME:
             return assemblyAiScrapper;
+        case ASHBY_NAME:
+            return ashbyScrapper;
         case ASTRONOMER_NAME:
             return astronomerScrapper;
         case AXIOS_HQ_NAME:
@@ -244,6 +270,52 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return lightdashScrapper;
         case TINYBIRD_NAME:
             return tinybirdScrapper;
+        case ATTIO_NAME:
+            return attioScrapper;
+        case BUFFER_NAME:
+            return bufferScrapper;
+        case CAMUNDA_NAME:
+            return camundaScrapper;
+        case CHECKLY_NAME:
+            return checklyScrapper;
+        case CHROMATIC_NAME:
+            return chromaticScrapper;
+        case CONSENSYS_NAME:
+            return consensysScrapper;
+        case DUALENTRY_NAME:
+            return dualentryScrapper;
+        case FINGERPRINT_NAME:
+            return fingerprintScrapper;
+        case FREEWILL_NAME:
+            return freewillScrapper;
+        case GEM_NAME:
+            return gemScrapper;
+        case GUSTO_NAME:
+            return gustoScrapper;
+        case HOP_SKIP_DRIVE_NAME:
+            return hopSkipDriveScrapper;
+        case ISTARI_DIGITAL_NAME:
+            return istariDigitalScrapper;
+        case MYSTEN_LABS_NAME:
+            return mystenLabsScrapper;
+        case REGRELLO_NAME:
+            return regrelloScrapper;
+        case RIVER_NAME:
+            return riverScrapper;
+        case SANDBOX_AQ_NAME:
+            return sandboxAQScrapper;
+        case SENTRY_NAME:
+            return sentryScrapper;
+        case SUPERMOVE_NAME:
+            return supermoveScrapper;
+        case VERCEL_NAME:
+            return vercelScrapper;
+        case WAVE_NAME:
+            return waveScrapper;
+        case WISPR_FLOW_NAME:
+            return wisprFlowScrapper;
+        case TWITCH_NAME:
+            return twitchScrapper;
         case ZAPIER_NAME:
             return zapierScrapper;
         case ZERO_X_NAME:
