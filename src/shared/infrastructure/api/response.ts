@@ -38,6 +38,30 @@ export const unauthorized = (): APIGatewayProxyResult => ({
     headers: RESPONSE_HEADERS,
 });
 
+export const unauthorizedBody = (
+    body: Record<string, unknown>,
+): APIGatewayProxyResult => ({
+    statusCode: RESPONSE_CODE.UNAUTHORIZED,
+    body: JSON.stringify(body),
+    headers: RESPONSE_HEADERS,
+});
+
+export const notFoundBody = (
+    body: Record<string, unknown>,
+): APIGatewayProxyResult => ({
+    statusCode: RESPONSE_CODE.NOT_FOUND,
+    body: JSON.stringify(body),
+    headers: RESPONSE_HEADERS,
+});
+
+export const conflictBody = (
+    body: Record<string, unknown>,
+): APIGatewayProxyResult => ({
+    statusCode: RESPONSE_CODE.CONFLICT,
+    body: JSON.stringify(body),
+    headers: RESPONSE_HEADERS,
+});
+
 export const methodNotAllowed = (): APIGatewayProxyResult =>
     METHOD_NOT_ALLOWED_RESPONSE;
 

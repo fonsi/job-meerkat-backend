@@ -3,7 +3,7 @@ import { ReportEventData } from './reportEvent';
 
 type ReportEnqueuer = (report: ReportEventData) => Promise<void>;
 
-const QUEUE_URL = process.env.SEND_REPORT_QUEUE_NAME;
+const QUEUE_URL = process.env.SEND_REPORT_QUEUE_URL;
 
 export const enqueue: ReportEnqueuer = async (report) =>
     await sendMessage({

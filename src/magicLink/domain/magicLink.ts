@@ -1,4 +1,4 @@
-export type MagicLinkPurpose = 'newsletter_preferences';
+export type MagicLinkPurpose = 'newsletter_confirm' | 'newsletter_preferences';
 
 export type MagicLinkSubject = {
     type: 'report';

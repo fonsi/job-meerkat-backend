@@ -1,54 +1,90 @@
 import { getCategories } from 'category/application/getCategories';
-import { verifyMagicLink } from 'magicLink/application/verifyMagicLink';
+import { getAllCompanies } from 'company/application/getAllCompanies';
+import { verifyMagicLinkWithReason } from 'magicLink/application/verifyMagicLink';
 import { dynamodbMagicLinkRepository } from 'magicLink/infrastructure/persistance/dynamodb/dynamodbMagicLinkRepository';
-import { companyRepository } from 'company/infrastructure/persistance/dynamodb/dynamodbCompanyRepository';
 import { normalizeEmail } from 'shared/infrastructure/email/normalizeEmail';
+import { ReportFrequency } from 'report/domain/report';
 import { reportRepository } from 'report/infrastructure/persistance/dynamodb/dynamodbReportRepository';
 import { mergeStoredOrDefault } from './defaultPreferences';
+
+export type NewsletterCompanyOption = {
+    id: string;
+    name: string;
+    logo: { url: string; background?: string };
+    jobPostsCount: number;
+};
 
 export type GetNewsletterPreferencesResult =
     | {
           ok: true;
           preferences: ReturnType<typeof mergeStoredOrDefault>;
+          frequency: ReportFrequency;
+          email: string;
           categories: ReturnType<typeof getCategories>;
-          companies: Array<{ id: string; name: string }>;
+          companies: NewsletterCompanyOption[];
       }
-    | { ok: false; reason: 'unauthorized' };
+    | { ok: false; reason: 'token_invalid' | 'token_expired' | 'not_found' };
+
+const sortByName = (a: { name: string }, b: { name: string }) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
 
 export const getNewsletterPreferences = async (event: {
     queryStringParameters?: Record<string, string> | null;
 }): Promise<GetNewsletterPreferencesResult> => {
     const token = event.queryStringParameters?.token;
     if (!token) {
-        return { ok: false, reason: 'unauthorized' };
+        return { ok: false, reason: 'token_invalid' };
     }
 
-    const verified = await verifyMagicLink({
+    const verified = await verifyMagicLinkWithReason({
         token,
         purpose: 'newsletter_preferences',
         repository: dynamodbMagicLinkRepository,
     });
 
-    if (!verified || verified.subject.type !== 'report') {
-        return { ok: false, reason: 'unauthorized' };
+    if (verified.ok === false) {
+        return { ok: false, reason: verified.reason };
     }
 
-    const report = await reportRepository.getById(verified.subject.reportId);
-    if (!report) {
-        return { ok: false, reason: 'unauthorized' };
+    if (verified.result.subject.type !== 'report') {
+        return { ok: false, reason: 'token_invalid' };
     }
 
-    if (normalizeEmail(report.email) !== normalizeEmail(verified.email)) {
-        return { ok: false, reason: 'unauthorized' };
+    const report = await reportRepository.getById(
+        verified.result.subject.reportId,
+    );
+    if (!report || report.status !== 'active') {
+        return { ok: false, reason: 'not_found' };
+    }
+
+    if (
+        normalizeEmail(report.email) !== normalizeEmail(verified.result.email)
+    ) {
+        return { ok: false, reason: 'token_invalid' };
     }
 
     const categories = getCategories();
-    const companies = await companyRepository.getAll();
+    const companies = await getAllCompanies({ countJobPosts: true });
+    const preferences = mergeStoredOrDefault(report.preferences);
+
+    if (!report.preferences) {
+        await reportRepository.updatePreferences(report.id, preferences);
+    }
 
     return {
         ok: true,
-        preferences: mergeStoredOrDefault(report.preferences),
+        preferences,
+        frequency: report.frequency,
+        email: report.email,
         categories,
-        companies: companies.map((c) => ({ id: c.id, name: c.name })),
+        companies: companies
+            .map((c) => ({
+                id: c.id,
+                name: c.name,
+                logo: c.logo,
+                jobPostsCount:
+                    'jobPostsCount' in c ? (c.jobPostsCount as number) : 0,
+            }))
+            .sort(sortByName),
     };
 };

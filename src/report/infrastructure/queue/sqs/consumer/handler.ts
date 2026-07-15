@@ -1,7 +1,10 @@
 import 'source-map-support/register';
 import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { initializeLogger, logger } from 'shared/infrastructure/logger/logger';
-import { sendDailyReport } from 'report/application/sendDailyReport';
+import {
+    sendDailyReport,
+    sendWeeklyReport,
+} from 'report/application/sendReport';
 import { ReportEventData } from '../reportEvent';
 
 const getEventData = (record): ReportEventData => {
@@ -24,6 +27,9 @@ export const index = async (event) => {
                 switch (reportType) {
                     case 'daily':
                         await sendDailyReport({ email: data.email });
+                        return;
+                    case 'weekly':
+                        await sendWeeklyReport({ email: data.email });
                         return;
                     default:
                         throw new Error('unknown report type');

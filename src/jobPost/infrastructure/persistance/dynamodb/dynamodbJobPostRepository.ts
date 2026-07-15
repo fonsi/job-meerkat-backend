@@ -21,6 +21,7 @@ import {
     Update,
     GetAllOpen,
     GetLatest,
+    GetLatestSince,
     FROM_WHEN,
     GetBySlug,
     GetAllClosedBefore,
@@ -125,18 +126,19 @@ const getByIdAndCompanyId: GetByIdAndCompanyId = async (id, companyId) => {
     }
 };
 
-const getLatest: GetLatest = async () => {
+const getLatestSince: GetLatestSince = async (sinceMs) => {
     try {
         const allOpenItems = await getAllOpen();
-        const latestItems = allOpenItems
-            .filter((jobPost) => jobPost.createdAt > Date.now() - FROM_WHEN)
+        const cutoff = Date.now() - sinceMs;
+        return allOpenItems
+            .filter((jobPost) => jobPost.createdAt > cutoff)
             .sort((a, b) => b.createdAt - a.createdAt);
-
-        return latestItems;
     } catch (e) {
         throw new DynamodbError(e);
     }
 };
+
+const getLatest: GetLatest = async () => getLatestSince(FROM_WHEN);
 
 const close: Close = async (jobPostId, companyId, closedAt) => {
     const update: UpdateItemExpression = {
@@ -350,6 +352,7 @@ export const jobPostRepository = {
     getByIdAndCompanyId,
     getBySlug,
     getLatest,
+    getLatestSince,
     close,
     update,
     getAllClosedBefore,

@@ -1,5 +1,5 @@
 import { randomBytes } from 'crypto';
-import { MAGIC_LINK_TTL_MS } from 'magicLink/domain/constants';
+import { magicLinkTtlMs } from 'magicLink/domain/constants';
 import {
     MagicLinkPurpose,
     MagicLinkSubject,
@@ -33,7 +33,7 @@ export const issueMagicLink = async ({
     const token = randomBytes(32).toString('base64url');
     const tokenHash = hashMagicLinkToken(token);
     const issuedAt = Date.now();
-    const expiresAt = issuedAt + MAGIC_LINK_TTL_MS;
+    const expiresAt = issuedAt + magicLinkTtlMs(purpose);
 
     const row: StoredMagicLink = {
         tokenHash,

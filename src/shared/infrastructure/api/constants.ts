@@ -16,13 +16,13 @@ export const RESPONSE_CODE = {
     BAD_REQUEST: 400,
     UNAUTHORIZED: 401,
     NOT_FOUND: 404,
+    CONFLICT: 409,
     METHOD_NOT_ALLOWED: 405,
     INTERNAL_ERROR: 500,
 };
 
 export const RESPONSE_HEADERS = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Credentials': true,
 };
 
 export const SUCCESS_RESPONSE: APIGatewayProxyResult = {

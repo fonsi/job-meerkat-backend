@@ -39,9 +39,15 @@ const allOpenPrefs = (): NewsletterPreferences => ({
 });
 
 describe('filterJobPostsForNewsletter', () => {
-    it('returns all posts when preferences undefined', () => {
-        const posts = [basePost({})];
-        expect(filterJobPostsForNewsletter(posts, undefined)).toEqual(posts);
+    it('applies publicSalaryOnly default when preferences undefined', () => {
+        const withSalary = basePost({});
+        const withoutSalary = basePost({
+            salaryRange: null,
+            id: '00000000-0000-4000-8000-000000000005',
+        });
+        expect(
+            filterJobPostsForNewsletter([withSalary, withoutSalary], undefined),
+        ).toEqual([withSalary]);
     });
 
     it('returns all posts when all dimensions are null (allow all)', () => {

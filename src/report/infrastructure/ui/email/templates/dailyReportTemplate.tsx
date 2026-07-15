@@ -1,109 +1,304 @@
 import React from 'react';
-import { Body, Container, Head, Heading, Html, Row, Column, Section, Img, Text, Link, render, toPlainText } from '@react-email/components';
-import { JobPostsByCompanyType } from 'report/application/sendDailyReport';
+import {
+    Column,
+    Img,
+    Link,
+    Row,
+    Section,
+    Text,
+} from '@react-email/components';
+import { JobPostsByCompanyType } from 'report/application/sendReport';
+import { ReportFrequency } from 'report/domain/report';
+import {
+    EmailShell,
+    buildEmailHtml,
+    emailColors,
+} from 'shared/infrastructure/email/templates/emailShell';
 import { buildJobPostPageUrl } from 'shared/infrastructure/url/buildJobPostPageUrl';
 
-type BuildDailyReportTemplate = (props: DailyReportTemplateProps) => Promise<{
+type BuildJobReportTemplate = (props: JobReportTemplateProps) => Promise<{
     html: string;
     text: string;
 }>;
 
-type DailyReportTemplateProps = {
+type JobReportTemplateProps = {
     jobPostsByCompany: JobPostsByCompanyType;
     totalJobPosts: number;
     totalCompanies: number;
-}
+    frequency: ReportFrequency;
+    manageUrl: string;
+    unsubscribeUrl: string;
+};
 
-const DailyReportTemplate = ({ jobPostsByCompany, totalJobPosts, totalCompanies }: DailyReportTemplateProps) => {
+const titleForFrequency = (frequency: ReportFrequency) =>
+    frequency === 'weekly' ? 'Weekly Job Report' : 'Daily Job Report';
+
+const cadenceLabel = (frequency: ReportFrequency) =>
+    frequency === 'weekly' ? 'weekly' : 'daily';
+
+const JobReportTemplate = ({
+    jobPostsByCompany,
+    totalJobPosts,
+    totalCompanies,
+    frequency,
+    manageUrl,
+    unsubscribeUrl,
+}: JobReportTemplateProps) => {
+    const title = titleForFrequency(frequency);
+
     return (
-        <Html lang="en">
-            <Head title="Daily Jobs Report" />
-            <Body>
-                <Container style={{ width: '100%', maxWidth: '680px' }}>
-                    <Section style={{ backgroundColor: '#1a1a1a', padding: '16px', borderRadius: '8px 8px 0 0', color: '#fefefe' }}>
-                        <Heading style={{ textAlign: 'center' }}>Daily Job Report</Heading>
-                        <Text style={{ textAlign: 'center' }}>Your curated list of the latest job opportunities</Text>
-                    </Section>
-                    <Section style={{ marginTop: '24px' }}>
-                        <Row>
-                            <Column
-                                align="center"
+        <EmailShell
+            title={title}
+            preview={`Your curated list of ${totalJobPosts} new job opportunities`}
+        >
+            <Text
+                style={{
+                    color: emailColors.muted,
+                    fontSize: '15px',
+                    lineHeight: '1.6',
+                    margin: '0 0 24px',
+                }}
+            >
+                Your curated list of the latest job opportunities.
+            </Text>
+
+            <Section style={{ marginBottom: '8px' }}>
+                <Row>
+                    <Column align="center" style={{ width: '50%' }}>
+                        <Text
+                            style={{
+                                color: emailColors.text,
+                                fontSize: '28px',
+                                fontWeight: 'bold',
+                                margin: '0',
+                                textAlign: 'center',
+                            }}
+                        >
+                            {totalJobPosts}
+                        </Text>
+                        <Text
+                            style={{
+                                color: emailColors.muted,
+                                fontSize: '14px',
+                                margin: '4px 0 0',
+                                textAlign: 'center',
+                            }}
+                        >
+                            New Jobs
+                        </Text>
+                    </Column>
+                    <Column align="center" style={{ width: '50%' }}>
+                        <Text
+                            style={{
+                                color: emailColors.text,
+                                fontSize: '28px',
+                                fontWeight: 'bold',
+                                margin: '0',
+                                textAlign: 'center',
+                            }}
+                        >
+                            {totalCompanies}
+                        </Text>
+                        <Text
+                            style={{
+                                color: emailColors.muted,
+                                fontSize: '14px',
+                                margin: '4px 0 0',
+                                textAlign: 'center',
+                            }}
+                        >
+                            Companies
+                        </Text>
+                    </Column>
+                </Row>
+            </Section>
+
+            {Object.values(jobPostsByCompany).map(({ company, jobPosts }) => (
+                <Section key={company.id} style={{ marginTop: '28px' }}>
+                    <Row
+                        style={{
+                            backgroundColor: '#111111',
+                            borderRadius: '4px',
+                            padding: '8px 12px',
+                        }}
+                    >
+                        <Column width="56px">
+                            <Img
+                                src={company.logo.url}
+                                alt={company.name}
+                                width={44}
                                 style={{
-                                    width: '50%',
-                                    height: 80,
+                                    display: 'block',
+                                    height: 'auto',
+                                    width: '44px',
+                                }}
+                            />
+                        </Column>
+                        <Column>
+                            <Text
+                                style={{
+                                    color: '#fefefe',
+                                    fontSize: '18px',
+                                    fontWeight: '600',
+                                    margin: '0',
                                 }}
                             >
-                                <Text style={{ textAlign: 'center', fontSize: '30px', fontWeight: 'bold' }}>{totalJobPosts}</Text>
-                                <Text style={{ textAlign: 'center', fontSize: '16px' }}>New Jobs</Text>
-                            </Column>
-                            <Column
-                                align="center"
+                                {company.name}
+                            </Text>
+                        </Column>
+                    </Row>
+                    {jobPosts.map((jobPost) => (
+                        <Row
+                            key={jobPost.id}
+                            style={{
+                                border: '1px solid #e5e5e5',
+                                borderRadius: '4px',
+                                marginTop: '12px',
+                                padding: '12px 14px',
+                            }}
+                        >
+                            <Link
                                 style={{
-                                    width: '50%',
-                                    height: 80,
+                                    color: emailColors.text,
+                                    fontSize: '18px',
+                                    fontWeight: '600',
+                                    textDecoration: 'none',
                                 }}
+                                href={buildJobPostPageUrl(jobPost.slug)}
                             >
-                                <Text style={{ textAlign: 'center', fontSize: '30px', fontWeight: 'bold' }}>{totalCompanies}</Text>
-                                <Text style={{ textAlign: 'center', fontSize: '16px' }}>Companies</Text>
-                            </Column>
+                                {jobPost.title}
+                            </Link>
+                            {jobPost.location ? (
+                                <Text
+                                    style={{
+                                        color: emailColors.muted,
+                                        fontSize: '14px',
+                                        margin: '6px 0 0',
+                                    }}
+                                >
+                                    {jobPost.location}
+                                </Text>
+                            ) : null}
+                            {jobPost.category ? (
+                                <Text
+                                    style={{
+                                        color: emailColors.muted,
+                                        fontSize: '14px',
+                                        margin: '2px 0 0',
+                                    }}
+                                >
+                                    {jobPost.category}
+                                </Text>
+                            ) : null}
+                            {jobPost.workplace ? (
+                                <Text
+                                    style={{
+                                        color: emailColors.muted,
+                                        fontSize: '14px',
+                                        margin: '2px 0 0',
+                                    }}
+                                >
+                                    {jobPost.workplace}
+                                </Text>
+                            ) : null}
+                            {jobPost.salaryRange ? (
+                                <Text
+                                    style={{
+                                        color: emailColors.text,
+                                        fontSize: '16px',
+                                        fontWeight: '600',
+                                        margin: '6px 0 0',
+                                    }}
+                                >
+                                    {jobPost.salaryRange.min
+                                        ? `${jobPost.salaryRange.min}-${jobPost.salaryRange.max} ${jobPost.salaryRange.currency}/${jobPost.salaryRange.period}`
+                                        : `${jobPost.salaryRange.max} ${jobPost.salaryRange.currency}/${jobPost.salaryRange.period}`}
+                                </Text>
+                            ) : null}
                         </Row>
-                    </Section>
-                    <Section>
-                        {Object.values(jobPostsByCompany).map(({ company, jobPosts }) => (
-                            <Section key={company.id}>
-                                <Row style={{ backgroundColor: '#333', padding: '4px 8px', borderRadius: '4px', marginTop: '24px' }}>
-                                    <Column width="60px">
-                                        <Img 
-                                            src={company.logo.url} 
-                                            alt={company.name} 
-                                            width={50}
-                                            style={{ 
-                                                width: '50px',
-                                                height: 'auto',
-                                                display: 'block'
-                                            }} 
-                                        />
-                                    </Column>
-                                    <Column>
-                                        <Text style={{ fontSize: '20px', fontWeight: '600', color: '#fefefe' }}>{company.name}</Text>
-                                    </Column>
-                                </Row>
-                                {jobPosts.map((jobPost) => (
-                                    <Row style={{ marginTop: '16px', padding: '8px 12px', borderRadius: '4px', border: '1px solid #ddd' }} key={jobPost.id}>
-                                        <Link style={{ textDecoration: 'none', color: '#333', fontSize: '24px', fontWeight: '600' }} href={buildJobPostPageUrl(jobPost.slug)}>{jobPost.title}</Link>
-                                        {jobPost.location && (
-                                            <Text style={{ fontSize: '14px', margin: '2px 0 1px' }}>📍 {jobPost.location}</Text>
-                                        )}
-                                        {jobPost.category && (
-                                            <Text style={{ fontSize: '14px', margin: '1px 0' }}>🏷️ {jobPost.category}</Text>
-                                        )}
-                                        {jobPost.workplace && (
-                                            <Text style={{ fontSize: '14px', margin: '1px 0' }}>💼 {jobPost.workplace}</Text>
-                                        )}
-                                        <Text style={{ fontSize: '18px', fontWeight: '600', margin: '2px 0' }}>{jobPost.salaryRange?.min ? `${jobPost.salaryRange.min}-${jobPost.salaryRange.max} ${jobPost.salaryRange.currency}/${jobPost.salaryRange.period}` : ''}</Text>
-                                    </Row>
-                                ))}
-                            </Section>
-                        ))}
-                    </Section>
-                    <Section style={{ marginTop: '24px' }}>
-                        <Text style={{ textAlign: 'center', color: '#c1c1c1', margin: '4px 0' }}>Thank you for using JobMeerkat! 🎯</Text>
-                        <Text style={{ textAlign: 'center', color: '#c1c1c1', margin: '4px 0' }}>This email was sent because you subscribed to our daily job reports.</Text>
-                        <Text style={{ textAlign: 'center', color: '#c1c1c1', margin: '4px 0' }}>If you have any questions or feedback, please contact us at <Link href="mailto:jobmeerkat@gmail.com">jobmeerkat@gmail.com</Link></Text>
-                    </Section>
-                </Container>
-            </Body>
-        </Html>
+                    ))}
+                </Section>
+            ))}
+
+            <Section style={{ marginTop: '32px' }}>
+                <Text
+                    style={{
+                        color: emailColors.muted,
+                        fontSize: '13px',
+                        margin: '4px 0',
+                        textAlign: 'center',
+                    }}
+                >
+                    Thank you for using JobMeerkat.
+                </Text>
+                <Text
+                    style={{
+                        color: emailColors.muted,
+                        fontSize: '13px',
+                        margin: '4px 0',
+                        textAlign: 'center',
+                    }}
+                >
+                    This email was sent because you subscribed to our{' '}
+                    {cadenceLabel(frequency)} job reports.
+                </Text>
+                {manageUrl ? (
+                    <Text
+                        style={{
+                            color: emailColors.muted,
+                            fontSize: '13px',
+                            margin: '4px 0',
+                            textAlign: 'center',
+                        }}
+                    >
+                        <Link
+                            href={manageUrl}
+                            style={{ color: emailColors.link }}
+                        >
+                            Manage your subscription
+                        </Link>
+                    </Text>
+                ) : null}
+                {unsubscribeUrl ? (
+                    <Text
+                        style={{
+                            color: emailColors.muted,
+                            fontSize: '13px',
+                            margin: '4px 0',
+                            textAlign: 'center',
+                        }}
+                    >
+                        <Link
+                            href={unsubscribeUrl}
+                            style={{ color: emailColors.link }}
+                        >
+                            Unsubscribe
+                        </Link>
+                    </Text>
+                ) : null}
+                <Text
+                    style={{
+                        color: emailColors.muted,
+                        fontSize: '13px',
+                        margin: '4px 0',
+                        textAlign: 'center',
+                    }}
+                >
+                    Questions or feedback?{' '}
+                    <Link
+                        href="mailto:jobmeerkat@gmail.com"
+                        style={{ color: emailColors.link }}
+                    >
+                        jobmeerkat@gmail.com
+                    </Link>
+                </Text>
+            </Section>
+        </EmailShell>
     );
 };
 
-export const buildDailyReportTemplate: BuildDailyReportTemplate = async ({ jobPostsByCompany, totalJobPosts, totalCompanies }) => {
-    const component = <DailyReportTemplate jobPostsByCompany={jobPostsByCompany} totalJobPosts={totalJobPosts} totalCompanies={totalCompanies} />;
-    const html = await render(component);
-    const text = toPlainText(html);
+export const buildJobReportTemplate: BuildJobReportTemplate = async (props) =>
+    buildEmailHtml(<JobReportTemplate {...props} />);
 
-    return {
-        html,
-        text,
-    }
-};
+/** @deprecated Use buildJobReportTemplate */
+export const buildDailyReportTemplate = buildJobReportTemplate;

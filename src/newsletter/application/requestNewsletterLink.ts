@@ -1,60 +1,24 @@
-import { issueMagicLink } from 'magicLink/application/issueMagicLink';
-import { dynamodbMagicLinkRepository } from 'magicLink/infrastructure/persistance/dynamodb/dynamodbMagicLinkRepository';
+import { sendPreferencesLinkForReport } from 'newsletter/infrastructure/email/sendNewsletterEmails';
+import { buildSettingsUrl } from 'newsletter/infrastructure/url/buildNewsletterUrls';
 import { normalizeEmail } from 'shared/infrastructure/email/normalizeEmail';
 import { reportRepository } from 'report/infrastructure/persistance/dynamodb/dynamodbReportRepository';
-import { sendNewsletterMagicLinkEmail } from 'newsletter/infrastructure/email/sendNewsletterMagicLinkEmail';
-
-type Body = {
-    email?: string;
-};
-
-const buildSettingsUrl = (token: string): string | null => {
-    const base = process.env.NEWSLETTER_SETTINGS_BASE_URL?.trim();
-    if (!base) {
-        console.warn(
-            'NEWSLETTER_SETTINGS_BASE_URL is not set; skipping magic link email',
-        );
-        return null;
-    }
-    const sep = base.includes('?') ? '&' : '?';
-    return `${base}${sep}token=${encodeURIComponent(token)}`;
-};
+import { parseEmailFromBody } from './parseEmailFromBody';
 
 export const requestNewsletterLink = async (event: {
     body?: string | null;
-}): Promise<{ sent: boolean }> => {
-    let body: Body = {};
-    try {
-        if (event.body) {
-            body = JSON.parse(event.body) as Body;
-        }
-    } catch {
-        return { sent: false };
-    }
-
-    const raw = body.email;
-    if (typeof raw !== 'string' || !raw.trim()) {
-        return { sent: false };
+}): Promise<{ ok: true }> => {
+    const raw = parseEmailFromBody(event.body);
+    if (!raw) {
+        return { ok: true };
     }
 
     const email = normalizeEmail(raw);
     const report = await reportRepository.getByEmailNormalized(email);
 
-    if (!report) {
-        return { sent: false };
+    if (!report || report.status !== 'active') {
+        return { ok: true };
     }
 
-    const { token } = await issueMagicLink({
-        purpose: 'newsletter_preferences',
-        subject: { type: 'report', reportId: report.id },
-        email: report.email,
-        repository: dynamodbMagicLinkRepository,
-    });
-
-    const url = buildSettingsUrl(token);
-    if (url) {
-        await sendNewsletterMagicLinkEmail({ to: report.email, linkUrl: url });
-    }
-
-    return { sent: !!url };
+    await sendPreferencesLinkForReport(report, buildSettingsUrl);
+    return { ok: true };
 };

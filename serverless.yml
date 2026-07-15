@@ -18,6 +18,7 @@ params:
         processCompanySchedule: cron(0 0 1 1 ? 1970) # never
         socialPostsSchedule: cron(0 0 1 1 ? 1970) # never
         reportsSchedule: cron(0 0 1 1 ? 1970) # never
+        weeklyReportsSchedule: cron(0 0 1 1 ? 1970) # never
         socialPostsCheck: cron(0 0 1 1 ? 1970) # never
         archiveClosedJobPostsSchedule: cron(0 0 1 1 ? 1970) # never
     production:
@@ -25,6 +26,7 @@ params:
         socialPostsSchedule: cron(0 2 ? * * *) # every day at 2 am
         socialPostsCheck: cron(0 * ? * * *) # every day every hour
         reportsSchedule: cron(0 5 ? * * *) # every day at 5 am
+        weeklyReportsSchedule: cron(0 5 ? * MON *) # every Monday at 5 am
         archiveClosedJobPostsSchedule: cron(0 6 ? * SUN *) # every Sunday at 6 am
 provider:
     name: aws
@@ -42,6 +44,8 @@ provider:
         PROCESS_COMPANY_QUEUE_NAME: ${sls:stage}-process-company-sqs-queue.fifo
         PUBLISH_SOCIAL_POST_QUEUE_NAME: ${sls:stage}-publish-social-post-sqs-queue
         SEND_REPORT_QUEUE_NAME: ${sls:stage}-send-report-sqs-queue
+        SEND_REPORT_QUEUE_URL:
+            Ref: sendReportQueue
         OPENAI_API_KEY: ${env:OPENAI_API_KEY}
         ASSETS_URL: ${env:ASSETS_URL}
         ROLLBAR_ACCESS_TOKEN: ${env:ROLLBAR_ACCESS_TOKEN}
@@ -58,8 +62,21 @@ provider:
         MAILGUN_API_KEY: ${env:MAILGUN_API_KEY}
         MAGIC_LINK_PEPPER: ${env:MAGIC_LINK_PEPPER, ''}
         NEWSLETTER_SETTINGS_BASE_URL: ${env:NEWSLETTER_SETTINGS_BASE_URL, ''}
+        NEWSLETTER_CONFIRM_BASE_URL: ${env:NEWSLETTER_CONFIRM_BASE_URL, ''}
+        NEWSLETTER_UNSUBSCRIBE_BASE_URL: ${env:NEWSLETTER_UNSUBSCRIBE_BASE_URL, ''}
     logs:
         httpApi: true
+    httpApi:
+        cors:
+            allowedOrigins:
+                - '*'
+            allowedHeaders:
+                - Content-Type
+            allowedMethods:
+                - GET
+                - POST
+                - PUT
+                - OPTIONS
     iamRoleStatements:
         - Effect: 'Allow'
           Resource:
@@ -146,12 +163,27 @@ resources:
                 AttributeDefinitions:
                     - AttributeName: id
                       AttributeType: S
+                    - AttributeName: emailNormalized
+                      AttributeType: S
+                    - AttributeName: unsubscribeToken
+                      AttributeType: S
                 KeySchema:
                     - AttributeName: id
                       KeyType: HASH
-                ProvisionedThroughput:
-                    ReadCapacityUnits: 1
-                    WriteCapacityUnits: 1
+                BillingMode: PAY_PER_REQUEST
+                GlobalSecondaryIndexes:
+                    - IndexName: emailNormalized-index
+                      KeySchema:
+                          - AttributeName: emailNormalized
+                            KeyType: HASH
+                      Projection:
+                          ProjectionType: ALL
+                    - IndexName: unsubscribeToken-index
+                      KeySchema:
+                          - AttributeName: unsubscribeToken
+                            KeyType: HASH
+                      Projection:
+                          ProjectionType: ALL
         magicLinkTable:
             Type: AWS::DynamoDB::Table
             Properties:
@@ -270,8 +302,16 @@ functions:
                   batchSize: 1
     scheduleReports:
         handler: src/report/infrastructure/api/schedule/handler.index
+        environment:
+            REPORT_SCHEDULE_FREQUENCY: daily
         events:
             - schedule: ${param:reportsSchedule}
+    scheduleWeeklyReports:
+        handler: src/report/infrastructure/api/schedule/handler.index
+        environment:
+            REPORT_SCHEDULE_FREQUENCY: weekly
+        events:
+            - schedule: ${param:weeklyReportsSchedule}
     archiveClosedJobPosts:
         handler: src/jobPost/infrastructure/api/archive/handler.index
         timeout: 30
@@ -282,7 +322,22 @@ functions:
         timeout: ${param:newsletterEndpointTimeout}
         events:
             - httpApi:
+                  path: /newsletter/subscribe
+                  method: POST
+            - httpApi:
+                  path: /newsletter/confirm
+                  method: POST
+            - httpApi:
                   path: /newsletter/request-link
+                  method: POST
+            - httpApi:
+                  path: /newsletter/unsubscribe/preview
+                  method: GET
+            - httpApi:
+                  path: /newsletter/unsubscribe/request-link
+                  method: POST
+            - httpApi:
+                  path: /newsletter/unsubscribe
                   method: POST
             - httpApi:
                   path: /newsletter/preferences

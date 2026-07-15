@@ -2,6 +2,7 @@ import { CompanyId } from 'company/domain/company';
 import { JobPost, JobPostId } from './jobPost';
 
 export const FROM_WHEN = 86400000; // 1 day
+export const FROM_WHEN_WEEKLY = 86400000 * 7; // 7 days
 
 export type Create = (jobPost: JobPost) => Promise<JobPost>;
 export type GetAll = () => Promise<JobPost[]>;
@@ -15,6 +16,7 @@ export type GetByIdAndCompanyId = (
     companyId: CompanyId,
 ) => Promise<JobPost | null>;
 export type GetLatest = () => Promise<JobPost[]>;
+export type GetLatestSince = (sinceMs: number) => Promise<JobPost[]>;
 export type Close = (
     jobPostId: JobPostId,
     companyId: CompanyId,
@@ -36,6 +38,7 @@ export interface JobPostRepository {
     getAllOpenByCompanyId: GetAllOpenByCompanyId;
     getByIdAndCompanyId: GetByIdAndCompanyId;
     getLatest: GetLatest;
+    getLatestSince: GetLatestSince;
     close: Close;
     update: Update;
     getBySlug: GetBySlug;

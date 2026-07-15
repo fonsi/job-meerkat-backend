@@ -4,7 +4,10 @@ import {
     Workplace,
     categoryTree,
 } from 'jobPost/domain/jobPost';
-import { NewsletterPreferences } from 'report/domain/newsletterPreferences';
+import {
+    NewsletterPreferences,
+    newsletterPreferencesDefaults,
+} from 'report/domain/newsletterPreferences';
 
 const buildSlugToCategoryMap = (): Map<string, Category> => {
     const m = new Map<string, Category>();
@@ -28,18 +31,15 @@ export const filterJobPostsForNewsletter = (
     jobPosts: JobPost[],
     preferences: NewsletterPreferences | undefined,
 ): JobPost[] => {
-    if (!preferences) {
-        return jobPosts;
-    }
-
+    const prefs = preferences ?? newsletterPreferencesDefaults();
     let out = jobPosts;
 
     if (
-        preferences.allowedCategorySlugs != null &&
-        preferences.allowedCategorySlugs.length > 0
+        prefs.allowedCategorySlugs != null &&
+        prefs.allowedCategorySlugs.length > 0
     ) {
         const allowed = new Set<Category>();
-        for (const slug of preferences.allowedCategorySlugs) {
+        for (const slug of prefs.allowedCategorySlugs) {
             const cat = SLUG_TO_CATEGORY.get(slug);
             if (cat) {
                 allowed.add(cat);
@@ -50,20 +50,14 @@ export const filterJobPostsForNewsletter = (
         }
     }
 
-    if (
-        preferences.allowedCompanyIds != null &&
-        preferences.allowedCompanyIds.length > 0
-    ) {
-        const allowed = new Set(preferences.allowedCompanyIds);
+    if (prefs.allowedCompanyIds != null && prefs.allowedCompanyIds.length > 0) {
+        const allowed = new Set(prefs.allowedCompanyIds);
         out = out.filter((j) => allowed.has(j.companyId));
     }
 
-    if (
-        preferences.allowedWorkplaces != null &&
-        preferences.allowedWorkplaces.length > 0
-    ) {
+    if (prefs.allowedWorkplaces != null && prefs.allowedWorkplaces.length > 0) {
         const allowed = new Set<Workplace>();
-        for (const w of preferences.allowedWorkplaces) {
+        for (const w of prefs.allowedWorkplaces) {
             const wp = WORKPLACE_FROM_PREF[w];
             if (wp) {
                 allowed.add(wp);
@@ -74,7 +68,7 @@ export const filterJobPostsForNewsletter = (
         }
     }
 
-    if (preferences.publicSalaryOnly) {
+    if (prefs.publicSalaryOnly) {
         out = out.filter((j) => j.salaryRange !== null);
     }
 

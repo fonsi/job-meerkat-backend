@@ -1,5 +1,5 @@
 export type ReportEventData = {
-    reportType: 'daily';
+    reportType: 'daily' | 'weekly';
     data: {
         email: string;
     };

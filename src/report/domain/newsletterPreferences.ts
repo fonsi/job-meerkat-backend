@@ -13,7 +13,7 @@ export const newsletterPreferencesDefaults = (): NewsletterPreferences => ({
     allowedCategorySlugs: null,
     allowedCompanyIds: null,
     allowedWorkplaces: null,
-    publicSalaryOnly: false,
+    publicSalaryOnly: true,
     updatedAt: 0,
 });
 
