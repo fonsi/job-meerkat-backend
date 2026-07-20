@@ -19,12 +19,16 @@ import {
     success,
     unauthorizedBody,
 } from 'shared/infrastructure/api/response';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
+import { initializeLogger, logger } from 'shared/infrastructure/logger/logger';
 
 const pathEndsWith = (path: string, suffix: string) =>
     path.endsWith(suffix) || path.includes(suffix);
 
 export const index = async (event) => {
     try {
+        initializeLogger();
+
         const method = event?.requestContext?.http?.method as
             | string
             | undefined;
@@ -45,6 +49,10 @@ export const index = async (event) => {
         ) {
             const result = await confirmNewsletter(event);
             if (result.ok === false) {
+                logger.info('newsletter/confirm failed', {
+                    reason: result.reason,
+                });
+                await logger.wait();
                 return unauthorizedBody({ error: result.reason });
             }
             return success({ preferencesToken: result.preferencesToken });
@@ -130,7 +138,9 @@ export const index = async (event) => {
 
         return methodNotAllowed();
     } catch (e) {
-        console.log(`[Error]: ${e instanceof Error ? e.message : e}`);
+        const error = errorWithPrefix(e, 'newsletter api');
+        logger.error(error);
+        await logger.wait();
         return serverError();
     }
 };
