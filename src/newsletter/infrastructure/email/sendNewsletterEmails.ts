@@ -1,4 +1,6 @@
+import { buildSubjectPurposeKey } from 'magicLink/application/buildSubjectPurposeKey';
 import { issueMagicLink } from 'magicLink/application/issueMagicLink';
+import { CONFIRM_LINK_RESEND_COOLDOWN_MS } from 'magicLink/domain/constants';
 import { MagicLinkPurpose } from 'magicLink/domain/magicLink';
 import { dynamodbMagicLinkRepository } from 'magicLink/infrastructure/persistance/dynamodb/dynamodbMagicLinkRepository';
 import { Report } from 'report/domain/report';
@@ -98,9 +100,27 @@ export const issueConfirmTokenForReport = async (
         subject: { type: 'report', reportId: report.id },
         email: report.email,
         repository: dynamodbMagicLinkRepository,
+        replaceExisting: false,
     });
 
     return token;
+};
+
+const hasRecentConfirmLink = async (reportId: string): Promise<boolean> => {
+    const subjectPurposeKey = buildSubjectPurposeKey('newsletter_confirm', {
+        type: 'report',
+        reportId,
+    });
+    const links =
+        await dynamodbMagicLinkRepository.listBySubjectPurposeKey(
+            subjectPurposeKey,
+        );
+    const now = Date.now();
+    const cooldownStartedAt = now - CONFIRM_LINK_RESEND_COOLDOWN_MS;
+
+    return links.some(
+        (link) => link.expiresAt > now && link.issuedAt >= cooldownStartedAt,
+    );
 };
 
 export const sendPreferencesLinkForReport = async (
@@ -125,6 +145,10 @@ export const sendConfirmLinkForReport = async (
     report: Report,
     buildUrl: (token: string) => string | null,
 ) => {
+    if (await hasRecentConfirmLink(report.id)) {
+        return true;
+    }
+
     const token = await issueConfirmTokenForReport(report);
     const url = buildUrl(token);
 

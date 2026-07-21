@@ -12,6 +12,23 @@ import { unmarshallStoredMagicLink } from './unmarshall';
 const TABLE = process.env.DYNAMODB_MAGIC_LINK_TABLE_NAME;
 const SUBJECT_PURPOSE_GSI = 'subjectPurpose-index';
 
+const listBySubjectPurposeKey: MagicLinkRepository['listBySubjectPurposeKey'] =
+    async (subjectPurposeKey) => {
+        try {
+            const results = await query(TABLE, {
+                IndexName: SUBJECT_PURPOSE_GSI,
+                KeyConditionExpression: 'subjectPurposeKey = :k',
+                ExpressionAttributeValues: {
+                    ':k': { S: subjectPurposeKey },
+                },
+            });
+
+            return (results.Items ?? []).map(unmarshallStoredMagicLink);
+        } catch (e) {
+            throw new DynamodbError(e);
+        }
+    };
+
 const put: MagicLinkRepository['put'] = async (link) => {
     try {
         await putItem(TABLE, marshallStoredMagicLink(link));
@@ -23,19 +40,11 @@ const put: MagicLinkRepository['put'] = async (link) => {
 const deleteBySubjectPurposeKey: MagicLinkRepository['deleteBySubjectPurposeKey'] =
     async (subjectPurposeKey) => {
         try {
-            const results = await query(TABLE, {
-                IndexName: SUBJECT_PURPOSE_GSI,
-                KeyConditionExpression: 'subjectPurposeKey = :k',
-                ExpressionAttributeValues: {
-                    ':k': { S: subjectPurposeKey },
-                },
-            });
-
-            const items = results.Items ?? [];
+            const items = await listBySubjectPurposeKey(subjectPurposeKey);
             await Promise.all(
                 items.map((item) =>
                     deleteItem(TABLE, {
-                        tokenHash: item['tokenHash'],
+                        tokenHash: { S: item.tokenHash },
                     }),
                 ),
             );
@@ -67,4 +76,5 @@ export const dynamodbMagicLinkRepository: MagicLinkRepository = {
     put,
     deleteBySubjectPurposeKey,
     getByTokenHash,
+    listBySubjectPurposeKey,
 };

@@ -14,6 +14,8 @@ export type IssueMagicLinkInput = {
     subject: MagicLinkSubject;
     email: string;
     repository: MagicLinkRepository;
+    /** When true (default), previous links for the same subject+purpose are removed. */
+    replaceExisting?: boolean;
 };
 
 export type IssueMagicLinkResult = {
@@ -26,9 +28,12 @@ export const issueMagicLink = async ({
     subject,
     email,
     repository,
+    replaceExisting = true,
 }: IssueMagicLinkInput): Promise<IssueMagicLinkResult> => {
     const subjectPurposeKey = buildSubjectPurposeKey(purpose, subject);
-    await repository.deleteBySubjectPurposeKey(subjectPurposeKey);
+    if (replaceExisting) {
+        await repository.deleteBySubjectPurposeKey(subjectPurposeKey);
+    }
 
     const token = randomBytes(32).toString('base64url');
     const tokenHash = hashMagicLinkToken(token);
