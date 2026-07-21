@@ -58,4 +58,24 @@ describe('DynamoDB company marshall', () => {
 
         expect(marshall(company)).toEqual(item);
     });
+
+    it('should return an Item with description', () => {
+        const description = 'Acme builds tools for remote teams.';
+        const company: Company = {
+            id: companyId,
+            name: companyName,
+            homePage,
+            logo: {
+                url: logoUrl,
+            },
+            description,
+        };
+
+        expect(marshall(company)).toEqual({
+            ...baseItem,
+            description: {
+                S: description,
+            },
+        });
+    });
 });

@@ -13,6 +13,8 @@ export type Company = {
     name: string;
     homePage: string;
     logo: CompanyLogo;
+    /** Short blurb for company pages / SEO. */
+    description?: string;
 };
 
 type CreateCompanyData = Omit<Company, 'id' | 'logo'> & {
@@ -25,6 +27,7 @@ export const makeCompanyLogoUrl = ({ id }: { id: CompanyId }) =>
 export const createCompany = ({
     name,
     homePage,
+    description,
 }: CreateCompanyData): Company => {
     const id = randomUUID();
     const logo = {
@@ -36,5 +39,6 @@ export const createCompany = ({
         name,
         homePage,
         logo,
+        ...(description ? { description } : {}),
     };
 };

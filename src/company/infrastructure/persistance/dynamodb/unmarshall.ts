@@ -15,6 +15,9 @@ export const unmarshall = (item: Record<string, AttributeValue>): Company => {
                 url: logoUrl,
                 background: item['logoBackground']?.['S'],
             },
+            ...(item['description']?.['S']
+                ? { description: item['description']['S'] }
+                : {}),
         };
     } catch (e) {
         throw new UnmarshallError(e.message, 'Company', item);

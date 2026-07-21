@@ -7,13 +7,15 @@ import { companyRepository } from 'company/infrastructure/persistance/dynamodb/d
 type CreateCompanyCommand = {
     name: string;
     homePage: string;
+    description?: string;
 };
 
 export const createCompany = async ({
     name,
     homePage,
+    description,
 }: CreateCompanyCommand): Promise<Company> => {
-    const company = createCompanyEntity({ name, homePage });
+    const company = createCompanyEntity({ name, homePage, description });
 
     return await companyRepository.create(company);
 };

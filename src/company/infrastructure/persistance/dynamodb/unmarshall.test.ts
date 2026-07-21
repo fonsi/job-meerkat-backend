@@ -59,6 +59,27 @@ describe('DynamoDB company unmarshall', () => {
         expect(unmarshall(item)).toEqual(company);
     });
 
+    it('should return a Company with description', () => {
+        const description = 'Acme builds tools for remote teams.';
+        const item = {
+            ...baseItem,
+            description: {
+                S: description,
+            },
+        };
+        const company: Company = {
+            id: companyId,
+            name: companyName,
+            homePage,
+            logo: {
+                url: logoUrl,
+            },
+            description,
+        };
+
+        expect(unmarshall(item)).toEqual(company);
+    });
+
     it('should throw UnmarshallError if something goes wrong', () => {
         const item = {
             id: {
