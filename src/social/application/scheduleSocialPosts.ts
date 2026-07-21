@@ -1,56 +1,42 @@
-import { JobPost } from 'jobPost/domain/jobPost';
+import { companyRepository } from 'company/infrastructure/persistance/dynamodb/dynamodbCompanyRepository';
+import { FROM_WHEN_WEEKLY } from 'jobPost/domain/jobPostRepository';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
-import {
-    makeScheduledSocialPostId,
-    ScheduledSocialPost,
-} from 'social/domain/scheduledSocialPost';
+import { buildSocialSchedule } from 'social/application/buildSocialSchedule';
 import { scheduledSocialPostRepository } from 'social/infrastructure/persistance/dynamodb/dynamodbScheduledSocialPostRepository';
 
-const hasSalaryRange = (jobPost: JobPost) => !!jobPost.salaryRange?.max;
-
 export const scheduleSocialPosts = async (): Promise<void> => {
-    const latestJobPosts = await jobPostRepository.getLatest();
-    const jobPostsWithSalary = latestJobPosts.filter(hasSalaryRange);
+    const now = Date.now();
+    const [latestJobPosts, weekJobPosts, companies] = await Promise.all([
+        jobPostRepository.getLatest(),
+        jobPostRepository.getLatestSince(FROM_WHEN_WEEKLY),
+        companyRepository.getAll(),
+    ]);
 
-    const usedCompanyIds = new Set();
-    const jobPostsSortedByBestPaid = jobPostsWithSalary.sort(
-        (a, b) => b.salaryRange.max - a.salaryRange.max,
-    );
-    const bestPaidJobPostsByCompany = jobPostsSortedByBestPaid.filter(
-        (jobPost) => {
-            if (usedCompanyIds.has(jobPost.companyId)) {
-                return false;
-            }
-
-            usedCompanyIds.add(jobPost.companyId);
-
-            return true;
-        },
+    const companiesById = new Map(
+        companies.map((company) => [company.id, company]),
     );
 
-    const timeSpanBetweenPosts = Math.floor(
-        (24 * 60 * 60 * 1000) / bestPaidJobPostsByCompany.length,
+    const existing = await scheduledSocialPostRepository.getAll();
+    await Promise.all(
+        existing
+            .filter((post) => post.date > now)
+            .map((post) => scheduledSocialPostRepository.remove(post)),
     );
-    const publishTime = Date.now();
+
+    const scheduled = buildSocialSchedule({
+        latestJobPosts,
+        weekJobPosts,
+        companiesById,
+        now,
+    });
 
     console.log(
-        `Scheduling ${bestPaidJobPostsByCompany.length} social posts. One post every ${(timeSpanBetweenPosts / (60 * 1000)).toFixed(2)} minutes`,
+        `Scheduling ${scheduled.length} social posts (~1/hour). Types: ${scheduled
+            .map((post) => `${post.type}[${post.platforms.join(',')}]`)
+            .join(', ')}`,
     );
 
     await Promise.allSettled(
-        bestPaidJobPostsByCompany.map((jobPost, index) => {
-            const date = publishTime + (index + 1) * timeSpanBetweenPosts;
-            console.log(index, date);
-
-            const scheduledSocialPost: ScheduledSocialPost = {
-                id: makeScheduledSocialPostId({
-                    jobPostId: jobPost.id,
-                    companyId: jobPost.companyId,
-                }),
-                date,
-            };
-
-            return scheduledSocialPostRepository.add(scheduledSocialPost);
-        }),
+        scheduled.map((post) => scheduledSocialPostRepository.add(post)),
     );
 };

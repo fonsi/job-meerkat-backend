@@ -2,17 +2,50 @@ import 'source-map-support/register';
 import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { initializeLogger, logger } from 'shared/infrastructure/logger/logger';
 import { publishSocialPost } from 'social/application/publishSocialPost';
-import { JobPostId } from 'jobPost/domain/jobPost';
+import { ScheduledSocialPost } from 'social/domain/scheduledSocialPost';
+import { ALL_SOCIAL_PLATFORMS } from 'social/domain/socialPlatform';
+import { SocialPostType } from 'social/domain/socialPostType';
 import { CompanyId } from 'company/domain/company';
+import { JobPostId } from 'jobPost/domain/jobPost';
 
-type EventData = {
+type LegacyEventData = {
     jobPostId: JobPostId;
     companyId: CompanyId;
 };
 
-const getEventData = (record): EventData => {
+const isScheduledSocialPost = (
+    value: unknown,
+): value is ScheduledSocialPost => {
+    if (!value || typeof value !== 'object') {
+        return false;
+    }
+    const post = value as ScheduledSocialPost;
+    return (
+        typeof post.id === 'string' &&
+        typeof post.date === 'number' &&
+        typeof post.type === 'string'
+    );
+};
+
+const getScheduledPost = (record): ScheduledSocialPost => {
     try {
-        return JSON.parse(record.body) as EventData;
+        const parsed = JSON.parse(record.body) as
+            | ScheduledSocialPost
+            | LegacyEventData;
+
+        if (isScheduledSocialPost(parsed)) {
+            return parsed;
+        }
+
+        const legacy = parsed as LegacyEventData;
+        return {
+            id: `${SocialPostType.JobPromo}_${legacy.jobPostId}_${legacy.companyId}`,
+            date: Date.now(),
+            type: SocialPostType.JobPromo,
+            platforms: [...ALL_SOCIAL_PLATFORMS],
+            jobPostId: legacy.jobPostId,
+            companyId: legacy.companyId,
+        };
     } catch (error) {
         throw errorWithPrefix(error, 'Error parsing SQS record body');
     }
@@ -24,10 +57,10 @@ export const index = async (event) => {
 
         const socialPostsToPublishBatch: Promise<void>[] = event.Records.map(
             (record) => {
-                const { jobPostId, companyId } = getEventData(record);
-                console.log(`[PUBLISH POST]: ${jobPostId} - ${companyId}`);
+                const post = getScheduledPost(record);
+                console.log(`[PUBLISH POST]: ${post.id}`);
 
-                return publishSocialPost({ jobPostId, companyId });
+                return publishSocialPost(post);
             },
         );
 
@@ -37,13 +70,11 @@ export const index = async (event) => {
                     `[PUBLISH POST RESULT] ${result.status}: ${JSON.stringify(result)}`,
                 );
                 if (result.status === 'rejected') {
-                    const { jobPostId, companyId } = getEventData(
-                        event.Records[index],
-                    );
+                    const post = getScheduledPost(event.Records[index]);
                     logger.error(
                         errorWithPrefix(
                             new Error(result.reason),
-                            `Error publishing social post: ${jobPostId} - ${companyId}`,
+                            `Error publishing social post: ${post.id}`,
                         ),
                     );
                 }
