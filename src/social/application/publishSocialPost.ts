@@ -1,4 +1,5 @@
 import { companyRepository } from 'company/infrastructure/persistance/dynamodb/dynamodbCompanyRepository';
+import { isCompanyDisabled } from 'company/domain/company';
 import { FROM_WHEN_WEEKLY } from 'jobPost/domain/jobPostRepository';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
 import { openaiCreateCompanyThreadPosts } from 'shared/infrastructure/ai/openai/openaiCreateCompanyThreadPosts';
@@ -53,6 +54,13 @@ const publishJobPromo = async (post: ScheduledSocialPost): Promise<void> => {
         return;
     }
 
+    if (isCompanyDisabled(company)) {
+        console.log('[PUBLISH POST]: job promo skipped (company disabled)', {
+            companyId: post.companyId,
+        });
+        return;
+    }
+
     const socialMediaPosts = await openaiSocialMediaPostsCreator({
         jobPost,
         company,
@@ -71,8 +79,16 @@ const publishDailyAnalysis = async (
         jobPostRepository.getLatest(),
         companyRepository.getAll(),
     ]);
-    const companiesById = new Map(companies.map((c) => [c.id, c]));
-    const eligible = latestJobPosts.filter(isEligibleForSocialAnalysis);
+    const companiesById = new Map(
+        companies
+            .filter((company) => !isCompanyDisabled(company))
+            .map((c) => [c.id, c]),
+    );
+    const eligible = latestJobPosts.filter(
+        (job) =>
+            isEligibleForSocialAnalysis(job) &&
+            companiesById.has(job.companyId),
+    );
     if (eligible.length === 0) {
         console.log(
             '[PUBLISH POST]: no eligible jobs for daily analysis (remote, public salary, USD/EUR)',
@@ -137,9 +153,17 @@ const publishWeeklyTopPaid = async (
         jobPostRepository.getLatestSince(FROM_WHEN_WEEKLY),
         companyRepository.getAll(),
     ]);
-    const companiesById = new Map(companies.map((c) => [c.id, c]));
+    const companiesById = new Map(
+        companies
+            .filter((company) => !isCompanyDisabled(company))
+            .map((c) => [c.id, c]),
+    );
     const topJobs = [...weekJobs]
-        .filter(isEligibleForSocialAnalysis)
+        .filter(
+            (job) =>
+                isEligibleForSocialAnalysis(job) &&
+                companiesById.has(job.companyId),
+        )
         .sort((a, b) => annualSalaryMax(b) - annualSalaryMax(a))
         .slice(0, 5)
         .map((job) =>
@@ -174,6 +198,16 @@ const publishCompanyThread = async (
         logger.error(new Error('Company not found'), {
             companyId: post.companyId,
         });
+        return;
+    }
+
+    if (isCompanyDisabled(company)) {
+        console.log(
+            '[PUBLISH POST]: company thread skipped (company disabled)',
+            {
+                companyId: post.companyId,
+            },
+        );
         return;
     }
 

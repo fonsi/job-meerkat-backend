@@ -24,9 +24,23 @@ const allCompanies: Company[] = [
     } as Company,
     {
         id: companyId2,
+        status: 'disabled',
     } as Company,
     {
         id: companyId3,
+    } as Company,
+];
+
+const allCompaniesActiveFirst: Company[] = [
+    {
+        id: companyId1,
+    } as Company,
+    {
+        id: companyId3,
+    } as Company,
+    {
+        id: companyId2,
+        status: 'disabled',
     } as Company,
 ];
 
@@ -36,11 +50,12 @@ const allCompaniesWithJobPostsCount: CompanyWithJobPostsCount[] = [
         jobPostsCount: 1,
     } as CompanyWithJobPostsCount,
     {
-        id: companyId2,
-        jobPostsCount: 1,
+        id: companyId3,
+        jobPostsCount: 0,
     } as CompanyWithJobPostsCount,
     {
-        id: companyId3,
+        id: companyId2,
+        status: 'disabled',
         jobPostsCount: 0,
     } as CompanyWithJobPostsCount,
 ];
@@ -82,12 +97,15 @@ describe('getAllCompanies', () => {
     test('should return all companies', async () => {
         const companies = await getAllCompanies({ countJobPosts: false });
 
-        expect(companies).toEqual(allCompanies);
+        expect(companies).toEqual(allCompaniesActiveFirst);
     });
 
     test('should return all companies with job posts count newer than six months', async () => {
         const companies = await getAllCompanies({ countJobPosts: true });
 
         expect(companies).toEqual(allCompaniesWithJobPostsCount);
+        expect(
+            jobPostRepository.getAllOpenByCompanyId,
+        ).not.toHaveBeenCalledWith(companyId2);
     });
 });

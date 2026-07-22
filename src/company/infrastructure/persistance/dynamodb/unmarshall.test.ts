@@ -80,6 +80,36 @@ describe('DynamoDB company unmarshall', () => {
         expect(unmarshall(item)).toEqual(company);
     });
 
+    it('should return a Company with disabled status fields', () => {
+        const statusMessage = 'Company shut down in June 2026.';
+        const disabledAt = 1719700000000;
+        const item = {
+            ...baseItem,
+            status: {
+                S: 'disabled',
+            },
+            statusMessage: {
+                S: statusMessage,
+            },
+            disabledAt: {
+                N: disabledAt.toString(),
+            },
+        };
+        const company: Company = {
+            id: companyId,
+            name: companyName,
+            homePage,
+            logo: {
+                url: logoUrl,
+            },
+            status: 'disabled',
+            statusMessage,
+            disabledAt,
+        };
+
+        expect(unmarshall(item)).toEqual(company);
+    });
+
     it('should throw UnmarshallError if something goes wrong', () => {
         const item = {
             id: {

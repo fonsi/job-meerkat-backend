@@ -1,4 +1,4 @@
-import { Company, CompanyId } from 'company/domain/company';
+import { Company, CompanyId, isCompanyDisabled } from 'company/domain/company';
 import { scrapCompany } from './scrapCompany';
 import { createJobPost } from 'jobPost/application/createJobPost';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
@@ -230,6 +230,11 @@ export const processCompany = async ({
 
     if (!company) {
         throw new Error(`Company not found - ${companyId}`);
+    }
+
+    if (isCompanyDisabled(company)) {
+        console.log('[PROCESS COMPANY] Skipping disabled company', companyId);
+        return;
     }
 
     const newScrapper = getNewCompanyScrapper(company);

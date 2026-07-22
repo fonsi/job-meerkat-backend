@@ -78,4 +78,33 @@ describe('DynamoDB company marshall', () => {
             },
         });
     });
+
+    it('should return an Item with disabled status fields', () => {
+        const statusMessage = 'Company shut down in June 2026.';
+        const disabledAt = 1719700000000;
+        const company: Company = {
+            id: companyId,
+            name: companyName,
+            homePage,
+            logo: {
+                url: logoUrl,
+            },
+            status: 'disabled',
+            statusMessage,
+            disabledAt,
+        };
+
+        expect(marshall(company)).toEqual({
+            ...baseItem,
+            status: {
+                S: 'disabled',
+            },
+            statusMessage: {
+                S: statusMessage,
+            },
+            disabledAt: {
+                N: disabledAt.toString(),
+            },
+        });
+    });
 });

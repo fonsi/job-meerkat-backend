@@ -1,4 +1,4 @@
-import { Company, CompanyId } from 'company/domain/company';
+import { Company, CompanyId, isCompanyDisabled } from 'company/domain/company';
 import { companyRepository } from 'company/infrastructure/persistance/dynamodb/dynamodbCompanyRepository';
 import { JobPost } from 'jobPost/domain/jobPost';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
@@ -22,9 +22,14 @@ export const getCompanyById = async ({
         company,
     };
 
+    if (company && isCompanyDisabled(company)) {
+        response.openJobPosts = [];
+        return response;
+    }
+
     if (includeOpenJobPosts) {
-        const openJobPosts = await jobPostRepository.getAllOpenByCompanyId(id);
-        response['openJobPosts'] = openJobPosts;
+        response.openJobPosts =
+            await jobPostRepository.getAllOpenByCompanyId(id);
     }
 
     return response;

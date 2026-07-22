@@ -104,4 +104,26 @@ describe('processCompany', () => {
         expect(createJobPost).not.toHaveBeenCalled();
         expect(closeJobPost).not.toHaveBeenCalled();
     });
+
+    it('skips scraping when the company is disabled', async () => {
+        const companyId = '123e4567-e89b-12d3-a456-426614174000' as CompanyId;
+        const company = {
+            id: companyId,
+            name: 'test-company',
+            homePage: 'https://example.com',
+            logo: {
+                url: 'https://assets.example.com/company.png',
+            },
+            status: 'disabled',
+            statusMessage: 'Shut down',
+        } as unknown as Company;
+
+        (companyRepository.getById as jest.Mock).mockResolvedValue(company);
+
+        await processCompany({ companyId });
+
+        expect(getNewCompanyScrapper).not.toHaveBeenCalled();
+        expect(createJobPost).not.toHaveBeenCalled();
+        expect(closeJobPost).not.toHaveBeenCalled();
+    });
 });

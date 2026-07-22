@@ -1,3 +1,4 @@
+import { isCompanyDisabled } from 'company/domain/company';
 import { companyRepository } from 'company/infrastructure/persistance/dynamodb/dynamodbCompanyRepository';
 import { FROM_WHEN_WEEKLY } from 'jobPost/domain/jobPostRepository';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
@@ -13,7 +14,9 @@ export const scheduleSocialPosts = async (): Promise<void> => {
     ]);
 
     const companiesById = new Map(
-        companies.map((company) => [company.id, company]),
+        companies
+            .filter((company) => !isCompanyDisabled(company))
+            .map((company) => [company.id, company]),
     );
 
     const existing = await scheduledSocialPostRepository.getAll();

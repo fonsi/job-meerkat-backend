@@ -1,5 +1,6 @@
 import { getCategories } from 'category/application/getCategories';
 import { getAllCompanies } from 'company/application/getAllCompanies';
+import { isCompanyDisabled } from 'company/domain/company';
 import { verifyMagicLinkWithReason } from 'magicLink/application/verifyMagicLink';
 import { dynamodbMagicLinkRepository } from 'magicLink/infrastructure/persistance/dynamodb/dynamodbMagicLinkRepository';
 import { normalizeEmail } from 'shared/infrastructure/email/normalizeEmail';
@@ -78,6 +79,7 @@ export const getNewsletterPreferences = async (event: {
         email: report.email,
         categories,
         companies: companies
+            .filter((c) => !isCompanyDisabled(c))
             .map((c) => ({
                 id: c.id,
                 name: c.name,

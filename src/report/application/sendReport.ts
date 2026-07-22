@@ -1,4 +1,4 @@
-import { Company, CompanyId } from 'company/domain/company';
+import { Company, CompanyId, isCompanyDisabled } from 'company/domain/company';
 import { companyRepository } from 'company/infrastructure/persistance/dynamodb/dynamodbCompanyRepository';
 import { JobPost } from 'jobPost/domain/jobPost';
 import { FROM_WHEN, FROM_WHEN_WEEKLY } from 'jobPost/domain/jobPostRepository';
@@ -68,7 +68,7 @@ export const sendReport = async ({ email, frequency }: SendReportData) => {
         (acc, jobPost) => {
             const companyId = jobPost.companyId;
             const company = companies.find((c) => c.id === companyId);
-            if (!company) {
+            if (!company || isCompanyDisabled(company)) {
                 return acc;
             }
 

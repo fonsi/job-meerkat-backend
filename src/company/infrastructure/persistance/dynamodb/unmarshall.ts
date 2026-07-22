@@ -18,6 +18,15 @@ export const unmarshall = (item: Record<string, AttributeValue>): Company => {
             ...(item['description']?.['S']
                 ? { description: item['description']['S'] }
                 : {}),
+            ...(item['status']?.['S']
+                ? { status: item['status']['S'] as Company['status'] }
+                : {}),
+            ...(item['statusMessage']?.['S']
+                ? { statusMessage: item['statusMessage']['S'] }
+                : {}),
+            ...(item['disabledAt']?.['N']
+                ? { disabledAt: Number(item['disabledAt']['N']) }
+                : {}),
         };
     } catch (e) {
         throw new UnmarshallError(e.message, 'Company', item);

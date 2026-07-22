@@ -8,6 +8,8 @@ export type CompanyLogo = {
     background?: string;
 };
 
+export type CompanyStatus = 'active' | 'disabled';
+
 export type Company = {
     id: CompanyId;
     name: string;
@@ -15,7 +17,14 @@ export type Company = {
     logo: CompanyLogo;
     /** Short blurb for company pages / SEO. */
     description?: string;
+    /** Missing status means active (backwards compatible). */
+    status?: CompanyStatus;
+    statusMessage?: string;
+    disabledAt?: number;
 };
+
+export const isCompanyDisabled = (company: Company): boolean =>
+    company.status === 'disabled';
 
 type CreateCompanyData = Omit<Company, 'id' | 'logo'> & {
     logo?: CompanyLogo;
