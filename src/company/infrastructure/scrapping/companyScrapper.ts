@@ -70,6 +70,8 @@ import { PROTONAI_NAME, protonaiScrapper } from './protonai';
 import { BLUESKY_NAME, blueskyScrapper } from './bluesky';
 import { BUBBLE_NAME, bubbleScrapper } from './bubble';
 import { TWITCH_NAME, twitchScrapper } from './twitch';
+import { AFFIRM_NAME, affirmScrapper } from './affirm';
+import { ANTHROPIC_NAME, anthropicScrapper } from './anthropic';
 import { ASHBY_NAME, ashbyScrapper } from './ashby';
 import { ATTIO_NAME, attioScrapper } from './attio';
 import { BUFFER_NAME, bufferScrapper } from './buffer';
@@ -80,9 +82,12 @@ import { CHROMATIC_NAME, chromaticScrapper } from './chromatic';
 import { CONSENSYS_NAME, consensysScrapper } from './consensys';
 import { CYBERHAVEN_NAME, cyberhavenScrapper } from './cyberhaven';
 import { DUALENTRY_NAME, dualentryScrapper } from './dualentry';
+import { FIGMA_NAME, figmaScrapper } from './figma';
 import { FINGERPRINT_NAME, fingerprintScrapper } from './fingerprint';
 import { FREEWILL_NAME, freewillScrapper } from './freewill';
 import { GEM_NAME, gemScrapper } from './gem';
+import { GITLAB_NAME, gitlabScrapper } from './gitlab';
+import { GRAFANA_LABS_NAME, grafanaLabsScrapper } from './grafanaLabs';
 import { GUSTO_NAME, gustoScrapper } from './gusto';
 import { HOP_SKIP_DRIVE_NAME, hopSkipDriveScrapper } from './hopSkipDrive';
 import { ISTARI_DIGITAL_NAME, istariDigitalScrapper } from './istariDigital';
@@ -91,6 +96,7 @@ import { REGRELLO_NAME, regrelloScrapper } from './regrello';
 import { RIVER_NAME, riverScrapper } from './river';
 import { SANDBOX_AQ_NAME, sandboxAQScrapper } from './sandboxAQ';
 import { SENTRY_NAME, sentryScrapper } from './sentry';
+import { STRIPE_NAME, stripeScrapper } from './stripe';
 import { SUPERMOVE_NAME, supermoveScrapper } from './supermove';
 import { VERCEL_NAME, vercelScrapper } from './vercel';
 import { WAVE_NAME, waveScrapper } from './wave';
@@ -139,12 +145,16 @@ export type NewCompanyScrapper = ({ companyId }: { companyId: CompanyId }) => {
 
 export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
     switch (company.name?.toLowerCase()) {
+        case AFFIRM_NAME:
+            return affirmScrapper;
         case AIRBNB_NAME:
             return airbnbScrapper;
         case ALL_TRAILS_NAME:
             return allTrailsScrapper;
         case AMONDO_NAME:
             return amondoScrapper;
+        case ANTHROPIC_NAME:
+            return anthropicScrapper;
         case ASSEMBLY_AI_NAME:
             return assemblyAiScrapper;
         case ASHBY_NAME:
@@ -185,10 +195,16 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return federatoScrapper;
         case FEELD_NAME:
             return feeldScrapper;
+        case FIGMA_NAME:
+            return figmaScrapper;
         case FLOAT_NAME:
             return floatScrapper;
         case FULLSTORY_NAME:
             return fullstoryScrapper;
+        case GITLAB_NAME:
+            return gitlabScrapper;
+        case GRAFANA_LABS_NAME:
+            return grafanaLabsScrapper;
         case GUIDELINE_NAME:
             return guidelineScrapper;
         case HAPPY_MONEY_NAME:
@@ -265,6 +281,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return streakScrapper;
         case STRAVA_NAME:
             return stravaScrapper;
+        case STRIPE_NAME:
+            return stripeScrapper;
         case SUPER_NAME:
             return superScrapper;
         case SUPERHUMAN_NAME:
