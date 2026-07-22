@@ -37,11 +37,15 @@ Skip or defer if: dead link, aggregator-only page, blocked custom ATS, or too ma
 
 ## 2. Create the company in the DB
 
+**Required fields:** `name`, `homePage`, and `description`. Never create a company without a description — it is used for social post generation.
+
 1. Edit `src/company/infrastructure/api/companyPost.event.json` body:
 
 ```json
-"body": "{\"name\": \"Company Name\", \"homePage\": \"https://example.com\"}"
+"body": "{\"name\": \"Company Name\", \"homePage\": \"https://example.com\", \"description\": \"One or two sentences on what the company builds and who it serves.\"}"
 ```
+
+Write `description` in the same style as existing DB entries: 1–2 plain sentences about the product/platform and customer outcome (not marketing fluff, not careers-page copy).
 
 2. Run:
 
@@ -49,10 +53,21 @@ Skip or defer if: dead link, aggregator-only page, blocked custom ATS, or too ma
 npm run local company -- --path src/company/infrastructure/api/companyPost.event.json
 ```
 
-3. Save the returned `companyId` (UUID).
+3. Save the returned `companyId` (UUID). Confirm the response/`getById` includes `description`.
 
 `name` in the DB must match the scraper registry key (case-insensitive). The scraper’s exported `*_NAME` constant is usually the lowercase company name (e.g. `twitch`, `hopskipdrive`, `wispr-flow` only if that matches how you register it — prefer the folder/`NAME` used in `companyScrapper.ts`).
 
+If a company was already created without a description, backfill it on `dev-company` (or the active stage table):
+
+```bash
+aws dynamodb update-item \
+  --table-name dev-company \
+  --profile jobmeerkat-aws \
+  --region eu-west-1 \
+  --key '{"id":{"S":"<companyId>"}}' \
+  --update-expression "SET description = :d" \
+  --expression-attribute-values '{":d":{"S":"<description>"}}'
+```
 ## 3. Create the scraper
 
 1. Add `src/company/infrastructure/scrapping/{folder}/index.ts`.
@@ -142,7 +157,7 @@ Statuses used previously: pending, validated, validated (API content), no openin
 ## Checklist (per company)
 
 - [ ] ATS + slug confirmed; job count acceptable
-- [ ] Company created in DB; `companyId` saved
+- [ ] Company created in DB **with `description`**; `companyId` saved
 - [ ] Scraper folder + `*_NAME` + list/detail logic
 - [ ] Registered in `companyScrapper.ts`
 - [ ] Title skip filters for open application / internship / talent community as needed

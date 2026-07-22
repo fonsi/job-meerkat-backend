@@ -23,4 +23,4 @@ It is a **Serverless Framework** project deployed in **AWS** and using:
 }
 ```
 
-`description` is optional. Sample event for local invoke: `src/company/infrastructure/api/createCompany.event.json`.
+`description` is **required when adding companies for scraping** (used for social posts). Sample event for local invoke: `src/company/infrastructure/api/companyPost.event.json`. See `docs/adding-company-scraper.md`.
