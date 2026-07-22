@@ -13,7 +13,7 @@ import { logger } from 'shared/infrastructure/logger/logger';
 import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 
 export const STREAK_NAME = 'streak';
-const STREAK_DOMAIN = 'https://streak.com';
+const STREAK_DOMAIN = 'https://www.streak.com';
 const STREAK_INITIAL_URL = `${STREAK_DOMAIN}/careers`;
 
 type ScrapJobPostData = {
@@ -21,8 +21,11 @@ type ScrapJobPostData = {
     url: string;
 };
 
-const JOB_POST_SELECTOR = '.careers a[href*="/careers"]';
-const JOB_CONTENT_SELECTOR = '.content-wrapper';
+const JOB_POST_SELECTOR = 'a.career11_item[href*="/careers/"]';
+const JOB_TITLE_SELECTOR = 'h3';
+const JOB_HEADER_SELECTOR = 'h1';
+const JOB_META_SELECTOR = '.career11_job-details-wrapper';
+const JOB_CONTENT_SELECTOR = '.w-richtext';
 
 const scrapJobPost = async ({
     title,
@@ -30,9 +33,13 @@ const scrapJobPost = async ({
 }: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
         const $ = await fromURL(url);
-        const jobPostContent = $(JOB_CONTENT_SELECTOR).text();
+        const jobPostHeader = $(JOB_HEADER_SELECTOR).first().text();
+        const jobPostMeta = $(JOB_META_SELECTOR).text();
+        const jobPostContent = $(JOB_CONTENT_SELECTOR).first().text();
 
-        return openaiJobPostAnalyzer(jobPostContent);
+        return openaiJobPostAnalyzer(
+            `${jobPostHeader} ${jobPostMeta} ${jobPostContent}`,
+        );
     } catch (e) {
         const error = errorWithPrefix(
             e,
@@ -53,19 +60,26 @@ export const streakScrapper: NewCompanyScrapper = ({ companyId }) => {
             const jobPosts: ListedJobPostsData[] = jobPostsElements
                 .toArray()
                 .map((jobPost) => {
-                    const url = `${STREAK_DOMAIN}${$(jobPost).attr('href')}`;
-                    const title = $(
-                        '.career-filter-listing-text',
-                        jobPost,
-                    ).text();
-                    const id = hash('md5', title); // hash generated from the title because there isn't any job post id
+                    const href = $(jobPost).attr('href');
+                    const url = href?.startsWith('http')
+                        ? href
+                        : `${STREAK_DOMAIN}${href}`;
+                    const title = $(JOB_TITLE_SELECTOR, jobPost).text().trim();
+                    const id = hash('md5', url);
 
                     return {
                         id,
                         url,
                         title,
                     };
-                });
+                })
+                .filter(
+                    ({ title, url }) =>
+                        Boolean(title) &&
+                        !url.endsWith('/careers') &&
+                        !title.toLowerCase().includes('intern') &&
+                        !title.toLowerCase().includes('open application'),
+                );
 
             return jobPosts;
         },
