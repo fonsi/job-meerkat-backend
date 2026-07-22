@@ -4,6 +4,7 @@ import {
     cleanUrlsInObject,
     SocialMediaPosts,
 } from 'shared/infrastructure/ai/openai/openaiCreateSocialJobPost';
+import { SOCIAL_POST_CONTENT_RULES } from 'social/domain/socialPostContentRules';
 
 const OPENAI_MODEL = 'gpt-4o-mini';
 const openai = new OpenAI();
@@ -50,11 +51,13 @@ export const openaiCreateDailyAnalysisPosts = async (
                 role: 'user',
                 content: `
 Create a "daily new jobs" analysis post from this data: ${JSON.stringify(stats)}.
-Jobmeerkat site: ${site}. We are a job board, not the employer.
+Jobmeerkat site: ${site}.
+${SOCIAL_POST_CONTENT_RULES}
+Salaries in this dataset are USD or EUR only — keep amounts in their given currency.
 
 X / Twitter: 1–2 tweets max (prefer 1 if it fits). Lead with a data hook (count, salary median/max). Include ${site}. No emojis. ≤280 chars each.
 Bluesky: similar to X, ≤299 chars, 1–2 posts.
-Threads: 2 messages — (1) the daily hook + invite to browse ${site}; (2) highlight 1–2 top paid roles with salary and encourage following for more. ≤500 chars. Max one hashtag total.
+Threads: 2 messages — (1) the daily hook + invite to browse listings on ${site}; (2) highlight 1–2 top paid roles with salary and encourage following for more. ≤500 chars. Max one hashtag total.
 LinkedIn: one short professional update with the key numbers and ${site}.
 
 Return JSON: ${JSON.stringify(example)}.

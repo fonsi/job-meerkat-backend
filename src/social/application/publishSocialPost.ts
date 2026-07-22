@@ -13,6 +13,8 @@ import { publishToPlatforms } from 'social/application/publishToPlatforms';
 import {
     annualSalaryMax,
     formatSalaryLabel,
+    isEligibleForSocial,
+    isEligibleForSocialAnalysis,
     median,
     toJobSummary,
 } from 'social/application/socialJobStats';
@@ -32,6 +34,14 @@ const publishJobPromo = async (post: ScheduledSocialPost): Promise<void> => {
             jobPostId: post.jobPostId,
             companyId: post.companyId,
         });
+        return;
+    }
+
+    if (!isEligibleForSocial(jobPost)) {
+        console.log(
+            '[PUBLISH POST]: job promo skipped (not remote with public salary)',
+            { jobPostId: post.jobPostId },
+        );
         return;
     }
 
@@ -62,21 +72,26 @@ const publishDailyAnalysis = async (
         companyRepository.getAll(),
     ]);
     const companiesById = new Map(companies.map((c) => [c.id, c]));
-    const withSalary = latestJobPosts.filter((job) => job.salaryRange?.max);
-    if (withSalary.length === 0) {
-        console.log('[PUBLISH POST]: no salaried jobs for daily analysis');
+    const eligible = latestJobPosts.filter(isEligibleForSocialAnalysis);
+    if (eligible.length === 0) {
+        console.log(
+            '[PUBLISH POST]: no eligible jobs for daily analysis (remote, public salary, USD/EUR)',
+        );
         return;
     }
 
-    const maxJob = [...withSalary].sort(
+    const maxJob = [...eligible].sort(
         (a, b) => annualSalaryMax(b) - annualSalaryMax(a),
     )[0];
     const currency = maxJob.salaryRange?.currency.toUpperCase() ?? 'USD';
-    const annuals = withSalary.map(annualSalaryMax);
+    const sameCurrency = eligible.filter(
+        (job) => job.salaryRange?.currency.toUpperCase() === currency,
+    );
+    const annuals = sameCurrency.map(annualSalaryMax);
     const medianValue = median(annuals);
     const maxValue = Math.max(...annuals);
     const categoryCounts = new Map<string, number>();
-    for (const job of withSalary) {
+    for (const job of eligible) {
         categoryCounts.set(
             job.category,
             (categoryCounts.get(job.category) ?? 0) + 1,
@@ -87,7 +102,7 @@ const publishDailyAnalysis = async (
         .slice(0, 3)
         .map(([category]) => category);
 
-    const topJobs = [...withSalary]
+    const topJobs = [...eligible]
         .sort((a, b) => annualSalaryMax(b) - annualSalaryMax(a))
         .slice(0, 3)
         .map((job) =>
@@ -98,8 +113,8 @@ const publishDailyAnalysis = async (
         );
 
     const socialMediaPosts = await openaiCreateDailyAnalysisPosts({
-        jobCount: withSalary.length,
-        companyCount: new Set(withSalary.map((job) => job.companyId)).size,
+        jobCount: eligible.length,
+        companyCount: new Set(eligible.map((job) => job.companyId)).size,
         medianSalaryLabel:
             medianValue == null
                 ? null
@@ -124,7 +139,7 @@ const publishWeeklyTopPaid = async (
     ]);
     const companiesById = new Map(companies.map((c) => [c.id, c]));
     const topJobs = [...weekJobs]
-        .filter((job) => job.salaryRange?.max)
+        .filter(isEligibleForSocialAnalysis)
         .sort((a, b) => annualSalaryMax(b) - annualSalaryMax(a))
         .slice(0, 5)
         .map((job) =>
@@ -165,8 +180,16 @@ const publishCompanyThread = async (
     const openJobs = await jobPostRepository.getAllOpenByCompanyId(
         post.companyId,
     );
-    const sampleJobs = [...openJobs]
-        .filter((job) => job.salaryRange?.max)
+    const eligibleJobs = openJobs.filter(isEligibleForSocialAnalysis);
+    if (eligibleJobs.length === 0) {
+        console.log(
+            '[PUBLISH POST]: no eligible jobs for company thread (remote, public salary, USD/EUR)',
+            { companyId: post.companyId },
+        );
+        return;
+    }
+
+    const sampleJobs = [...eligibleJobs]
         .sort((a, b) => annualSalaryMax(b) - annualSalaryMax(a))
         .slice(0, 3)
         .map((job) => ({
@@ -177,7 +200,7 @@ const publishCompanyThread = async (
 
     const socialMediaPosts = await openaiCreateCompanyThreadPosts({
         company,
-        openCount: openJobs.length,
+        openCount: eligibleJobs.length,
         jobs: sampleJobs,
     });
 

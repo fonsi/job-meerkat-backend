@@ -5,6 +5,7 @@ import {
     cleanUrlsInObject,
     SocialMediaPosts,
 } from 'shared/infrastructure/ai/openai/openaiCreateSocialJobPost';
+import { SOCIAL_POST_CONTENT_RULES } from 'social/domain/socialPostContentRules';
 
 const OPENAI_MODEL = 'gpt-4o-mini';
 const openai = new OpenAI();
@@ -50,13 +51,14 @@ Create a company spotlight thread.
 Company: ${company.name}
 Homepage: ${company.homePage}
 Internal company context (for you only — rewrite in your own words, never copy-paste): ${company.description ?? 'n/a'}
-Open roles on Jobmeerkat: ${openCount}
+Open remote roles with public salary (USD/EUR) on Jobmeerkat: ${openCount}
 Sample roles: ${JSON.stringify(jobs)}
 Company page: ${companyLink}
 Site: ${site}
 
-We list jobs; we are not ${company.name}.
+${SOCIAL_POST_CONTENT_RULES}
 Never paste the company description verbatim. Paraphrase into short social copy.
+Keep salaries in USD/EUR as given.
 
 X: optional single tweet (may be unused). ≤280 chars.
 Bluesky: 1–2 posts with an original company hook + ${companyLink}. ≤299 chars.

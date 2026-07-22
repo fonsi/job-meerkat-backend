@@ -5,6 +5,7 @@ import {
     SocialMediaPosts,
 } from 'shared/infrastructure/ai/openai/openaiCreateSocialJobPost';
 import { DailyAnalysisJobSummary } from 'shared/infrastructure/ai/openai/openaiCreateDailyAnalysisPosts';
+import { SOCIAL_POST_CONTENT_RULES } from 'social/domain/socialPostContentRules';
 
 const OPENAI_MODEL = 'gpt-4o-mini';
 const openai = new OpenAI();
@@ -36,11 +37,13 @@ export const openaiCreateWeeklyTopPaidPosts = async ({
                 role: 'user',
                 content: `
 Create a weekly "top paid remote jobs" roundup from: ${JSON.stringify(topJobs)}.
-Site: ${site}. Jobmeerkat lists jobs; we are not the employer.
+Site: ${site}.
+${SOCIAL_POST_CONTENT_RULES}
+Salaries are USD or EUR only — keep each amount in its given currency.
 
 X: 1–2 tweets. Hook + 2–3 standout salaries, then ${site}. No emojis. ≤280 chars.
 Bluesky: similar, ≤299 chars, 1–2 posts.
-Threads: 2–3 messages listing the top roles with salaries and links where useful, ending with ${site}. ≤500 chars. Max one hashtag.
+Threads: 2–3 messages listing the top roles with salaries and listing links where useful, ending with ${site}. ≤500 chars. Max one hashtag.
 LinkedIn: one roundup post.
 
 Return JSON: ${JSON.stringify(example)}.

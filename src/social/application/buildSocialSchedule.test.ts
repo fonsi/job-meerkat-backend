@@ -28,11 +28,17 @@ const job = ({
     companyId,
     max,
     createdAt = Date.UTC(2026, 6, 21, 12),
+    workplace = Workplace.Remote,
+    currency = 'usd',
+    salaryRange,
 }: {
     id: string;
     companyId: string;
-    max: number;
+    max?: number;
     createdAt?: number;
+    workplace?: Workplace;
+    currency?: string;
+    salaryRange?: JobPost['salaryRange'];
 }): JobPost => ({
     id: id as JobPostId,
     originalId: id,
@@ -42,13 +48,16 @@ const job = ({
     url: 'https://example.com',
     category: Category.Frontend,
     type: JobType.FullTime,
-    salaryRange: {
-        min: max - 10000,
-        max,
-        currency: 'usd',
-        period: Period.Year,
-    },
-    workplace: Workplace.Remote,
+    salaryRange:
+        salaryRange !== undefined
+            ? salaryRange
+            : {
+                  min: (max ?? 0) - 10000,
+                  max: max ?? 0,
+                  currency,
+                  period: Period.Year,
+              },
+    workplace,
     location: 'worldwide',
     createdAt,
     closedAt: null,
@@ -161,5 +170,67 @@ describe('buildSocialSchedule', () => {
                 !post.platforms.includes(SocialPlatform.X),
         );
         expect(jobPromosWithoutX.length).toBeGreaterThan(0);
+    });
+
+    it('only includes remote jobs with public salary for promos', () => {
+        const latestJobPosts = [
+            job({ id: 'remote', companyId: 'c1', max: 200000 }),
+            job({
+                id: 'onsite',
+                companyId: 'c2',
+                max: 250000,
+                workplace: Workplace.OnSite,
+            }),
+            job({
+                id: 'nosalary',
+                companyId: 'c3',
+                salaryRange: null,
+            }),
+        ];
+
+        const scheduled = buildSocialSchedule({
+            latestJobPosts,
+            weekJobPosts: latestJobPosts,
+            companiesById,
+            now,
+            includeWeeklyTopPaid: false,
+        });
+
+        const jobPromos = scheduled.filter(
+            (post) => post.type === SocialPostType.JobPromo,
+        );
+        expect(jobPromos).toHaveLength(1);
+        expect(jobPromos[0].jobPostId).toBe('remote');
+    });
+
+    it('skips analysis posts when only non-USD/EUR salaries exist', () => {
+        const latestJobPosts = [
+            job({
+                id: 'gbp',
+                companyId: 'c1',
+                max: 200000,
+                currency: 'gbp',
+            }),
+        ];
+
+        const scheduled = buildSocialSchedule({
+            latestJobPosts,
+            weekJobPosts: latestJobPosts,
+            companiesById,
+            now,
+            includeWeeklyTopPaid: true,
+        });
+
+        expect(
+            scheduled.some(
+                (post) =>
+                    post.type === SocialPostType.DailyAnalysis ||
+                    post.type === SocialPostType.WeeklyTopPaid ||
+                    post.type === SocialPostType.CompanyThread,
+            ),
+        ).toBe(false);
+        expect(
+            scheduled.some((post) => post.type === SocialPostType.JobPromo),
+        ).toBe(true);
     });
 });

@@ -5,6 +5,7 @@ import {
     buildJobPostPageUrl,
     getPublicSiteBaseUrl,
 } from 'shared/infrastructure/url/buildJobPostPageUrl';
+import { SOCIAL_POST_CONTENT_RULES } from 'social/domain/socialPostContentRules';
 
 export type SocialMediaPosts = {
     linkedin: string;
@@ -77,24 +78,24 @@ export const openaiSocialMediaPostsCreator = async ({
                         text: `
 At Jobmeerkat we listed a job post with data ${JSON.stringify(jobPostForPrompt)} at company ${company.name}.
 ${companyContext}
-We are a job board (we do not hire for this role). Never imply Jobmeerkat is the employer.
+${SOCIAL_POST_CONTENT_RULES}
 Write plain text only (no HTML/markdown).
 Never paste the company description verbatim. Use it only as background to write a fresh, shorter social line.
 
 X / Twitter:
-- Prefer a SINGLE tweet (array length 1) with role, company, salary if available, and the job link ${jobPageUrl}.
+- Prefer a SINGLE tweet (array length 1) with role, company, salary if available, and the listing link ${jobPageUrl}.
 - Only use a 2-tweet thread if salary + links cannot fit in 280 characters.
 - No emojis. Hashtags OK if useful; do not hashtag the company name.
 - Hard limit 280 characters per tweet.
 
 Bluesky:
 - Same angle as X, character limit 299. 1–2 posts is fine.
-- Include job link ${jobPageUrl} and optionally company page ${companyLink}.
+- Include job listing ${jobPageUrl} and optionally company page ${companyLink}.
 
 Meta Threads (different from X):
-- Message 1: job hook (title, company, location, salary) + note that the apply link is in the thread + link to Jobmeerkat ${jobmeerkatLink}. Max one hashtag. No company-name hashtag.
+- Message 1: job hook (title at company, location, salary) + note that the listing link is in the thread + link to Jobmeerkat ${jobmeerkatLink}. Max one hashtag. No company-name hashtag.
 - Message 2: one original sentence about what the company does (paraphrase from context; do not quote it) + company page ${companyLink}.
-- Message 3: job apply/details link ${jobPageUrl}.
+- Message 3: job listing details link ${jobPageUrl}.
 - Max 500 characters per message.
 
 LinkedIn: one longer professional post with the available facts and ${jobPageUrl}.

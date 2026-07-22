@@ -1,6 +1,27 @@
-import { JobPost, Period } from 'jobPost/domain/jobPost';
+import { JobPost, Period, Workplace } from 'jobPost/domain/jobPost';
 import { buildJobPostPageUrl } from 'shared/infrastructure/url/buildJobPostPageUrl';
 import { DailyAnalysisJobSummary } from 'shared/infrastructure/ai/openai/openaiCreateDailyAnalysisPosts';
+
+const SOCIAL_CURRENCIES = new Set(['usd', 'eur']);
+
+export const hasPublicSalary = (jobPost: JobPost): boolean =>
+    !!jobPost.salaryRange?.max;
+
+export const isRemoteJob = (jobPost: JobPost): boolean =>
+    jobPost.workplace === Workplace.Remote;
+
+export const isUsdOrEurSalary = (jobPost: JobPost): boolean => {
+    const currency = jobPost.salaryRange?.currency?.toLowerCase();
+    return currency != null && SOCIAL_CURRENCIES.has(currency);
+};
+
+/** All social publications: remote + public salary. */
+export const isEligibleForSocial = (jobPost: JobPost): boolean =>
+    isRemoteJob(jobPost) && hasPublicSalary(jobPost);
+
+/** dailyAnalysis / weeklyTopPaid / companyThread: also USD or EUR only. */
+export const isEligibleForSocialAnalysis = (jobPost: JobPost): boolean =>
+    isEligibleForSocial(jobPost) && isUsdOrEurSalary(jobPost);
 
 const toAnnual = (amount: number, period: Period): number => {
     switch (period) {

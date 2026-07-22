@@ -1,5 +1,5 @@
 import { Company } from 'company/domain/company';
-import { JobPost, Period } from 'jobPost/domain/jobPost';
+import { JobPost } from 'jobPost/domain/jobPost';
 import {
     makeScheduledSocialPostId,
     ScheduledSocialPost,
@@ -17,31 +17,17 @@ import {
     SOCIAL_POST_SLOT_MS,
     X_DAILY_PUBLICATION_BUDGET,
 } from 'social/domain/socialScheduleConfig';
-
-const hasSalaryRange = (jobPost: JobPost) => !!jobPost.salaryRange?.max;
-
-const annualMax = (jobPost: JobPost): number => {
-    const range = jobPost.salaryRange;
-    if (!range?.max) {
-        return 0;
-    }
-    switch (range.period) {
-        case Period.Month:
-            return range.max * 12;
-        case Period.Week:
-            return range.max * 52;
-        case Period.Day:
-            return range.max * 260;
-        case Period.Hour:
-            return range.max * 2080;
-        default:
-            return range.max;
-    }
-};
+import {
+    annualSalaryMax,
+    isEligibleForSocial,
+    isEligibleForSocialAnalysis,
+} from 'social/application/socialJobStats';
 
 export const pickBestPaidJobPerCompany = (jobPosts: JobPost[]): JobPost[] => {
-    const withSalary = jobPosts.filter(hasSalaryRange);
-    const sorted = [...withSalary].sort((a, b) => annualMax(b) - annualMax(a));
+    const eligible = jobPosts.filter(isEligibleForSocial);
+    const sorted = [...eligible].sort(
+        (a, b) => annualSalaryMax(b) - annualSalaryMax(a),
+    );
     const usedCompanyIds = new Set<string>();
 
     return sorted.filter((jobPost) => {
@@ -62,8 +48,9 @@ const pickCompanyForThread = ({
     companiesById: Map<string, Company>;
     excludeCompanyIds: Set<string>;
 }): Company | null => {
+    const eligibleJobs = jobPosts.filter(isEligibleForSocialAnalysis);
     const openByCompany = new Map<string, number>();
-    for (const job of jobPosts) {
+    for (const job of eligibleJobs) {
         openByCompany.set(
             job.companyId,
             (openByCompany.get(job.companyId) ?? 0) + 1,
@@ -104,8 +91,8 @@ export const buildSocialSchedule = ({
     const drafts: Array<Omit<ScheduledSocialPost, 'date'>> = [];
     let xRemaining = X_DAILY_PUBLICATION_BUDGET;
 
-    const salariedLatest = latestJobPosts.filter(hasSalaryRange);
-    if (salariedLatest.length > 0) {
+    const analysisLatest = latestJobPosts.filter(isEligibleForSocialAnalysis);
+    if (analysisLatest.length > 0) {
         drafts.push({
             id: makeScheduledSocialPostId({
                 type: SocialPostType.DailyAnalysis,
@@ -117,7 +104,10 @@ export const buildSocialSchedule = ({
         xRemaining -= 1;
     }
 
-    if (includeWeeklyTopPaid && weekJobPosts.some(hasSalaryRange)) {
+    if (
+        includeWeeklyTopPaid &&
+        weekJobPosts.some(isEligibleForSocialAnalysis)
+    ) {
         drafts.push({
             id: makeScheduledSocialPostId({
                 type: SocialPostType.WeeklyTopPaid,
