@@ -51,6 +51,7 @@ import { V7_NAME, v7Scrapper } from './v7';
 import { krakenScrapper, KRAKEN_NAME } from './kraken';
 import { RUNWAY_NAME, runwayScrapper } from './runway';
 import { MAZE_NAME, mazeScrapper } from './maze';
+import { MAZE_HQ_NAME, mazeHqScrapper } from './mazeHq';
 import { RAVIO_NAME, ravioScrapper } from './ravio';
 import { NETLIFY_NAME, netlifyScrapper } from './netlify';
 import { CONFIANT_NAME, confiantScrapper } from './confiant';
@@ -72,10 +73,12 @@ import { TWITCH_NAME, twitchScrapper } from './twitch';
 import { ASHBY_NAME, ashbyScrapper } from './ashby';
 import { ATTIO_NAME, attioScrapper } from './attio';
 import { BUFFER_NAME, bufferScrapper } from './buffer';
+import { BUILDER_NAME, builderScrapper } from './builder';
 import { CAMUNDA_NAME, camundaScrapper } from './camunda';
 import { CHECKLY_NAME, checklyScrapper } from './checkly';
 import { CHROMATIC_NAME, chromaticScrapper } from './chromatic';
 import { CONSENSYS_NAME, consensysScrapper } from './consensys';
+import { CYBERHAVEN_NAME, cyberhavenScrapper } from './cyberhaven';
 import { DUALENTRY_NAME, dualentryScrapper } from './dualentry';
 import { FINGERPRINT_NAME, fingerprintScrapper } from './fingerprint';
 import { FREEWILL_NAME, freewillScrapper } from './freewill';
@@ -216,6 +219,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return magicSchoolScrapper;
         case MAZE_NAME:
             return mazeScrapper;
+        case MAZE_HQ_NAME:
+            return mazeHqScrapper;
         case MAILER_LITE_NAME:
             return mailerLiteScrapper;
         case MATTERMOST_NAME:
@@ -274,6 +279,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return attioScrapper;
         case BUFFER_NAME:
             return bufferScrapper;
+        case BUILDER_NAME:
+            return builderScrapper;
         case CAMUNDA_NAME:
             return camundaScrapper;
         case CHECKLY_NAME:
@@ -282,6 +289,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return chromaticScrapper;
         case CONSENSYS_NAME:
             return consensysScrapper;
+        case CYBERHAVEN_NAME:
+            return cyberhavenScrapper;
         case DUALENTRY_NAME:
             return dualentryScrapper;
         case FINGERPRINT_NAME:
