@@ -1,5 +1,6 @@
 import { Company } from 'company/domain/company';
 import { companyRepository } from 'company/infrastructure/persistance/dynamodb/dynamodbCompanyRepository';
+import { wasPublishedLessThanSixMonthsAgo } from 'jobPost/domain/jobPost';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
 
 type Params = {
@@ -25,7 +26,7 @@ export const getAllCompanies = async ({
             company.id,
         );
         (company as CompanyWithJobPostsCount).jobPostsCount =
-            openJobPost.length;
+            openJobPost.filter(wasPublishedLessThanSixMonthsAgo).length;
     }
 
     return companies;

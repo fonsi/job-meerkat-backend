@@ -1,6 +1,9 @@
 import { CompanyId, CompanyLogo } from 'company/domain/company';
 import { companyRepository } from 'company/infrastructure/persistance/dynamodb/dynamodbCompanyRepository';
-import { JobPost } from 'jobPost/domain/jobPost';
+import {
+    JobPost,
+    wasPublishedLessThanSixMonthsAgo,
+} from 'jobPost/domain/jobPost';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
 
 type JobPostWithCompany = JobPost & {
@@ -10,11 +13,6 @@ type JobPostWithCompany = JobPost & {
         logo: CompanyLogo;
     };
 };
-
-const SIX_MONTHS = 1000 * 60 * 60 * 24 * 30 * 6;
-
-const wasPublishedLessThanSixMonthsAgo = (jobPost: JobPost): boolean =>
-    new Date().getTime() - jobPost.createdAt < SIX_MONTHS;
 
 export const getAllJobPosts = async (): Promise<JobPostWithCompany[]> => {
     const jobPostsPromise = jobPostRepository.getAllOpen();

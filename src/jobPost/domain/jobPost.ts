@@ -249,3 +249,8 @@ export const closeJobPost = (jobPost: JobPost): JobPost => {
 };
 
 export const isOpen = (jobPost: JobPost) => !jobPost.closedAt;
+
+const SIX_MONTHS = 1000 * 60 * 60 * 24 * 30 * 6;
+
+export const wasPublishedLessThanSixMonthsAgo = (jobPost: JobPost): boolean =>
+    Date.now() - jobPost.createdAt < SIX_MONTHS;
