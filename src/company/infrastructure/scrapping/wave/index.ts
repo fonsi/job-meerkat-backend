@@ -1,4 +1,3 @@
-import { fromURL } from 'cheerio';
 import {
     ListedJobPostsData,
     NewCompanyScrapper,
@@ -17,22 +16,17 @@ const WAVE_NAME_INITIAL_URL =
 
 type ScrapJobPostData = {
     id: string;
-    url: string;
+    title: string;
+    content: string;
 };
-
-const JOB_HEADER_SELECTOR = '.job__header';
-const JOB_CONTENT_SELECTOR = '.job__description';
 
 const scrapJobPost = async ({
     id,
-    url,
+    title,
+    content,
 }: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
-        const $ = await fromURL(url);
-        const jobPostHeader = $(JOB_HEADER_SELECTOR).text();
-        const jobPostContent = $(JOB_CONTENT_SELECTOR).text();
-
-        return openaiJobPostAnalyzer(`${jobPostHeader} ${jobPostContent}`);
+        return openaiJobPostAnalyzer(`${title}\n${content}`);
     } catch (e) {
         const error = errorWithPrefix(
             e,
@@ -56,6 +50,7 @@ export const waveScrapper: NewCompanyScrapper = ({ companyId }) => {
                     url: jobData.absolute_url,
                     title: jobData.title,
                     createdAt: new Date(jobData.updated_at).getTime(),
+                    content: jobData.content,
                 }))
                 .filter(
                     ({ title }) =>
@@ -75,9 +70,14 @@ export const waveScrapper: NewCompanyScrapper = ({ companyId }) => {
                         `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
                     );
 
+                    if (!jobPost.content) {
+                        continue;
+                    }
+
                     const jobPostData = await scrapJobPost({
                         id: jobPost.id,
-                        url: jobPost.url,
+                        title: jobPost.title,
+                        content: jobPost.content,
                     });
 
                     data.push({
