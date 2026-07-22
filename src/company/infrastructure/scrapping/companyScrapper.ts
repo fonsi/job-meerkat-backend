@@ -91,6 +91,7 @@ import { GRAFANA_LABS_NAME, grafanaLabsScrapper } from './grafanaLabs';
 import { GUSTO_NAME, gustoScrapper } from './gusto';
 import { HOP_SKIP_DRIVE_NAME, hopSkipDriveScrapper } from './hopSkipDrive';
 import { ISTARI_DIGITAL_NAME, istariDigitalScrapper } from './istariDigital';
+import { KALEPA_NAME, kalepaScrapper } from './kalepa';
 import { MYSTEN_LABS_NAME, mystenLabsScrapper } from './mystenLabs';
 import { REGRELLO_NAME, regrelloScrapper } from './regrello';
 import { RIVER_NAME, riverScrapper } from './river';
@@ -225,6 +226,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return invisibleScrapper;
         case KIT_NAME:
             return kitScrapper;
+        case KALEPA_NAME:
+            return kalepaScrapper;
         case KRAKEN_NAME:
             return krakenScrapper;
         case LIMITLESS_NAME:
