@@ -1,4 +1,5 @@
 import {
+    buildCompanyPageUrl,
     buildJobPostPageUrl,
     getPublicSiteBaseUrl,
     PUBLIC_SITE_BASE_URL,
@@ -21,6 +22,16 @@ describe('buildJobPostPageUrl', () => {
     it('encodes the slug query value', () => {
         expect(buildJobPostPageUrl('x y')).toBe(
             'https://jobmeerkat.com/job/?slug=x%20y',
+        );
+    });
+});
+
+describe('buildCompanyPageUrl', () => {
+    it('builds /company/:id with the hardcoded base', () => {
+        expect(
+            buildCompanyPageUrl('123e4567-e89b-12d3-a456-426614174000'),
+        ).toBe(
+            'https://jobmeerkat.com/company/123e4567-e89b-12d3-a456-426614174000',
         );
     });
 });

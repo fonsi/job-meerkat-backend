@@ -14,7 +14,10 @@ import {
     buildEmailHtml,
     emailColors,
 } from 'shared/infrastructure/email/templates/emailShell';
-import { buildJobPostPageUrl } from 'shared/infrastructure/url/buildJobPostPageUrl';
+import {
+    buildCompanyPageUrl,
+    buildJobPostPageUrl,
+} from 'shared/infrastructure/url/buildJobPostPageUrl';
 
 type BuildJobReportTemplate = (props: JobReportTemplateProps) => Promise<{
     html: string;
@@ -30,11 +33,24 @@ type JobReportTemplateProps = {
     unsubscribeUrl: string;
 };
 
+const MAX_JOB_POSTS_PER_COMPANY = 4;
+
 const titleForFrequency = (frequency: ReportFrequency) =>
     frequency === 'weekly' ? 'Weekly Job Report' : 'Daily Job Report';
 
 const cadenceLabel = (frequency: ReportFrequency) =>
     frequency === 'weekly' ? 'weekly' : 'daily';
+
+const openedWhenLabel = (frequency: ReportFrequency) =>
+    frequency === 'weekly' ? 'last week' : 'yesterday';
+
+const moreJobPostsLinkLabel = (
+    remaining: number,
+    frequency: ReportFrequency,
+) => {
+    const jobPostsWord = remaining === 1 ? 'job post' : 'job posts';
+    return `Take a look at the other ${remaining} ${jobPostsWord} opened ${openedWhenLabel(frequency)}`;
+};
 
 const JobReportTemplate = ({
     jobPostsByCompany,
@@ -113,112 +129,143 @@ const JobReportTemplate = ({
                 </Row>
             </Section>
 
-            {Object.values(jobPostsByCompany).map(({ company, jobPosts }) => (
-                <Section key={company.id} style={{ marginTop: '28px' }}>
-                    <Row
-                        style={{
-                            backgroundColor: '#111111',
-                            borderRadius: '4px',
-                            padding: '8px 12px',
-                        }}
-                    >
-                        <Column width="56px">
-                            <Img
-                                src={company.logo.url}
-                                alt={company.name}
-                                width={44}
-                                style={{
-                                    display: 'block',
-                                    height: 'auto',
-                                    width: '44px',
-                                }}
-                            />
-                        </Column>
-                        <Column>
-                            <Text
-                                style={{
-                                    color: '#fefefe',
-                                    fontSize: '18px',
-                                    fontWeight: '600',
-                                    margin: '0',
-                                }}
-                            >
-                                {company.name}
-                            </Text>
-                        </Column>
-                    </Row>
-                    {jobPosts.map((jobPost) => (
+            {Object.values(jobPostsByCompany).map(({ company, jobPosts }) => {
+                const visibleJobPosts = jobPosts.slice(
+                    0,
+                    MAX_JOB_POSTS_PER_COMPANY,
+                );
+                const remainingJobPosts =
+                    jobPosts.length - visibleJobPosts.length;
+
+                return (
+                    <Section key={company.id} style={{ marginTop: '28px' }}>
                         <Row
-                            key={jobPost.id}
                             style={{
-                                border: '1px solid #e5e5e5',
+                                backgroundColor: '#111111',
                                 borderRadius: '4px',
-                                marginTop: '12px',
-                                padding: '12px 14px',
+                                padding: '8px 12px',
                             }}
                         >
-                            <Link
+                            <Column width="56px">
+                                <Img
+                                    src={company.logo.url}
+                                    alt={company.name}
+                                    width={44}
+                                    style={{
+                                        display: 'block',
+                                        height: 'auto',
+                                        width: '44px',
+                                    }}
+                                />
+                            </Column>
+                            <Column>
+                                <Text
+                                    style={{
+                                        color: '#fefefe',
+                                        fontSize: '18px',
+                                        fontWeight: '600',
+                                        margin: '0',
+                                    }}
+                                >
+                                    {company.name}
+                                </Text>
+                            </Column>
+                        </Row>
+                        {visibleJobPosts.map((jobPost) => (
+                            <Row
+                                key={jobPost.id}
                                 style={{
-                                    color: emailColors.text,
-                                    fontSize: '18px',
-                                    fontWeight: '600',
-                                    textDecoration: 'none',
+                                    border: '1px solid #e5e5e5',
+                                    borderRadius: '4px',
+                                    marginTop: '12px',
+                                    padding: '12px 14px',
                                 }}
-                                href={buildJobPostPageUrl(jobPost.slug)}
                             >
-                                {jobPost.title}
-                            </Link>
-                            {jobPost.location ? (
-                                <Text
-                                    style={{
-                                        color: emailColors.muted,
-                                        fontSize: '14px',
-                                        margin: '6px 0 0',
-                                    }}
-                                >
-                                    {jobPost.location}
-                                </Text>
-                            ) : null}
-                            {jobPost.category ? (
-                                <Text
-                                    style={{
-                                        color: emailColors.muted,
-                                        fontSize: '14px',
-                                        margin: '2px 0 0',
-                                    }}
-                                >
-                                    {jobPost.category}
-                                </Text>
-                            ) : null}
-                            {jobPost.workplace ? (
-                                <Text
-                                    style={{
-                                        color: emailColors.muted,
-                                        fontSize: '14px',
-                                        margin: '2px 0 0',
-                                    }}
-                                >
-                                    {jobPost.workplace}
-                                </Text>
-                            ) : null}
-                            {jobPost.salaryRange ? (
-                                <Text
+                                <Link
                                     style={{
                                         color: emailColors.text,
-                                        fontSize: '16px',
+                                        fontSize: '18px',
                                         fontWeight: '600',
-                                        margin: '6px 0 0',
+                                        textDecoration: 'none',
+                                    }}
+                                    href={buildJobPostPageUrl(jobPost.slug)}
+                                >
+                                    {jobPost.title}
+                                </Link>
+                                {jobPost.location ? (
+                                    <Text
+                                        style={{
+                                            color: emailColors.muted,
+                                            fontSize: '14px',
+                                            margin: '6px 0 0',
+                                        }}
+                                    >
+                                        {jobPost.location}
+                                    </Text>
+                                ) : null}
+                                {jobPost.category ? (
+                                    <Text
+                                        style={{
+                                            color: emailColors.muted,
+                                            fontSize: '14px',
+                                            margin: '2px 0 0',
+                                        }}
+                                    >
+                                        {jobPost.category}
+                                    </Text>
+                                ) : null}
+                                {jobPost.workplace ? (
+                                    <Text
+                                        style={{
+                                            color: emailColors.muted,
+                                            fontSize: '14px',
+                                            margin: '2px 0 0',
+                                        }}
+                                    >
+                                        {jobPost.workplace}
+                                    </Text>
+                                ) : null}
+                                {jobPost.salaryRange ? (
+                                    <Text
+                                        style={{
+                                            color: emailColors.text,
+                                            fontSize: '16px',
+                                            fontWeight: '600',
+                                            margin: '6px 0 0',
+                                        }}
+                                    >
+                                        {jobPost.salaryRange.min
+                                            ? `${jobPost.salaryRange.min}-${jobPost.salaryRange.max} ${jobPost.salaryRange.currency}/${jobPost.salaryRange.period}`
+                                            : `${jobPost.salaryRange.max} ${jobPost.salaryRange.currency}/${jobPost.salaryRange.period}`}
+                                    </Text>
+                                ) : null}
+                            </Row>
+                        ))}
+                        {remainingJobPosts > 0 ? (
+                            <Text
+                                style={{
+                                    margin: '14px 0 0',
+                                    textAlign: 'center',
+                                }}
+                            >
+                                <Link
+                                    href={buildCompanyPageUrl(company.id)}
+                                    style={{
+                                        color: emailColors.link,
+                                        fontSize: '15px',
+                                        fontWeight: '600',
                                     }}
                                 >
-                                    {jobPost.salaryRange.min
-                                        ? `${jobPost.salaryRange.min}-${jobPost.salaryRange.max} ${jobPost.salaryRange.currency}/${jobPost.salaryRange.period}`
-                                        : `${jobPost.salaryRange.max} ${jobPost.salaryRange.currency}/${jobPost.salaryRange.period}`}
-                                </Text>
-                            ) : null}
-                        </Row>
-                    ))}
-                </Section>
-            ))}
+                                    {moreJobPostsLinkLabel(
+                                        remainingJobPosts,
+                                        frequency,
+                                    )}
+                                </Link>
+                            </Text>
+                        ) : null}
+                    </Section>
+                );
+            })}
 
             <Section style={{ marginTop: '32px' }}>
                 <Text
