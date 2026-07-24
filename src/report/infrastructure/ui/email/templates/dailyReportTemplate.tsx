@@ -44,13 +44,13 @@ const cadenceLabel = (frequency: ReportFrequency) =>
 const openedWhenLabel = (frequency: ReportFrequency) =>
     frequency === 'weekly' ? 'last week' : 'yesterday';
 
+const jobCountLabel = (count: number) =>
+    count === 1 ? '1 new job' : `${count} new jobs`;
+
 const moreJobPostsLinkLabel = (
     remaining: number,
     frequency: ReportFrequency,
-) => {
-    const jobPostsWord = remaining === 1 ? 'job post' : 'job posts';
-    return `Take a look at the other ${remaining} ${jobPostsWord} opened ${openedWhenLabel(frequency)}`;
-};
+) => `View the other ${remaining} opened ${openedWhenLabel(frequency)} →`;
 
 const JobReportTemplate = ({
     jobPostsByCompany,
@@ -136,6 +136,7 @@ const JobReportTemplate = ({
                 );
                 const remainingJobPosts =
                     jobPosts.length - visibleJobPosts.length;
+                const companyPageUrl = buildCompanyPageUrl(company.id);
 
                 return (
                     <Section key={company.id} style={{ marginTop: '28px' }}>
@@ -167,8 +168,46 @@ const JobReportTemplate = ({
                                         margin: '0',
                                     }}
                                 >
-                                    {company.name}
+                                    <Link
+                                        href={companyPageUrl}
+                                        style={{
+                                            color: '#fefefe',
+                                            textDecoration: 'none',
+                                        }}
+                                    >
+                                        {company.name}
+                                    </Link>
+                                    <span
+                                        style={{
+                                            color: '#cccccc',
+                                            fontWeight: '400',
+                                        }}
+                                    >
+                                        {` · ${jobCountLabel(jobPosts.length)}`}
+                                    </span>
                                 </Text>
+                                {remainingJobPosts > 0 ? (
+                                    <Text
+                                        style={{
+                                            margin: '4px 0 0',
+                                        }}
+                                    >
+                                        <Link
+                                            href={companyPageUrl}
+                                            style={{
+                                                color: '#cccccc',
+                                                fontSize: '13px',
+                                                fontWeight: '500',
+                                                textDecoration: 'underline',
+                                            }}
+                                        >
+                                            {moreJobPostsLinkLabel(
+                                                remainingJobPosts,
+                                                frequency,
+                                            )}
+                                        </Link>
+                                    </Text>
+                                ) : null}
                             </Column>
                         </Row>
                         {visibleJobPosts.map((jobPost) => (
@@ -241,28 +280,6 @@ const JobReportTemplate = ({
                                 ) : null}
                             </Row>
                         ))}
-                        {remainingJobPosts > 0 ? (
-                            <Text
-                                style={{
-                                    margin: '14px 0 0',
-                                    textAlign: 'center',
-                                }}
-                            >
-                                <Link
-                                    href={buildCompanyPageUrl(company.id)}
-                                    style={{
-                                        color: emailColors.link,
-                                        fontSize: '15px',
-                                        fontWeight: '600',
-                                    }}
-                                >
-                                    {moreJobPostsLinkLabel(
-                                        remainingJobPosts,
-                                        frequency,
-                                    )}
-                                </Link>
-                            </Text>
-                        ) : null}
                     </Section>
                 );
             })}
