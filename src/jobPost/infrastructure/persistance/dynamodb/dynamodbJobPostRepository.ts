@@ -233,7 +233,7 @@ const update: Update = async (jobPost) => {
                               N: jobPost.salaryRange.min?.toString() || '0',
                           },
                           ':salaryMax': {
-                              N: jobPost.salaryRange.max.toString(),
+                              N: jobPost.salaryRange.max?.toString() || '0',
                           },
                       }
                     : {}),

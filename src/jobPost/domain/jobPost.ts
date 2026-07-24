@@ -179,7 +179,7 @@ export type JobPost = {
     category: Category;
     salaryRange: {
         min?: number;
-        max: number;
+        max?: number;
         currency: string;
         period: Period;
     } | null;
