@@ -61,7 +61,7 @@ Never paste the company description verbatim. Paraphrase into short social copy.
 Keep salaries in USD/EUR as given.
 
 X: optional single tweet (may be unused). ≤280 chars.
-Bluesky: 1–2 posts with an original company hook + ${companyLink}. ≤299 chars.
+Bluesky: 1–2 posts with an original company hook + ${companyLink}. ≤300 graphemes (prefer ≤280).
 Threads: 2–3 messages — original one-liner on what they do, open roles / sample salaries, link ${companyLink}. ≤500 chars. Max one hashtag.
 
 LinkedIn: one spotlight post written from scratch (paraphrase only).

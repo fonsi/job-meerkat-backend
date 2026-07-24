@@ -42,7 +42,7 @@ ${SOCIAL_POST_CONTENT_RULES}
 Salaries are USD or EUR only — keep each amount in its given currency.
 
 X: 1–2 tweets. Hook + 2–3 standout salaries, then ${site}. No emojis. ≤280 chars.
-Bluesky: similar, ≤299 chars, 1–2 posts.
+Bluesky: similar, ≤300 graphemes (prefer ≤280), 1–2 posts.
 Threads: 2–3 messages listing the top roles with salaries and listing links where useful, ending with ${site}. ≤500 chars. Max one hashtag.
 LinkedIn: one roundup post.
 

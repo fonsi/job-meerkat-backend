@@ -89,7 +89,7 @@ X / Twitter:
 - Hard limit 280 characters per tweet.
 
 Bluesky:
-- Same angle as X, character limit 299. 1–2 posts is fine.
+- Same angle as X, hard limit 300 graphemes per post (prefer ≤280). 1–2 posts is fine.
 - Include job listing ${jobPageUrl} and optionally company page ${companyLink}.
 
 Meta Threads (different from X):

@@ -56,7 +56,7 @@ ${SOCIAL_POST_CONTENT_RULES}
 Salaries in this dataset are USD or EUR only — keep amounts in their given currency.
 
 X / Twitter: 1–2 tweets max (prefer 1 if it fits). Lead with a data hook (count, salary median/max). Include ${site}. No emojis. ≤280 chars each.
-Bluesky: similar to X, ≤299 chars, 1–2 posts.
+Bluesky: similar to X, ≤300 graphemes (prefer ≤280), 1–2 posts.
 Threads: 2 messages — (1) the daily hook + invite to browse listings on ${site}; (2) highlight 1–2 top paid roles with salary and encourage following for more. ≤500 chars. Max one hashtag total.
 LinkedIn: one short professional update with the key numbers and ${site}.
 
