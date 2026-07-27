@@ -19,6 +19,10 @@ export const marshallReport = (report: Report) => {
         item.unsubscribedAt = { N: report.unsubscribedAt.toString() };
     }
 
+    if (report.reminderSentAt != null) {
+        item.reminderSentAt = { N: report.reminderSentAt.toString() };
+    }
+
     if (report.preferences) {
         item.preferences = { S: JSON.stringify(report.preferences) };
     }

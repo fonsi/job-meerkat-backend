@@ -21,6 +21,7 @@ params:
         weeklyReportsSchedule: cron(0 0 1 1 ? 1970) # never
         socialPostsCheck: cron(0 0 1 1 ? 1970) # never
         archiveClosedJobPostsSchedule: cron(0 0 1 1 ? 1970) # never
+        processPendingSubscriptionsSchedule: cron(0 0 1 1 ? 1970) # never
     production:
         processCompanySchedule: cron(0 0 ? * * *) # every day at 0 am
         socialPostsSchedule: cron(0 2 ? * * *) # every day at 2 am
@@ -28,6 +29,7 @@ params:
         reportsSchedule: cron(0 5 ? * * *) # every day at 5 am
         weeklyReportsSchedule: cron(0 5 ? * MON *) # every Monday at 5 am
         archiveClosedJobPostsSchedule: cron(0 6 ? * SUN *) # every Sunday at 6 am
+        processPendingSubscriptionsSchedule: cron(0 6 ? * * *) # every day at 6 am
 provider:
     name: aws
     runtime: nodejs24.x
@@ -321,6 +323,11 @@ functions:
         timeout: 30
         events:
             - schedule: ${param:archiveClosedJobPostsSchedule}
+    processPendingSubscriptions:
+        handler: src/newsletter/infrastructure/api/pending/handler.index
+        timeout: 30
+        events:
+            - schedule: ${param:processPendingSubscriptionsSchedule}
     newsletter:
         handler: src/newsletter/infrastructure/api/handler.index
         timeout: ${param:newsletterEndpointTimeout}

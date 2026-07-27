@@ -13,6 +13,7 @@ export type Report = {
     createdAt: number;
     confirmedAt?: number;
     unsubscribedAt?: number;
+    reminderSentAt?: number;
     unsubscribeToken: string;
     preferences?: NewsletterPreferences;
 };

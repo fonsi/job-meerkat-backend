@@ -80,6 +80,11 @@ export const unmarshall = (item: Record<string, AttributeValue>): Report => {
                       unsubscribedAt: parseInt(item['unsubscribedAt']['N'], 10),
                   }
                 : {}),
+            ...(item['reminderSentAt']?.N
+                ? {
+                      reminderSentAt: parseInt(item['reminderSentAt']['N'], 10),
+                  }
+                : {}),
             ...(preferences ? { preferences } : {}),
         };
 

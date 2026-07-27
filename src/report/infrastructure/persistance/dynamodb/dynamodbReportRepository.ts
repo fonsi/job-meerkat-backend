@@ -1,4 +1,5 @@
 import {
+    deleteItem,
     getItem,
     putItem,
     query,
@@ -11,10 +12,12 @@ import { normalizeEmail } from 'shared/infrastructure/email/normalizeEmail';
 import {
     Activate,
     CreatePending,
+    Delete,
     GetAll,
     GetByEmailNormalized,
     GetById,
     GetByUnsubscribeToken,
+    MarkReminderSent,
     ReportRepository,
     Unsubscribe,
     ResetToPending,
@@ -201,14 +204,16 @@ const unsubscribe: Unsubscribe = async (id) => {
 
 const resetToPending: ResetToPending = async (id, unsubscribeToken) => {
     try {
+        const now = Date.now();
         const update: UpdateItemExpression = {
             Key: { id: { S: id } },
             UpdateExpression:
-                'SET #status = :status, unsubscribeToken = :token REMOVE confirmedAt, unsubscribedAt',
+                'SET #status = :status, unsubscribeToken = :token, createdAt = :createdAt REMOVE confirmedAt, unsubscribedAt, reminderSentAt',
             ExpressionAttributeNames: { '#status': 'status' },
             ExpressionAttributeValues: {
                 ':status': { S: 'pending' },
                 ':token': { S: unsubscribeToken },
+                ':createdAt': { N: now.toString() },
             },
             ReturnValues: 'ALL_NEW',
         };
@@ -221,6 +226,39 @@ const resetToPending: ResetToPending = async (id, unsubscribeToken) => {
         }
 
         return unmarshall(item);
+    } catch (e) {
+        throw new DynamodbError(e);
+    }
+};
+
+const markReminderSent: MarkReminderSent = async (id) => {
+    try {
+        const now = Date.now();
+        const update: UpdateItemExpression = {
+            Key: { id: { S: id } },
+            UpdateExpression: 'SET reminderSentAt = :reminderSentAt',
+            ExpressionAttributeValues: {
+                ':reminderSentAt': { N: now.toString() },
+            },
+            ReturnValues: 'ALL_NEW',
+        };
+
+        const result = await updateItem(REPORT_TABLE, update);
+        const item = result.Attributes;
+
+        if (!item) {
+            throw new Error('markReminderSent: missing Attributes');
+        }
+
+        return unmarshall(item);
+    } catch (e) {
+        throw new DynamodbError(e);
+    }
+};
+
+const deleteReport: Delete = async (id) => {
+    try {
+        await deleteItem(REPORT_TABLE, { id: { S: id } });
     } catch (e) {
         throw new DynamodbError(e);
     }
@@ -314,4 +352,6 @@ export const reportRepository = {
     updateFrequency,
     updatePreferences,
     updateUnsubscribeToken,
+    markReminderSent,
+    delete: deleteReport,
 } as ReportRepository;

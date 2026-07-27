@@ -31,6 +31,31 @@ export const sendConfirmSubscriptionEmail = async ({
     });
 };
 
+export const sendConfirmSubscriptionReminderEmail = async ({
+    to,
+    linkUrl,
+}: {
+    to: string;
+    linkUrl: string;
+}) => {
+    const { html, text } = await buildSimpleEmailTemplate({
+        title: 'Still want job digests?',
+        preview: 'Your JobMeerkat subscription is waiting for confirmation',
+        paragraphs: [
+            'You signed up for JobMeerkat job digests a few days ago, but we haven’t confirmed your email yet.',
+            'Confirm once and we’ll start sending curated opportunities your way. If you didn’t mean to subscribe, you can ignore this email — we’ll remove the pending request soon.',
+        ],
+        cta: { label: 'Confirm subscription', url: linkUrl },
+    });
+
+    await sendEmail({
+        to: [to],
+        subject: 'Reminder: confirm your JobMeerkat subscription',
+        text,
+        html,
+    });
+};
+
 export const sendNewsletterMagicLinkEmail = async ({
     to,
     linkUrl,
@@ -157,6 +182,24 @@ export const sendConfirmLinkForReport = async (
     }
 
     await sendConfirmSubscriptionEmail({ to: report.email, linkUrl: url });
+    return true;
+};
+
+export const sendConfirmReminderLinkForReport = async (
+    report: Report,
+    buildUrl: (token: string) => string | null,
+) => {
+    const token = await issueConfirmTokenForReport(report);
+    const url = buildUrl(token);
+
+    if (!url) {
+        return false;
+    }
+
+    await sendConfirmSubscriptionReminderEmail({
+        to: report.email,
+        linkUrl: url,
+    });
     return true;
 };
 

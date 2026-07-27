@@ -30,6 +30,8 @@ export type UpdateUnsubscribeToken = (
     id: ReportId,
     unsubscribeToken: string,
 ) => Promise<Report>;
+export type MarkReminderSent = (id: ReportId) => Promise<Report>;
+export type Delete = (id: ReportId) => Promise<void>;
 
 export interface ReportRepository {
     getAll: GetAll;
@@ -43,4 +45,6 @@ export interface ReportRepository {
     updateFrequency: UpdateFrequency;
     updatePreferences: UpdatePreferences;
     updateUnsubscribeToken: UpdateUnsubscribeToken;
+    markReminderSent: MarkReminderSent;
+    delete: Delete;
 }
