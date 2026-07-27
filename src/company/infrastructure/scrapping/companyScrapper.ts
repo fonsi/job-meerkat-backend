@@ -116,6 +116,29 @@ import { WAVE_NAME, waveScrapper } from './wave';
 import { WEBFLOW_NAME, webflowScrapper } from './webflow';
 import { WISPR_FLOW_NAME, wisprFlowScrapper } from './wisprFlow';
 import { WORKOS_NAME, workOsScrapper } from './workOs';
+import {
+    ABNORMAL_SECURITY_NAME,
+    abnormalSecurityScrapper,
+} from './abnormalSecurity';
+import { BITWARDEN_NAME, bitwardenScrapper } from './bitwarden';
+import { CRIBL_NAME, criblScrapper } from './cribl';
+import { DOXIMITY_NAME, doximityScrapper } from './doximity';
+import { EXPEL_NAME, expelScrapper } from './expel';
+import { GLIDE_NAME, glideScrapper } from './glide';
+import { GOLINKS_NAME, goLinksScrapper } from './goLinks';
+import { HONEYCOMB_NAME, honeycombScrapper } from './honeycomb';
+import { ITERABLE_NAME, iterableScrapper } from './iterable';
+import { MARQETA_NAME, marqetaScrapper } from './marqeta';
+import { MATERIALIZE_NAME, materializeScrapper } from './materialize';
+import { OSO_NAME, osoScrapper } from './oso';
+import { OUTSCHOOL_NAME, outschoolScrapper } from './outschool';
+import { RESEND_NAME, resendScrapper } from './resend';
+import { SPRIG_NAME, sprigScrapper } from './sprig';
+import { STYTCH_NAME, stytchScrapper } from './stytch';
+import { SUBSTACK_NAME, substackScrapper } from './substack';
+import { TEMPORAL_NAME, temporalScrapper } from './temporal';
+import { VULTR_NAME, vultrScrapper } from './vultr';
+import { WIKIMEDIA_NAME, wikimediaScrapper } from './wikimedia';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -386,6 +409,46 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return wisprFlowScrapper;
         case WORKOS_NAME:
             return workOsScrapper;
+        case ABNORMAL_SECURITY_NAME:
+            return abnormalSecurityScrapper;
+        case BITWARDEN_NAME:
+            return bitwardenScrapper;
+        case CRIBL_NAME:
+            return criblScrapper;
+        case DOXIMITY_NAME:
+            return doximityScrapper;
+        case EXPEL_NAME:
+            return expelScrapper;
+        case GLIDE_NAME:
+            return glideScrapper;
+        case GOLINKS_NAME:
+            return goLinksScrapper;
+        case HONEYCOMB_NAME:
+            return honeycombScrapper;
+        case ITERABLE_NAME:
+            return iterableScrapper;
+        case MARQETA_NAME:
+            return marqetaScrapper;
+        case MATERIALIZE_NAME:
+            return materializeScrapper;
+        case OSO_NAME:
+            return osoScrapper;
+        case OUTSCHOOL_NAME:
+            return outschoolScrapper;
+        case RESEND_NAME:
+            return resendScrapper;
+        case SPRIG_NAME:
+            return sprigScrapper;
+        case STYTCH_NAME:
+            return stytchScrapper;
+        case SUBSTACK_NAME:
+            return substackScrapper;
+        case TEMPORAL_NAME:
+            return temporalScrapper;
+        case VULTR_NAME:
+            return vultrScrapper;
+        case WIKIMEDIA_NAME:
+            return wikimediaScrapper;
         case TWITCH_NAME:
             return twitchScrapper;
         case ZAPIER_NAME:
