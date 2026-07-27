@@ -77,10 +77,14 @@ import { ATTIO_NAME, attioScrapper } from './attio';
 import { BUFFER_NAME, bufferScrapper } from './buffer';
 import { BUILDER_NAME, builderScrapper } from './builder';
 import { CAMUNDA_NAME, camundaScrapper } from './camunda';
+import { CALENDLY_NAME, calendlyScrapper } from './calendly';
 import { CHECKLY_NAME, checklyScrapper } from './checkly';
 import { CHROMATIC_NAME, chromaticScrapper } from './chromatic';
+import { CLICKUP_NAME, clickUpScrapper } from './clickUp';
 import { CONSENSYS_NAME, consensysScrapper } from './consensys';
 import { CYBERHAVEN_NAME, cyberhavenScrapper } from './cyberhaven';
+import { DEEPGRAM_NAME, deepgramScrapper } from './deepgram';
+import { DESCRIPT_NAME, descriptScrapper } from './descript';
 import { DUALENTRY_NAME, dualentryScrapper } from './dualentry';
 import { FIGMA_NAME, figmaScrapper } from './figma';
 import { FINGERPRINT_NAME, fingerprintScrapper } from './fingerprint';
@@ -90,18 +94,28 @@ import { GITLAB_NAME, gitlabScrapper } from './gitlab';
 import { GRAFANA_LABS_NAME, grafanaLabsScrapper } from './grafanaLabs';
 import { GUSTO_NAME, gustoScrapper } from './gusto';
 import { HOP_SKIP_DRIVE_NAME, hopSkipDriveScrapper } from './hopSkipDrive';
+import { INCIDENT_IO_NAME, incidentIoScrapper } from './incidentIo';
 import { ISTARI_DIGITAL_NAME, istariDigitalScrapper } from './istariDigital';
 import { KALEPA_NAME, kalepaScrapper } from './kalepa';
+import { LAUNCHDARKLY_NAME, launchDarklyScrapper } from './launchDarkly';
+import { MERCURY_NAME, mercuryScrapper } from './mercury';
 import { MYSTEN_LABS_NAME, mystenLabsScrapper } from './mystenLabs';
+import { PARAGON_NAME, paragonScrapper } from './paragon';
+import { PREFECT_NAME, prefectScrapper } from './prefect';
 import { REGRELLO_NAME, regrelloScrapper } from './regrello';
+import { RENDER_NAME, renderScrapper } from './render';
 import { RIVER_NAME, riverScrapper } from './river';
 import { SANDBOX_AQ_NAME, sandboxAQScrapper } from './sandboxAQ';
 import { SENTRY_NAME, sentryScrapper } from './sentry';
 import { STRIPE_NAME, stripeScrapper } from './stripe';
 import { SUPERMOVE_NAME, supermoveScrapper } from './supermove';
+import { TAILSCALE_NAME, tailscaleScrapper } from './tailscale';
+import { TINES_NAME, tinesScrapper } from './tines';
 import { VERCEL_NAME, vercelScrapper } from './vercel';
 import { WAVE_NAME, waveScrapper } from './wave';
+import { WEBFLOW_NAME, webflowScrapper } from './webflow';
 import { WISPR_FLOW_NAME, wisprFlowScrapper } from './wisprFlow';
+import { WORKOS_NAME, workOsScrapper } from './workOs';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -222,6 +236,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return humanInterestScrapper;
         case HUMAN_SIGNAL_NAME:
             return humanSignalScrapper;
+        case INCIDENT_IO_NAME:
+            return incidentIoScrapper;
         case INVISIBLE_NAME:
             return invisibleScrapper;
         case KIT_NAME:
@@ -230,6 +246,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return kalepaScrapper;
         case KRAKEN_NAME:
             return krakenScrapper;
+        case LAUNCHDARKLY_NAME:
+            return launchDarklyScrapper;
         case LIMITLESS_NAME:
             return limitlessScrapper;
         case LATTICE_NAME:
@@ -244,18 +262,24 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return mailerLiteScrapper;
         case MATTERMOST_NAME:
             return mattermostScrapper;
+        case MERCURY_NAME:
+            return mercuryScrapper;
         case MIMO_NAME:
             return mimoScrapper;
         case NETLIFY_NAME:
             return netlifyScrapper;
         case ONE_PASSWORD_NAME:
             return onePasswordScrapper;
+        case PARAGON_NAME:
+            return paragonScrapper;
         case PHANTOM_NAME:
             return phantomScrapper;
         case PHOTOROOM_NAME:
             return photoroomScrapper;
         case PLANET_SCALE_NAME:
             return planetScaleScrapper;
+        case PREFECT_NAME:
+            return prefectScrapper;
         case PROTONAI_NAME:
             return protonaiScrapper;
         case POSTSCRIPT_NAME:
@@ -270,6 +294,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return ravioScrapper;
         case REC_ROOM_NAME:
             return recRoomScrapper;
+        case RENDER_NAME:
+            return renderScrapper;
         case REVENUE_CAT_NAME:
             return revenueCatScrapper;
         case REPLIT_NAME:
@@ -290,6 +316,10 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return superScrapper;
         case SUPERHUMAN_NAME:
             return superhumanScrapper;
+        case TAILSCALE_NAME:
+            return tailscaleScrapper;
+        case TINES_NAME:
+            return tinesScrapper;
         case V7_NAME:
             return v7Scrapper;
         case LIGHTDASH_NAME:
@@ -302,16 +332,24 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return bufferScrapper;
         case BUILDER_NAME:
             return builderScrapper;
+        case CALENDLY_NAME:
+            return calendlyScrapper;
         case CAMUNDA_NAME:
             return camundaScrapper;
         case CHECKLY_NAME:
             return checklyScrapper;
         case CHROMATIC_NAME:
             return chromaticScrapper;
+        case CLICKUP_NAME:
+            return clickUpScrapper;
         case CONSENSYS_NAME:
             return consensysScrapper;
         case CYBERHAVEN_NAME:
             return cyberhavenScrapper;
+        case DEEPGRAM_NAME:
+            return deepgramScrapper;
+        case DESCRIPT_NAME:
+            return descriptScrapper;
         case DUALENTRY_NAME:
             return dualentryScrapper;
         case FINGERPRINT_NAME:
@@ -342,8 +380,12 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return vercelScrapper;
         case WAVE_NAME:
             return waveScrapper;
+        case WEBFLOW_NAME:
+            return webflowScrapper;
         case WISPR_FLOW_NAME:
             return wisprFlowScrapper;
+        case WORKOS_NAME:
+            return workOsScrapper;
         case TWITCH_NAME:
             return twitchScrapper;
         case ZAPIER_NAME:
