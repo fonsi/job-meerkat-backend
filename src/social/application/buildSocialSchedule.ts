@@ -13,6 +13,7 @@ import {
 } from 'social/domain/socialPlatform';
 import { SocialPostType } from 'social/domain/socialPostType';
 import {
+    COMPANY_THREADS_PER_DAY,
     MAX_PUBLICATIONS_PER_DAY,
     SOCIAL_POST_SLOT_MS,
     X_DAILY_PUBLICATION_BUDGET,
@@ -120,13 +121,19 @@ export const buildSocialSchedule = ({
     }
 
     const jobPromoCandidates = pickBestPaidJobPerCompany(latestJobPosts);
-    const companyForThread = pickCompanyForThread({
-        jobPosts: latestJobPosts,
-        companiesById,
-        excludeCompanyIds: new Set(),
-    });
+    const usedCompanyThreadIds = new Set<string>();
 
-    if (companyForThread && drafts.length < MAX_PUBLICATIONS_PER_DAY) {
+    for (let i = 0; i < COMPANY_THREADS_PER_DAY; i++) {
+        if (drafts.length >= MAX_PUBLICATIONS_PER_DAY) break;
+
+        const companyForThread = pickCompanyForThread({
+            jobPosts: latestJobPosts,
+            companiesById,
+            excludeCompanyIds: usedCompanyThreadIds,
+        });
+        if (!companyForThread) break;
+
+        usedCompanyThreadIds.add(companyForThread.id);
         drafts.push({
             id: makeScheduledSocialPostId({
                 type: SocialPostType.CompanyThread,

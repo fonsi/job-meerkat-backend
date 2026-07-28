@@ -11,7 +11,9 @@ import { buildSocialSchedule } from './buildSocialSchedule';
 import { SocialPostType } from 'social/domain/socialPostType';
 import { SocialPlatform } from 'social/domain/socialPlatform';
 import {
+    COMPANY_THREADS_PER_DAY,
     MAX_PUBLICATIONS_PER_DAY,
+    SOCIAL_POST_SLOT_MS,
     X_DAILY_PUBLICATION_BUDGET,
 } from 'social/domain/socialScheduleConfig';
 
@@ -91,11 +93,14 @@ describe('buildSocialSchedule', () => {
         expect(scheduled[0].type).toBe(SocialPostType.DailyAnalysis);
         expect(scheduled[0].platforms).toContain(SocialPlatform.X);
 
-        expect(
-            scheduled.some(
-                (post) => post.type === SocialPostType.CompanyThread,
-            ),
-        ).toBe(true);
+        const companyThreads = scheduled.filter(
+            (post) => post.type === SocialPostType.CompanyThread,
+        );
+        expect(companyThreads).toHaveLength(2); // only c1 + c3 have descriptions
+        expect(companyThreads.map((post) => post.companyId).sort()).toEqual([
+            'c1',
+            'c3',
+        ]);
 
         const jobPromos = scheduled.filter(
             (post) => post.type === SocialPostType.JobPromo,
@@ -109,6 +114,7 @@ describe('buildSocialSchedule', () => {
             X_DAILY_PUBLICATION_BUDGET,
         );
         expect(scheduled.length).toBeLessThanOrEqual(MAX_PUBLICATIONS_PER_DAY);
+        expect(scheduled[1].date - scheduled[0].date).toBe(SOCIAL_POST_SLOT_MS);
     });
 
     it('includes weekly top paid when requested and reserves X', () => {
@@ -232,5 +238,54 @@ describe('buildSocialSchedule', () => {
         expect(
             scheduled.some((post) => post.type === SocialPostType.JobPromo),
         ).toBe(true);
+    });
+
+    it('schedules up to three distinct company threads when available', () => {
+        const latestJobPosts = Array.from({ length: 5 }, (_, index) =>
+            job({
+                id: `j${index}`,
+                companyId: `c${index}`,
+                max: 200000 - index * 1000,
+            }),
+        );
+        const manyCompanies = latestJobPosts.map((_, index) =>
+            company(`c${index}`, `Co${index}`, 'A product company.'),
+        );
+        const manyById = new Map(manyCompanies.map((c) => [c.id, c]));
+
+        const scheduled = buildSocialSchedule({
+            latestJobPosts,
+            weekJobPosts: latestJobPosts,
+            companiesById: manyById,
+            now,
+            includeWeeklyTopPaid: false,
+        });
+
+        const companyThreads = scheduled.filter(
+            (post) => post.type === SocialPostType.CompanyThread,
+        );
+        expect(companyThreads).toHaveLength(COMPANY_THREADS_PER_DAY);
+        expect(new Set(companyThreads.map((post) => post.companyId)).size).toBe(
+            COMPANY_THREADS_PER_DAY,
+        );
+    });
+
+    it('leaves capacity unused when there are not enough job promos', () => {
+        const latestJobPosts = [
+            job({ id: 'j1', companyId: 'c1', max: 200000 }),
+        ];
+
+        const scheduled = buildSocialSchedule({
+            latestJobPosts,
+            weekJobPosts: latestJobPosts,
+            companiesById,
+            now,
+            includeWeeklyTopPaid: false,
+        });
+
+        expect(scheduled.length).toBeLessThan(MAX_PUBLICATIONS_PER_DAY);
+        expect(
+            scheduled.filter((post) => post.type === SocialPostType.JobPromo),
+        ).toHaveLength(1);
     });
 });

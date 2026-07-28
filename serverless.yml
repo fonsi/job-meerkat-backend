@@ -25,7 +25,7 @@ params:
     production:
         processCompanySchedule: cron(0 0 ? * * *) # every day at 0 am
         socialPostsSchedule: cron(0 2 ? * * *) # every day at 2 am
-        socialPostsCheck: cron(0 * ? * * *) # every day every hour
+        socialPostsCheck: cron(0/30 * ? * * *) # every day every 30 minutes
         reportsSchedule: cron(0 5 ? * * *) # every day at 5 am
         weeklyReportsSchedule: cron(0 5 ? * MON *) # every Monday at 5 am
         archiveClosedJobPostsSchedule: cron(0 6 ? * SUN *) # every Sunday at 6 am
