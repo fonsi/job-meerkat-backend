@@ -14,8 +14,6 @@ const OPENAI_MODEL = 'gpt-4o-mini';
 const openai = new OpenAI();
 
 const example: SocialMediaPosts = {
-    linkedin: 'linkedin post',
-    twitter: ['tweet 1', 'tweet 2'],
     bluesky: ['bluesky 1', 'bluesky 2'],
     threads: ['thread 1', 'thread 2', 'thread 3'],
 };
@@ -25,10 +23,8 @@ export const openaiCreateWeeklyTopPaidPosts = async ({
 }: {
     topJobs: DailyAnalysisJobSummary[];
 }): Promise<SocialMediaPosts> => {
-    const siteX = buildPublicSiteUrl(UtmSource.X);
     const siteBluesky = buildPublicSiteUrl(UtmSource.Bluesky);
     const siteThreads = buildPublicSiteUrl(UtmSource.Threads);
-    const siteLinkedIn = buildPublicSiteUrl(UtmSource.LinkedIn);
 
     const completion = await openai.chat.completions.create({
         model: OPENAI_MODEL,
@@ -47,10 +43,8 @@ ${SOCIAL_POST_CONTENT_RULES}
 Salaries are USD or EUR only — keep each amount in its given currency.
 When including listing links from the data, keep their query strings.
 
-X: 1–2 tweets. Hook + 2–3 standout salaries, then ${siteX}. No emojis. ≤280 chars.
-Bluesky: similar, use ${siteBluesky}, ≤300 graphemes (prefer ≤280), 1–2 posts.
+Bluesky: 1–2 posts. Hook + 2–3 standout salaries, then ${siteBluesky}. No emojis. ≤300 graphemes (prefer ≤280).
 Threads: 2–3 messages listing the top roles with salaries and listing links where useful, ending with ${siteThreads}. ≤500 chars. Max one hashtag.
-LinkedIn: one roundup post with ${siteLinkedIn}.
 
 Return JSON: ${JSON.stringify(example)}.
 `,

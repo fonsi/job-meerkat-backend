@@ -30,8 +30,6 @@ export type DailyAnalysisStats = {
 };
 
 const example: SocialMediaPosts = {
-    linkedin: 'linkedin post',
-    twitter: ['tweet 1', 'tweet 2'],
     bluesky: ['bluesky 1', 'bluesky 2'],
     threads: ['thread 1', 'thread 2'],
 };
@@ -39,10 +37,8 @@ const example: SocialMediaPosts = {
 export const openaiCreateDailyAnalysisPosts = async (
     stats: DailyAnalysisStats,
 ): Promise<SocialMediaPosts> => {
-    const siteX = buildPublicSiteUrl(UtmSource.X);
     const siteBluesky = buildPublicSiteUrl(UtmSource.Bluesky);
     const siteThreads = buildPublicSiteUrl(UtmSource.Threads);
-    const siteLinkedIn = buildPublicSiteUrl(UtmSource.LinkedIn);
 
     const completion = await openai.chat.completions.create({
         model: OPENAI_MODEL,
@@ -61,10 +57,8 @@ ${SOCIAL_POST_CONTENT_RULES}
 Salaries in this dataset are USD or EUR only — keep amounts in their given currency.
 When including listing links from the data, keep their query strings.
 
-X / Twitter: 1–2 tweets max (prefer 1 if it fits). Lead with a data hook (count, salary median/max). Include ${siteX}. No emojis. ≤280 chars each.
-Bluesky: similar to X, use ${siteBluesky}, ≤300 graphemes (prefer ≤280), 1–2 posts.
+Bluesky: 1–2 posts max (prefer 1 if it fits). Lead with a data hook (count, salary median/max). Include ${siteBluesky}. No emojis. ≤300 graphemes (prefer ≤280).
 Threads: 2 messages — (1) the daily hook + invite to browse listings on ${siteThreads}; (2) highlight 1–2 top paid roles with salary and encourage following for more. ≤500 chars. Max one hashtag total.
-LinkedIn: one short professional update with the key numbers and ${siteLinkedIn}.
 
 Return JSON: ${JSON.stringify(example)}.
 `,

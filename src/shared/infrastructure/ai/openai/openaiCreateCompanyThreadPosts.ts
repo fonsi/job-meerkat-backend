@@ -21,8 +21,6 @@ export type CompanyThreadJobSummary = {
 };
 
 const example: SocialMediaPosts = {
-    linkedin: 'linkedin post',
-    twitter: ['tweet 1'],
     bluesky: ['bluesky 1', 'bluesky 2'],
     threads: ['thread 1', 'thread 2', 'thread 3'],
 };
@@ -36,7 +34,6 @@ export const openaiCreateCompanyThreadPosts = async ({
     openCount: number;
     jobs: CompanyThreadJobSummary[];
 }): Promise<SocialMediaPosts> => {
-    const companyUrlX = buildCompanyPageUrl(company.id, UtmSource.X);
     const companyUrlBluesky = buildCompanyPageUrl(
         company.id,
         UtmSource.Bluesky,
@@ -45,11 +42,7 @@ export const openaiCreateCompanyThreadPosts = async ({
         company.id,
         UtmSource.Threads,
     );
-    const companyUrlLinkedIn = buildCompanyPageUrl(
-        company.id,
-        UtmSource.LinkedIn,
-    );
-    const siteX = buildPublicSiteUrl(UtmSource.X);
+    const siteBluesky = buildPublicSiteUrl(UtmSource.Bluesky);
 
     const completion = await openai.chat.completions.create({
         model: OPENAI_MODEL,
@@ -69,18 +62,15 @@ Homepage: ${company.homePage}
 Internal company context (for you only — rewrite in your own words, never copy-paste): ${company.description ?? 'n/a'}
 Open remote roles with public salary (USD/EUR) on Jobmeerkat: ${openCount}
 Sample roles: ${JSON.stringify(jobs)}
-Site: ${siteX}
+Site: ${siteBluesky}
 
 ${SOCIAL_POST_CONTENT_RULES}
 Never paste the company description verbatim. Paraphrase into short social copy.
 Keep salaries in USD/EUR as given.
 When linking sample roles, keep the jobUrl from the sample data and do not strip query strings.
 
-X: optional single tweet (may be unused). Use ${companyUrlX}. ≤280 chars.
 Bluesky: 1–2 posts with an original company hook + ${companyUrlBluesky}. ≤300 graphemes (prefer ≤280).
 Threads: 2–3 messages — original one-liner on what they do, open roles / sample salaries, link ${companyUrlThreads}. ≤500 chars. Max one hashtag.
-
-LinkedIn: one spotlight post written from scratch (paraphrase only) + ${companyUrlLinkedIn}.
 
 Return JSON: ${JSON.stringify(example)}.
 `,

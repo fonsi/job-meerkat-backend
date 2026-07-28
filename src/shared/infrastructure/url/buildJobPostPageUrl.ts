@@ -12,10 +12,8 @@ export const UtmSource = {
      * length does not grow when those sources are applied.
      */
     Social: '_social',
-    X: 'x',
     Bluesky: 'bluesky',
     Threads: 'threads',
-    LinkedIn: 'linkedin',
 } as const;
 
 export type UtmSourceValue = (typeof UtmSource)[keyof typeof UtmSource];

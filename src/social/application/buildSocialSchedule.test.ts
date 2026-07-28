@@ -14,7 +14,6 @@ import {
     COMPANY_THREADS_PER_DAY,
     MAX_PUBLICATIONS_PER_DAY,
     SOCIAL_POST_SLOT_MS,
-    X_DAILY_PUBLICATION_BUDGET,
 } from 'social/domain/socialScheduleConfig';
 
 const company = (id: string, name: string, description?: string): Company => ({
@@ -74,7 +73,7 @@ describe('buildSocialSchedule', () => {
     ];
     const companiesById = new Map(companies.map((c) => [c.id, c]));
 
-    it('schedules daily analysis, company thread, and job promos with X quota', () => {
+    it('schedules daily analysis, company thread, and job promos', () => {
         const latestJobPosts = [
             job({ id: 'j1', companyId: 'c1', max: 200000 }),
             job({ id: 'j2', companyId: 'c2', max: 180000 }),
@@ -91,7 +90,10 @@ describe('buildSocialSchedule', () => {
         });
 
         expect(scheduled[0].type).toBe(SocialPostType.DailyAnalysis);
-        expect(scheduled[0].platforms).toContain(SocialPlatform.X);
+        expect(scheduled[0].platforms).toEqual([
+            SocialPlatform.Threads,
+            SocialPlatform.Bluesky,
+        ]);
 
         const companyThreads = scheduled.filter(
             (post) => post.type === SocialPostType.CompanyThread,
@@ -106,18 +108,11 @@ describe('buildSocialSchedule', () => {
             (post) => post.type === SocialPostType.JobPromo,
         );
         expect(jobPromos).toHaveLength(3);
-
-        const xPublications = scheduled.filter((post) =>
-            post.platforms.includes(SocialPlatform.X),
-        );
-        expect(xPublications.length).toBeLessThanOrEqual(
-            X_DAILY_PUBLICATION_BUDGET,
-        );
         expect(scheduled.length).toBeLessThanOrEqual(MAX_PUBLICATIONS_PER_DAY);
         expect(scheduled[1].date - scheduled[0].date).toBe(SOCIAL_POST_SLOT_MS);
     });
 
-    it('includes weekly top paid when requested and reserves X', () => {
+    it('includes weekly top paid when requested', () => {
         const latestJobPosts = [
             job({ id: 'j1', companyId: 'c1', max: 200000 }),
         ];
@@ -141,11 +136,14 @@ describe('buildSocialSchedule', () => {
         const weekly = scheduled.find(
             (post) => post.type === SocialPostType.WeeklyTopPaid,
         );
-        expect(weekly?.platforms).toContain(SocialPlatform.X);
+        expect(weekly?.platforms).toEqual([
+            SocialPlatform.Threads,
+            SocialPlatform.Bluesky,
+        ]);
     });
 
-    it('puts surplus job promos on Threads/Bluesky only once X budget is used', () => {
-        const latestJobPosts = Array.from({ length: 20 }, (_, index) =>
+    it('caps total publications at MAX_PUBLICATIONS_PER_DAY', () => {
+        const latestJobPosts = Array.from({ length: 60 }, (_, index) =>
             job({
                 id: `j${index}`,
                 companyId: `c${index}`,
@@ -165,17 +163,14 @@ describe('buildSocialSchedule', () => {
             includeWeeklyTopPaid: true,
         });
 
-        const xCount = scheduled.filter((post) =>
-            post.platforms.includes(SocialPlatform.X),
-        ).length;
-        expect(xCount).toBe(X_DAILY_PUBLICATION_BUDGET);
-
-        const jobPromosWithoutX = scheduled.filter(
-            (post) =>
-                post.type === SocialPostType.JobPromo &&
-                !post.platforms.includes(SocialPlatform.X),
-        );
-        expect(jobPromosWithoutX.length).toBeGreaterThan(0);
+        expect(scheduled.length).toBe(MAX_PUBLICATIONS_PER_DAY);
+        expect(
+            scheduled.every(
+                (post) =>
+                    post.platforms.includes(SocialPlatform.Threads) &&
+                    post.platforms.includes(SocialPlatform.Bluesky),
+            ),
+        ).toBe(true);
     });
 
     it('only includes remote jobs with public salary for promos', () => {

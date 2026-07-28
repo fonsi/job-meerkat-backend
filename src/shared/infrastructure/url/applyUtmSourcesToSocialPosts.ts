@@ -7,13 +7,6 @@ import {
 export const applyUtmSourcesToSocialPosts = (
     posts: SocialMediaPosts,
 ): SocialMediaPosts => ({
-    linkedin: applyUtmSourceToJobmeerkatUrls(
-        posts.linkedin,
-        UtmSource.LinkedIn,
-    ),
-    twitter: posts.twitter.map((post) =>
-        applyUtmSourceToJobmeerkatUrls(post, UtmSource.X),
-    ),
     bluesky: posts.bluesky.map((post) =>
         applyUtmSourceToJobmeerkatUrls(post, UtmSource.Bluesky),
     ),

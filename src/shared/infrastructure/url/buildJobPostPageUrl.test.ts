@@ -19,9 +19,9 @@ describe('getPublicSiteBaseUrl', () => {
 
 describe('appendUtmSource', () => {
     it('appends utm_source with ? when no query exists', () => {
-        expect(appendUtmSource('https://jobmeerkat.com', UtmSource.X)).toBe(
-            'https://jobmeerkat.com?utm_source=x',
-        );
+        expect(
+            appendUtmSource('https://jobmeerkat.com', UtmSource.Bluesky),
+        ).toBe('https://jobmeerkat.com?utm_source=bluesky');
     });
 
     it('appends utm_source with & when a query exists', () => {
@@ -36,7 +36,7 @@ describe('appendUtmSource', () => {
     it('replaces an existing utm_source', () => {
         expect(
             appendUtmSource(
-                'https://jobmeerkat.com?utm_source=x',
+                'https://jobmeerkat.com?utm_source=_social',
                 UtmSource.Bluesky,
             ),
         ).toBe('https://jobmeerkat.com?utm_source=bluesky');
@@ -88,10 +88,10 @@ describe('buildCompanyPageUrl', () => {
         expect(
             buildCompanyPageUrl(
                 '123e4567-e89b-12d3-a456-426614174000',
-                UtmSource.X,
+                UtmSource.Threads,
             ),
         ).toBe(
-            'https://jobmeerkat.com/company/123e4567-e89b-12d3-a456-426614174000?utm_source=x',
+            'https://jobmeerkat.com/company/123e4567-e89b-12d3-a456-426614174000?utm_source=threads',
         );
     });
 });
@@ -109,16 +109,10 @@ describe('applyUtmSourceToJobmeerkatUrls', () => {
 describe('applyUtmSourcesToSocialPosts', () => {
     it('applies platform-specific utm_source values', () => {
         const tagged = applyUtmSourcesToSocialPosts({
-            linkedin: 'https://jobmeerkat.com/job/?slug=a',
-            twitter: ['https://jobmeerkat.com'],
             bluesky: ['https://jobmeerkat.com/company/1'],
-            threads: ['https://jobmeerkat.com?utm_source=x'],
+            threads: ['https://jobmeerkat.com?utm_source=_social'],
         });
 
-        expect(tagged.linkedin).toBe(
-            'https://jobmeerkat.com/job/?slug=a&utm_source=linkedin',
-        );
-        expect(tagged.twitter).toEqual(['https://jobmeerkat.com?utm_source=x']);
         expect(tagged.bluesky).toEqual([
             'https://jobmeerkat.com/company/1?utm_source=bluesky',
         ]);
@@ -134,14 +128,10 @@ describe('applyUtmSourcesToSocialPosts', () => {
         );
 
         const tagged = applyUtmSourcesToSocialPosts({
-            linkedin: url,
-            twitter: [url],
             bluesky: [url],
             threads: [url],
         });
 
-        expect(tagged.linkedin).toContain('utm_source=linkedin');
-        expect(tagged.twitter[0]).toContain('utm_source=x');
         expect(tagged.bluesky[0]).toContain('utm_source=bluesky');
         expect(tagged.threads[0]).toContain('utm_source=threads');
     });

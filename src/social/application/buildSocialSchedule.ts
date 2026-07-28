@@ -6,17 +6,12 @@ import {
     toDateKey,
     toWeekKey,
 } from 'social/domain/scheduledSocialPost';
-import {
-    ALL_SOCIAL_PLATFORMS,
-    SOCIAL_PLATFORMS_WITHOUT_X,
-    SocialPlatform,
-} from 'social/domain/socialPlatform';
+import { ALL_SOCIAL_PLATFORMS } from 'social/domain/socialPlatform';
 import { SocialPostType } from 'social/domain/socialPostType';
 import {
     COMPANY_THREADS_PER_DAY,
     MAX_PUBLICATIONS_PER_DAY,
     SOCIAL_POST_SLOT_MS,
-    X_DAILY_PUBLICATION_BUDGET,
 } from 'social/domain/socialScheduleConfig';
 import {
     annualSalaryMax,
@@ -90,7 +85,6 @@ export const buildSocialSchedule = ({
 }: BuildSocialScheduleParams): ScheduledSocialPost[] => {
     const dateKey = toDateKey(now);
     const drafts: Array<Omit<ScheduledSocialPost, 'date'>> = [];
-    let xRemaining = X_DAILY_PUBLICATION_BUDGET;
 
     const analysisLatest = latestJobPosts.filter(isEligibleForSocialAnalysis);
     if (analysisLatest.length > 0) {
@@ -102,7 +96,6 @@ export const buildSocialSchedule = ({
             type: SocialPostType.DailyAnalysis,
             platforms: [...ALL_SOCIAL_PLATFORMS],
         });
-        xRemaining -= 1;
     }
 
     if (
@@ -117,7 +110,6 @@ export const buildSocialSchedule = ({
             type: SocialPostType.WeeklyTopPaid,
             platforms: [...ALL_SOCIAL_PLATFORMS],
         });
-        xRemaining -= 1;
     }
 
     const jobPromoCandidates = pickBestPaidJobPerCompany(latestJobPosts);
@@ -141,7 +133,7 @@ export const buildSocialSchedule = ({
                 dateKey,
             }),
             type: SocialPostType.CompanyThread,
-            platforms: [...SOCIAL_PLATFORMS_WITHOUT_X],
+            platforms: [...ALL_SOCIAL_PLATFORMS],
             companyId: companyForThread.id,
         });
     }
@@ -151,15 +143,6 @@ export const buildSocialSchedule = ({
             break;
         }
 
-        const platforms: SocialPlatform[] =
-            xRemaining > 0
-                ? [...ALL_SOCIAL_PLATFORMS]
-                : [...SOCIAL_PLATFORMS_WITHOUT_X];
-
-        if (xRemaining > 0) {
-            xRemaining -= 1;
-        }
-
         drafts.push({
             id: makeScheduledSocialPostId({
                 type: SocialPostType.JobPromo,
@@ -167,7 +150,7 @@ export const buildSocialSchedule = ({
                 companyId: jobPost.companyId,
             }),
             type: SocialPostType.JobPromo,
-            platforms,
+            platforms: [...ALL_SOCIAL_PLATFORMS],
             jobPostId: jobPost.id,
             companyId: jobPost.companyId,
         });
