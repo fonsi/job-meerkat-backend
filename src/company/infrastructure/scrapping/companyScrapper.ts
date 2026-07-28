@@ -134,7 +134,6 @@ import { OSO_NAME, osoScrapper } from './oso';
 import { OUTSCHOOL_NAME, outschoolScrapper } from './outschool';
 import { RESEND_NAME, resendScrapper } from './resend';
 import { SPRIG_NAME, sprigScrapper } from './sprig';
-import { STYTCH_NAME, stytchScrapper } from './stytch';
 import { SUBSTACK_NAME, substackScrapper } from './substack';
 import { TEMPORAL_NAME, temporalScrapper } from './temporal';
 import { VULTR_NAME, vultrScrapper } from './vultr';
@@ -439,8 +438,6 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return resendScrapper;
         case SPRIG_NAME:
             return sprigScrapper;
-        case STYTCH_NAME:
-            return stytchScrapper;
         case SUBSTACK_NAME:
             return substackScrapper;
         case TEMPORAL_NAME:
