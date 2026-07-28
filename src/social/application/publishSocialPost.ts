@@ -7,7 +7,10 @@ import { openaiCreateDailyAnalysisPosts } from 'shared/infrastructure/ai/openai/
 import { openaiSocialMediaPostsCreator } from 'shared/infrastructure/ai/openai/openaiCreateSocialJobPost';
 import { openaiCreateWeeklyTopPaidPosts } from 'shared/infrastructure/ai/openai/openaiCreateWeeklyTopPaidPosts';
 import { logger } from 'shared/infrastructure/logger/logger';
-import { buildJobPostPageUrl } from 'shared/infrastructure/url/buildJobPostPageUrl';
+import {
+    buildJobPostPageUrl,
+    UtmSource,
+} from 'shared/infrastructure/url/buildJobPostPageUrl';
 import { ScheduledSocialPost } from 'social/domain/scheduledSocialPost';
 import { SocialPostType } from 'social/domain/socialPostType';
 import { publishToPlatforms } from 'social/application/publishToPlatforms';
@@ -229,7 +232,7 @@ const publishCompanyThread = async (
         .map((job) => ({
             title: job.title,
             salaryLabel: formatSalaryLabel(job),
-            jobUrl: buildJobPostPageUrl(job.slug),
+            jobUrl: buildJobPostPageUrl(job.slug, UtmSource.Social),
         }));
 
     const socialMediaPosts = await openaiCreateCompanyThreadPosts({

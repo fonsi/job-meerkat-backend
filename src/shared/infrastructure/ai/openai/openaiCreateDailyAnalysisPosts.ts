@@ -1,5 +1,8 @@
 import OpenAI from 'openai';
-import { getPublicSiteBaseUrl } from 'shared/infrastructure/url/buildJobPostPageUrl';
+import {
+    buildPublicSiteUrl,
+    UtmSource,
+} from 'shared/infrastructure/url/buildJobPostPageUrl';
 import {
     cleanUrlsInObject,
     SocialMediaPosts,
@@ -36,7 +39,10 @@ const example: SocialMediaPosts = {
 export const openaiCreateDailyAnalysisPosts = async (
     stats: DailyAnalysisStats,
 ): Promise<SocialMediaPosts> => {
-    const site = getPublicSiteBaseUrl();
+    const siteX = buildPublicSiteUrl(UtmSource.X);
+    const siteBluesky = buildPublicSiteUrl(UtmSource.Bluesky);
+    const siteThreads = buildPublicSiteUrl(UtmSource.Threads);
+    const siteLinkedIn = buildPublicSiteUrl(UtmSource.LinkedIn);
 
     const completion = await openai.chat.completions.create({
         model: OPENAI_MODEL,
@@ -51,14 +57,14 @@ export const openaiCreateDailyAnalysisPosts = async (
                 role: 'user',
                 content: `
 Create a "daily new jobs" analysis post from this data: ${JSON.stringify(stats)}.
-Jobmeerkat site: ${site}.
 ${SOCIAL_POST_CONTENT_RULES}
 Salaries in this dataset are USD or EUR only — keep amounts in their given currency.
+When including listing links from the data, keep their query strings.
 
-X / Twitter: 1–2 tweets max (prefer 1 if it fits). Lead with a data hook (count, salary median/max). Include ${site}. No emojis. ≤280 chars each.
-Bluesky: similar to X, ≤300 graphemes (prefer ≤280), 1–2 posts.
-Threads: 2 messages — (1) the daily hook + invite to browse listings on ${site}; (2) highlight 1–2 top paid roles with salary and encourage following for more. ≤500 chars. Max one hashtag total.
-LinkedIn: one short professional update with the key numbers and ${site}.
+X / Twitter: 1–2 tweets max (prefer 1 if it fits). Lead with a data hook (count, salary median/max). Include ${siteX}. No emojis. ≤280 chars each.
+Bluesky: similar to X, use ${siteBluesky}, ≤300 graphemes (prefer ≤280), 1–2 posts.
+Threads: 2 messages — (1) the daily hook + invite to browse listings on ${siteThreads}; (2) highlight 1–2 top paid roles with salary and encourage following for more. ≤500 chars. Max one hashtag total.
+LinkedIn: one short professional update with the key numbers and ${siteLinkedIn}.
 
 Return JSON: ${JSON.stringify(example)}.
 `,

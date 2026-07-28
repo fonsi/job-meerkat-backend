@@ -2,8 +2,10 @@ import { Company } from 'company/domain/company';
 import { JobPost } from 'jobPost/domain/jobPost';
 import OpenAI from 'openai';
 import {
+    buildCompanyPageUrl,
     buildJobPostPageUrl,
-    getPublicSiteBaseUrl,
+    buildPublicSiteUrl,
+    UtmSource,
 } from 'shared/infrastructure/url/buildJobPostPageUrl';
 import { SOCIAL_POST_CONTENT_RULES } from 'social/domain/socialPostContentRules';
 
@@ -50,11 +52,23 @@ export const openaiSocialMediaPostsCreator = async ({
     jobPost,
     company,
 }: OpenaiSocialMediaPostsCreator): Promise<SocialMediaPosts> => {
-    const baseUrl = getPublicSiteBaseUrl();
-    const companyLink = `${baseUrl}/company/${company.id}`;
-    const jobmeerkatLink = baseUrl;
-    const jobPageUrl = buildJobPostPageUrl(jobPost.slug);
-    const jobPostForPrompt: JobPost = { ...jobPost, url: jobPageUrl };
+    const jobUrlX = buildJobPostPageUrl(jobPost.slug, UtmSource.X);
+    const jobUrlBluesky = buildJobPostPageUrl(jobPost.slug, UtmSource.Bluesky);
+    const jobUrlThreads = buildJobPostPageUrl(jobPost.slug, UtmSource.Threads);
+    const jobUrlLinkedIn = buildJobPostPageUrl(
+        jobPost.slug,
+        UtmSource.LinkedIn,
+    );
+    const companyUrlBluesky = buildCompanyPageUrl(
+        company.id,
+        UtmSource.Bluesky,
+    );
+    const companyUrlThreads = buildCompanyPageUrl(
+        company.id,
+        UtmSource.Threads,
+    );
+    const siteThreads = buildPublicSiteUrl(UtmSource.Threads);
+    const jobPostForPrompt: JobPost = { ...jobPost, url: jobUrlX };
     const companyContext = company.description?.trim()
         ? `Internal company context (for you only — rewrite in your own words, never copy-paste): ${company.description.trim()}`
         : 'No company description available.';
@@ -83,22 +97,22 @@ Write plain text only (no HTML/markdown).
 Never paste the company description verbatim. Use it only as background to write a fresh, shorter social line.
 
 X / Twitter:
-- Prefer a SINGLE tweet (array length 1) with role, company, salary if available, and the listing link ${jobPageUrl}.
+- Prefer a SINGLE tweet (array length 1) with role, company, salary if available, and the listing link ${jobUrlX}.
 - Only use a 2-tweet thread if salary + links cannot fit in 280 characters.
 - No emojis. Hashtags OK if useful; do not hashtag the company name.
-- Hard limit 280 characters per tweet.
+- Hard limit 280 characters per tweet. (X shortens URLs — length of the query string does not matter.)
 
 Bluesky:
 - Same angle as X, hard limit 300 graphemes per post (prefer ≤280). 1–2 posts is fine.
-- Include job listing ${jobPageUrl} and optionally company page ${companyLink}.
+- Include job listing ${jobUrlBluesky} and optionally company page ${companyUrlBluesky}.
 
 Meta Threads (different from X):
-- Message 1: job hook (title at company, location, salary) + note that the listing link is in the thread + link to Jobmeerkat ${jobmeerkatLink}. Max one hashtag. No company-name hashtag.
-- Message 2: one original sentence about what the company does (paraphrase from context; do not quote it) + company page ${companyLink}.
-- Message 3: job listing details link ${jobPageUrl}.
+- Message 1: job hook (title at company, location, salary) + note that the listing link is in the thread + link to Jobmeerkat ${siteThreads}. Max one hashtag. No company-name hashtag.
+- Message 2: one original sentence about what the company does (paraphrase from context; do not quote it) + company page ${companyUrlThreads}.
+- Message 3: job listing details link ${jobUrlThreads}.
 - Max 500 characters per message.
 
-LinkedIn: one longer professional post with the available facts and ${jobPageUrl}.
+LinkedIn: one longer professional post with the available facts and ${jobUrlLinkedIn}.
 
 Return JSON like: ${JSON.stringify(socialMediaPostsExample)}.
 `,

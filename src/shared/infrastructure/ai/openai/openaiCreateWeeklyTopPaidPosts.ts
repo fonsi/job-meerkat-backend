@@ -1,5 +1,8 @@
 import OpenAI from 'openai';
-import { getPublicSiteBaseUrl } from 'shared/infrastructure/url/buildJobPostPageUrl';
+import {
+    buildPublicSiteUrl,
+    UtmSource,
+} from 'shared/infrastructure/url/buildJobPostPageUrl';
 import {
     cleanUrlsInObject,
     SocialMediaPosts,
@@ -22,7 +25,10 @@ export const openaiCreateWeeklyTopPaidPosts = async ({
 }: {
     topJobs: DailyAnalysisJobSummary[];
 }): Promise<SocialMediaPosts> => {
-    const site = getPublicSiteBaseUrl();
+    const siteX = buildPublicSiteUrl(UtmSource.X);
+    const siteBluesky = buildPublicSiteUrl(UtmSource.Bluesky);
+    const siteThreads = buildPublicSiteUrl(UtmSource.Threads);
+    const siteLinkedIn = buildPublicSiteUrl(UtmSource.LinkedIn);
 
     const completion = await openai.chat.completions.create({
         model: OPENAI_MODEL,
@@ -37,14 +43,14 @@ export const openaiCreateWeeklyTopPaidPosts = async ({
                 role: 'user',
                 content: `
 Create a weekly "top paid remote jobs" roundup from: ${JSON.stringify(topJobs)}.
-Site: ${site}.
 ${SOCIAL_POST_CONTENT_RULES}
 Salaries are USD or EUR only — keep each amount in its given currency.
+When including listing links from the data, keep their query strings.
 
-X: 1–2 tweets. Hook + 2–3 standout salaries, then ${site}. No emojis. ≤280 chars.
-Bluesky: similar, ≤300 graphemes (prefer ≤280), 1–2 posts.
-Threads: 2–3 messages listing the top roles with salaries and listing links where useful, ending with ${site}. ≤500 chars. Max one hashtag.
-LinkedIn: one roundup post.
+X: 1–2 tweets. Hook + 2–3 standout salaries, then ${siteX}. No emojis. ≤280 chars.
+Bluesky: similar, use ${siteBluesky}, ≤300 graphemes (prefer ≤280), 1–2 posts.
+Threads: 2–3 messages listing the top roles with salaries and listing links where useful, ending with ${siteThreads}. ≤500 chars. Max one hashtag.
+LinkedIn: one roundup post with ${siteLinkedIn}.
 
 Return JSON: ${JSON.stringify(example)}.
 `,

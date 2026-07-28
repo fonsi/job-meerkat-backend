@@ -1,5 +1,8 @@
 import { JobPost, Period, Workplace } from 'jobPost/domain/jobPost';
-import { buildJobPostPageUrl } from 'shared/infrastructure/url/buildJobPostPageUrl';
+import {
+    buildJobPostPageUrl,
+    UtmSource,
+} from 'shared/infrastructure/url/buildJobPostPageUrl';
 import { DailyAnalysisJobSummary } from 'shared/infrastructure/ai/openai/openaiCreateDailyAnalysisPosts';
 
 const SOCIAL_CURRENCIES = new Set(['usd', 'eur']);
@@ -70,7 +73,7 @@ export const toJobSummary = (
     companyName,
     salaryLabel: formatSalaryLabel(jobPost),
     category: jobPost.category,
-    jobUrl: buildJobPostPageUrl(jobPost.slug),
+    jobUrl: buildJobPostPageUrl(jobPost.slug, UtmSource.Social),
 });
 
 export const median = (values: number[]): number | null => {

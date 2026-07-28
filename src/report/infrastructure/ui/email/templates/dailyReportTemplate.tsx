@@ -17,6 +17,7 @@ import {
 import {
     buildCompanyPageUrl,
     buildJobPostPageUrl,
+    UtmSource,
 } from 'shared/infrastructure/url/buildJobPostPageUrl';
 
 type BuildJobReportTemplate = (props: JobReportTemplateProps) => Promise<{
@@ -136,7 +137,10 @@ const JobReportTemplate = ({
                 );
                 const remainingJobPosts =
                     jobPosts.length - visibleJobPosts.length;
-                const companyPageUrl = buildCompanyPageUrl(company.id);
+                const companyPageUrl = buildCompanyPageUrl(
+                    company.id,
+                    UtmSource.Newsletter,
+                );
 
                 return (
                     <Section key={company.id} style={{ marginTop: '28px' }}>
@@ -227,7 +231,10 @@ const JobReportTemplate = ({
                                         fontWeight: '600',
                                         textDecoration: 'none',
                                     }}
-                                    href={buildJobPostPageUrl(jobPost.slug)}
+                                    href={buildJobPostPageUrl(
+                                        jobPost.slug,
+                                        UtmSource.Newsletter,
+                                    )}
                                 >
                                     {jobPost.title}
                                 </Link>
