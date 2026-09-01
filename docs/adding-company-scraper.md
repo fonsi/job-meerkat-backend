@@ -147,7 +147,7 @@ Review titles for open/general/spontaneous applications, internships, talent poo
 
 ## 6. Track status
 
-Update (or create) a tracking note with:
+Update (or create) `.local/company-scraper-tracking.md` with:
 
 | Company | Company ID | Platform | API slug | Jobs | Status |
 |---|---|---|---|---:|---|
@@ -164,7 +164,7 @@ Statuses used previously: pending, validated, validated (API content), no openin
 - [ ] List titles reviewed
 - [ ] ~5 sample job posts scrape with titles
 - [ ] Temporary list/slice hacks reverted
-- [ ] Tracking doc updated
+- [ ] Tracking note updated in `.local/company-scraper-tracking.md`
 
 ## Batching tips
 

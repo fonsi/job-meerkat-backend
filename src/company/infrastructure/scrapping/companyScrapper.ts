@@ -136,6 +136,7 @@ import { RESEND_NAME, resendScrapper } from './resend';
 import { SPRIG_NAME, sprigScrapper } from './sprig';
 import { SUBSTACK_NAME, substackScrapper } from './substack';
 import { TEMPORAL_NAME, temporalScrapper } from './temporal';
+import { TODOIST_NAME, todoistScrapper } from './todoist';
 import { VULTR_NAME, vultrScrapper } from './vultr';
 import { WIKIMEDIA_NAME, wikimediaScrapper } from './wikimedia';
 
@@ -442,6 +443,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return substackScrapper;
         case TEMPORAL_NAME:
             return temporalScrapper;
+        case TODOIST_NAME:
+            return todoistScrapper;
         case VULTR_NAME:
             return vultrScrapper;
         case WIKIMEDIA_NAME:

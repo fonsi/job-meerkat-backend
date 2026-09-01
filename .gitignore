@@ -22,3 +22,6 @@ jspm_packages
 .env.development
 .env.production
 .cursor/.rollbar-mcp.json
+
+# local dev artifacts (generated notes, scratch files)
+.local/
