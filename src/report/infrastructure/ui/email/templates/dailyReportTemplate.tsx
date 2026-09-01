@@ -1,12 +1,8 @@
 import React from 'react';
-import {
-    Column,
-    Img,
-    Link,
-    Row,
-    Section,
-    Text,
-} from '@react-email/components';
+import { Column, Img, Link, Row, Section, Text } from '@react-email/components';
+import { formatJobPlaceLabel } from 'jobPost/domain/formatJobPlaceLabel';
+import { formatSalaryRangeLabel } from 'jobPost/domain/formatSalaryRange';
+import { selectVisibleJobPostsForReport } from 'report/application/selectVisibleJobPostsForReport';
 import { JobPostsByCompanyType } from 'report/application/sendReport';
 import { ReportFrequency } from 'report/domain/report';
 import {
@@ -17,6 +13,7 @@ import {
 import {
     buildCompanyPageUrl,
     buildJobPostPageUrl,
+    buildPublicSiteUrl,
     UtmSource,
 } from 'shared/infrastructure/url/buildJobPostPageUrl';
 
@@ -34,8 +31,6 @@ type JobReportTemplateProps = {
     unsubscribeUrl: string;
 };
 
-const MAX_JOB_POSTS_PER_COMPANY = 4;
-
 const titleForFrequency = (frequency: ReportFrequency) =>
     frequency === 'weekly' ? 'Weekly Job Report' : 'Daily Job Report';
 
@@ -48,10 +43,24 @@ const openedWhenLabel = (frequency: ReportFrequency) =>
 const jobCountLabel = (count: number) =>
     count === 1 ? '1 new job' : `${count} new jobs`;
 
-const moreJobPostsLinkLabel = (
-    remaining: number,
-    frequency: ReportFrequency,
-) => `View the other ${remaining} opened ${openedWhenLabel(frequency)} →`;
+const moreJobPostsLinkLabel = (remaining: number, frequency: ReportFrequency) =>
+    `View the other ${remaining} opened ${openedWhenLabel(frequency)} →`;
+
+const remainingOpeningsLinkLabel = (remaining: number) =>
+    remaining === 1
+        ? 'Still 1 new opening to discover →'
+        : `Still ${remaining} new openings to discover →`;
+
+const categoryBadgeStyle = {
+    backgroundColor: '#111111',
+    borderRadius: '4px',
+    color: '#fefefe',
+    display: 'inline-block',
+    fontSize: '12px',
+    fontWeight: '500',
+    lineHeight: '16px',
+    padding: '4px 8px',
+} as const;
 
 const JobReportTemplate = ({
     jobPostsByCompany,
@@ -62,6 +71,15 @@ const JobReportTemplate = ({
     unsubscribeUrl,
 }: JobReportTemplateProps) => {
     const title = titleForFrequency(frequency);
+    const {
+        companies: visibleCompanies,
+        hiddenCompanyCount,
+        remainingJobPostCount,
+    } = selectVisibleJobPostsForReport(
+        Object.values(jobPostsByCompany),
+        totalJobPosts,
+    );
+    const allJobsUrl = buildPublicSiteUrl(UtmSource.Newsletter);
 
     return (
         <EmailShell
@@ -130,11 +148,7 @@ const JobReportTemplate = ({
                 </Row>
             </Section>
 
-            {Object.values(jobPostsByCompany).map(({ company, jobPosts }) => {
-                const visibleJobPosts = jobPosts.slice(
-                    0,
-                    MAX_JOB_POSTS_PER_COMPANY,
-                );
+            {visibleCompanies.map(({ company, jobPosts, visibleJobPosts }) => {
                 const remainingJobPosts =
                     jobPosts.length - visibleJobPosts.length;
                 const companyPageUrl = buildCompanyPageUrl(
@@ -214,82 +228,144 @@ const JobReportTemplate = ({
                                 ) : null}
                             </Column>
                         </Row>
-                        {visibleJobPosts.map((jobPost) => (
-                            <Row
-                                key={jobPost.id}
-                                style={{
-                                    border: '1px solid #e5e5e5',
-                                    borderRadius: '4px',
-                                    marginTop: '12px',
-                                    padding: '12px 14px',
-                                }}
-                            >
-                                <Link
+                        {visibleJobPosts.map((jobPost) => {
+                            const placeLabel = formatJobPlaceLabel(jobPost);
+                            const salaryLabel = formatSalaryRangeLabel(
+                                jobPost.salaryRange,
+                            );
+
+                            return (
+                                <Row
+                                    key={jobPost.id}
                                     style={{
-                                        color: emailColors.text,
-                                        fontSize: '18px',
-                                        fontWeight: '600',
-                                        textDecoration: 'none',
+                                        border: '1px solid #e5e5e5',
+                                        borderRadius: '4px',
+                                        marginTop: '12px',
+                                        padding: '12px 14px',
                                     }}
-                                    href={buildJobPostPageUrl(
-                                        jobPost.slug,
-                                        UtmSource.Newsletter,
-                                    )}
                                 >
-                                    {jobPost.title}
-                                </Link>
-                                {jobPost.location ? (
-                                    <Text
-                                        style={{
-                                            color: emailColors.muted,
-                                            fontSize: '14px',
-                                            margin: '6px 0 0',
-                                        }}
-                                    >
-                                        {jobPost.location}
-                                    </Text>
-                                ) : null}
-                                {jobPost.category ? (
-                                    <Text
-                                        style={{
-                                            color: emailColors.muted,
-                                            fontSize: '14px',
-                                            margin: '2px 0 0',
-                                        }}
-                                    >
-                                        {jobPost.category}
-                                    </Text>
-                                ) : null}
-                                {jobPost.workplace ? (
-                                    <Text
-                                        style={{
-                                            color: emailColors.muted,
-                                            fontSize: '14px',
-                                            margin: '2px 0 0',
-                                        }}
-                                    >
-                                        {jobPost.workplace}
-                                    </Text>
-                                ) : null}
-                                {jobPost.salaryRange ? (
-                                    <Text
-                                        style={{
-                                            color: emailColors.text,
-                                            fontSize: '16px',
-                                            fontWeight: '600',
-                                            margin: '6px 0 0',
-                                        }}
-                                    >
-                                        {jobPost.salaryRange.min
-                                            ? `${jobPost.salaryRange.min}-${jobPost.salaryRange.max} ${jobPost.salaryRange.currency}/${jobPost.salaryRange.period}`
-                                            : `${jobPost.salaryRange.max} ${jobPost.salaryRange.currency}/${jobPost.salaryRange.period}`}
-                                    </Text>
-                                ) : null}
-                            </Row>
-                        ))}
+                                    <Column>
+                                        <Link
+                                            style={{
+                                                color: emailColors.text,
+                                                fontSize: '18px',
+                                                fontWeight: '600',
+                                                textDecoration: 'none',
+                                            }}
+                                            href={buildJobPostPageUrl(
+                                                jobPost.slug,
+                                                UtmSource.Newsletter,
+                                            )}
+                                        >
+                                            {jobPost.title}
+                                        </Link>
+                                        <table
+                                            cellPadding={0}
+                                            cellSpacing={0}
+                                            role="presentation"
+                                            style={{ marginTop: '8px' }}
+                                        >
+                                            <tbody>
+                                                <tr>
+                                                    <td
+                                                        style={{
+                                                            verticalAlign:
+                                                                'middle',
+                                                        }}
+                                                    >
+                                                        <span
+                                                            style={
+                                                                categoryBadgeStyle
+                                                            }
+                                                        >
+                                                            {jobPost.category}
+                                                        </span>
+                                                    </td>
+                                                    {placeLabel ? (
+                                                        <td
+                                                            style={{
+                                                                color: emailColors.muted,
+                                                                fontSize:
+                                                                    '14px',
+                                                                paddingLeft:
+                                                                    '12px',
+                                                                verticalAlign:
+                                                                    'middle',
+                                                            }}
+                                                        >
+                                                            <svg
+                                                                width="14"
+                                                                height="14"
+                                                                viewBox="0 0 24 24"
+                                                                style={{
+                                                                    display:
+                                                                        'inline-block',
+                                                                    marginRight:
+                                                                        '4px',
+                                                                    verticalAlign:
+                                                                        'middle',
+                                                                }}
+                                                            >
+                                                                <path
+                                                                    fill={
+                                                                        emailColors.muted
+                                                                    }
+                                                                    d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7m0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5"
+                                                                />
+                                                            </svg>
+                                                            <span
+                                                                style={{
+                                                                    verticalAlign:
+                                                                        'middle',
+                                                                }}
+                                                            >
+                                                                {placeLabel}
+                                                            </span>
+                                                        </td>
+                                                    ) : null}
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        {salaryLabel ? (
+                                            <Text
+                                                style={{
+                                                    color: emailColors.text,
+                                                    fontSize: '16px',
+                                                    fontWeight: '600',
+                                                    margin: '6px 0 0',
+                                                }}
+                                            >
+                                                {salaryLabel}
+                                            </Text>
+                                        ) : null}
+                                    </Column>
+                                </Row>
+                            );
+                        })}
                     </Section>
                 );
             })}
+
+            {hiddenCompanyCount > 0 ? (
+                <Section style={{ marginTop: '28px' }}>
+                    <Text
+                        style={{
+                            color: emailColors.muted,
+                            fontSize: '15px',
+                            lineHeight: '1.6',
+                            margin: '0',
+                            textAlign: 'center',
+                        }}
+                    >
+                        <Link
+                            href={allJobsUrl}
+                            style={{ color: emailColors.link }}
+                        >
+                            {remainingOpeningsLinkLabel(remainingJobPostCount)}
+                        </Link>
+                    </Text>
+                </Section>
+            ) : null}
 
             <Section style={{ marginTop: '32px' }}>
                 <Text
