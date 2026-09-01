@@ -10,6 +10,8 @@ import {
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
 import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
+import { fetchJobListingJson } from '../fetchJobListingJson';
+import { JobListingUnavailableError } from '../jobListingUnavailableError';
 
 export const SUPERHUMAN_NAME = 'superhuman';
 // superhuman aquired grammarly
@@ -19,6 +21,19 @@ const SUPERHUMAN_INITIAL_URL =
 type ScrapJobPostData = {
     id: number;
     url: string;
+};
+
+type GreenhouseDepartment = {
+    jobs?: Array<{
+        id: number;
+        absolute_url: string;
+        title: string;
+        updated_at: string;
+    }>;
+};
+
+type GreenhouseDepartmentsResponse = {
+    departments?: GreenhouseDepartment[];
 };
 
 const JOB_TITLE_SELECTOR = '.job__title';
@@ -49,13 +64,23 @@ const scrapJobPost = async ({
 export const superhumanScrapper: NewCompanyScrapper = ({ companyId }) => {
     return {
         getListedJobPostsData: async () => {
-            const response = await fetch(SUPERHUMAN_INITIAL_URL);
-            const jobsData = await response.json();
+            const jobsData =
+                await fetchJobListingJson<GreenhouseDepartmentsResponse>({
+                    companyName: SUPERHUMAN_NAME,
+                    url: SUPERHUMAN_INITIAL_URL,
+                });
+
+            if (!Array.isArray(jobsData.departments)) {
+                throw new JobListingUnavailableError(
+                    SUPERHUMAN_NAME,
+                    SUPERHUMAN_INITIAL_URL,
+                );
+            }
 
             const jobPosts: ListedJobPostsData[] = [];
 
             jobsData.departments.forEach((department) => {
-                department.jobs.forEach((jobData) => {
+                (department.jobs || []).forEach((jobData) => {
                     const url = jobData.absolute_url;
                     const title = jobData.title;
 

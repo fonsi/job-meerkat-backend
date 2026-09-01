@@ -27,7 +27,7 @@ import {
     GetAllClosedBefore,
     MoveClosedToArchive,
 } from 'jobPost/domain/jobPostRepository';
-import { isOpen } from 'jobPost/domain/jobPost';
+import { isOpen, normalizeSalaryRange } from 'jobPost/domain/jobPost';
 
 const JOB_POST_TABLE = process.env.DYNAMODB_JOB_POST_TABLE_NAME;
 const CLOSED_JOB_POST_TABLE = process.env.DYNAMODB_CLOSED_JOB_POST_TABLE_NAME;
@@ -170,12 +170,13 @@ const close: Close = async (jobPostId, companyId, closedAt) => {
 
 const update: Update = async (jobPost) => {
     try {
+        const salaryRange = normalizeSalaryRange(jobPost.salaryRange);
         const baseUpdateExpression =
             'SET originalId = :originalId, #type = :type, #title = :title, #url = :url, #category = :category, workplace = :workplace, #location = :location, createdAt = :createdAt';
-        const salaryUpdateExpression = jobPost.salaryRange
+        const salaryUpdateExpression = salaryRange
             ? ', salaryCurrency = :salaryCurrency, salaryPeriod = :salaryPeriod, salaryMin = :salaryMin, salaryMax = :salaryMax'
             : '';
-        const salaryRemoveExpression = jobPost.salaryRange
+        const salaryRemoveExpression = salaryRange
             ? ''
             : ', salaryCurrency, salaryPeriod, salaryMin, salaryMax';
 
@@ -221,19 +222,19 @@ const update: Update = async (jobPost) => {
                 ':createdAt': {
                     N: jobPost.createdAt.toString(),
                 },
-                ...(jobPost.salaryRange
+                ...(salaryRange
                     ? {
                           ':salaryCurrency': {
-                              S: jobPost.salaryRange.currency,
+                              S: salaryRange.currency,
                           },
                           ':salaryPeriod': {
-                              S: jobPost.salaryRange.period,
+                              S: salaryRange.period,
                           },
                           ':salaryMin': {
-                              N: jobPost.salaryRange.min?.toString() || '0',
+                              N: salaryRange.min?.toString() || '0',
                           },
                           ':salaryMax': {
-                              N: jobPost.salaryRange.max?.toString() || '0',
+                              N: salaryRange.max?.toString() || '0',
                           },
                       }
                     : {}),

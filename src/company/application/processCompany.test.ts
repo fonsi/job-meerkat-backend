@@ -38,6 +38,13 @@ jest.mock('jobPost/application/closeJobPost', () => ({
     closeJobPost: jest.fn(),
 }));
 
+jest.mock('shared/infrastructure/logger/logger', () => ({
+    logger: {
+        info: jest.fn(),
+        error: jest.fn(),
+    },
+}));
+
 describe('processCompany', () => {
     beforeEach(() => {
         jest.clearAllMocks();
@@ -123,6 +130,34 @@ describe('processCompany', () => {
         await processCompany({ companyId });
 
         expect(getNewCompanyScrapper).not.toHaveBeenCalled();
+        expect(createJobPost).not.toHaveBeenCalled();
+        expect(closeJobPost).not.toHaveBeenCalled();
+    });
+
+    it('skips updates when the job listing is unavailable', async () => {
+        const companyId = '123e4567-e89b-12d3-a456-426614174000' as CompanyId;
+        const company = {
+            id: companyId,
+            name: 'test-company',
+            homePage: 'https://example.com',
+            logo: {
+                url: 'https://assets.example.com/company.png',
+            },
+        } as unknown as Company;
+
+        (companyRepository.getById as jest.Mock).mockResolvedValue(company);
+        (getNewCompanyScrapper as jest.Mock).mockReturnValue(() => ({
+            getListedJobPostsData: jest
+                .fn()
+                .mockRejectedValue(
+                    new Error('Response status code 404: Not Found'),
+                ),
+            scrapJobPost: jest.fn(),
+        }));
+
+        await processCompany({ companyId });
+
+        expect(jobPostRepository.getAllByCompanyId).not.toHaveBeenCalled();
         expect(createJobPost).not.toHaveBeenCalled();
         expect(closeJobPost).not.toHaveBeenCalled();
     });

@@ -1,5 +1,5 @@
 import { AttributeValue } from '@aws-sdk/client-dynamodb';
-import { JobPost } from 'jobPost/domain/jobPost';
+import { JobPost, normalizeSalaryRange } from 'jobPost/domain/jobPost';
 
 export const marshall = (jobPost: JobPost): Record<string, AttributeValue> => {
     const {
@@ -10,13 +10,13 @@ export const marshall = (jobPost: JobPost): Record<string, AttributeValue> => {
         title,
         url,
         category,
-        salaryRange,
         workplace,
         location,
         createdAt,
         closedAt,
         slug,
     } = jobPost;
+    const salaryRange = normalizeSalaryRange(jobPost.salaryRange);
 
     const item = {
         id: {

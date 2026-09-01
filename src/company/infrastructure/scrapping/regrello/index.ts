@@ -9,6 +9,8 @@ import {
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
 import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
+import { fetchJobListingJson } from '../fetchJobListingJson';
+import { JobListingUnavailableError } from '../jobListingUnavailableError';
 
 export const REGRELLO_NAME = 'regrello';
 const REGRELLO_NAME_INITIAL_URL =
@@ -18,6 +20,14 @@ type ScrapJobPostData = {
     id: string;
     title: string;
     content: string;
+};
+
+type LeverJobPosting = {
+    id: string;
+    hostedUrl: string;
+    text: string;
+    createdAt: number;
+    descriptionPlain: string;
 };
 
 const scrapJobPost = async ({
@@ -41,8 +51,17 @@ const scrapJobPost = async ({
 export const regrelloScrapper: NewCompanyScrapper = ({ companyId }) => {
     return {
         getListedJobPostsData: async () => {
-            const response = await fetch(REGRELLO_NAME_INITIAL_URL);
-            const jobsData = await response.json();
+            const jobsData = await fetchJobListingJson<LeverJobPosting[]>({
+                companyName: REGRELLO_NAME,
+                url: REGRELLO_NAME_INITIAL_URL,
+            });
+
+            if (!Array.isArray(jobsData)) {
+                throw new JobListingUnavailableError(
+                    REGRELLO_NAME,
+                    REGRELLO_NAME_INITIAL_URL,
+                );
+            }
 
             return jobsData.map((jobData) => ({
                 id: jobData.id,

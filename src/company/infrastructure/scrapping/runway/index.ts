@@ -10,6 +10,8 @@ import {
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
 import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
+import { fetchJobListingJson } from '../fetchJobListingJson';
+import { JobListingUnavailableError } from '../jobListingUnavailableError';
 
 export const RUNWAY_NAME = 'runway';
 const RUNWAY_INITIAL_URL =
@@ -18,6 +20,15 @@ const RUNWAY_INITIAL_URL =
 type ScrapJobPostData = {
     id: string;
     url: string;
+};
+
+type GreenhouseJobsResponse = {
+    jobs?: Array<{
+        id: number;
+        absolute_url: string;
+        title: string;
+        updated_at: string;
+    }>;
 };
 
 const JOB_HEADER_SELECTOR = '.job__header';
@@ -48,23 +59,24 @@ const scrapJobPost = async ({
 export const runwayScrapper: NewCompanyScrapper = ({ companyId }) => {
     return {
         getListedJobPostsData: async () => {
-            const response = await fetch(RUNWAY_INITIAL_URL);
-            const jobsData = await response.json();
+            const jobsData = await fetchJobListingJson<GreenhouseJobsResponse>({
+                companyName: RUNWAY_NAME,
+                url: RUNWAY_INITIAL_URL,
+            });
 
-            const jobPosts: ListedJobPostsData[] = jobsData.jobs.map(
-                (jobData) => {
-                    const url = jobData.absolute_url;
+            if (!Array.isArray(jobsData.jobs)) {
+                throw new JobListingUnavailableError(
+                    RUNWAY_NAME,
+                    RUNWAY_INITIAL_URL,
+                );
+            }
 
-                    return {
-                        id: jobData.id.toString(),
-                        url,
-                        title: jobData.title,
-                        createdAt: new Date(jobData.updated_at).getTime(),
-                    };
-                },
-            );
-
-            return jobPosts;
+            return jobsData.jobs.map((jobData) => ({
+                id: jobData.id.toString(),
+                url: jobData.absolute_url,
+                title: jobData.title,
+                createdAt: new Date(jobData.updated_at).getTime(),
+            }));
         },
 
         scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {

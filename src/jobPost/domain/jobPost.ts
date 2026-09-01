@@ -169,6 +169,13 @@ export const categoryTree: CategoryTree = [
     },
 ];
 
+export type SalaryRange = {
+    min?: number;
+    max?: number;
+    currency: string;
+    period: Period;
+};
+
 export type JobPost = {
     id: JobPostId;
     originalId: string;
@@ -177,17 +184,28 @@ export type JobPost = {
     url: string;
     title: string;
     category: Category;
-    salaryRange: {
-        min?: number;
-        max?: number;
-        currency: string;
-        period: Period;
-    } | null;
+    salaryRange: SalaryRange | null;
     workplace: Workplace;
     location: string;
     createdAt: number;
     closedAt: number | null;
     slug: string;
+};
+
+export const normalizeSalaryRange = (
+    salaryRange: SalaryRange | null | undefined,
+): SalaryRange | null => {
+    if (!salaryRange) return null;
+
+    const currency = salaryRange.currency?.trim();
+    const period = salaryRange.period?.trim() as Period | undefined;
+    if (!currency || !period) return null;
+
+    return {
+        ...salaryRange,
+        currency,
+        period,
+    };
 };
 
 export type CreateJobPostData = Omit<
@@ -236,6 +254,7 @@ export const createJobPost = (data: CreateJobPostData): JobPost => {
         closedAt,
         slug,
         ...data,
+        salaryRange: normalizeSalaryRange(data.salaryRange),
     };
 };
 

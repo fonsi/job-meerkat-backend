@@ -2,7 +2,7 @@ import { Company, CompanyId, isCompanyDisabled } from 'company/domain/company';
 import { scrapCompany } from './scrapCompany';
 import { createJobPost } from 'jobPost/application/createJobPost';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
-import { isOpen, JobPost } from 'jobPost/domain/jobPost';
+import { isOpen, JobPost, normalizeSalaryRange } from 'jobPost/domain/jobPost';
 import {
     getNewCompanyScrapper,
     NewCompanyScrapper,
@@ -12,6 +12,7 @@ import {
 import { closeJobPost } from 'jobPost/application/closeJobPost';
 import { companyRepository } from 'company/infrastructure/persistance/dynamodb/dynamodbCompanyRepository';
 import { logger } from 'shared/infrastructure/logger/logger';
+import { isJobListingUnavailableError } from 'company/infrastructure/scrapping/jobListingUnavailableError';
 
 type ProcessCompanyCommand = {
     companyId: CompanyId;
@@ -136,7 +137,22 @@ const scrapUsingNewScrapper = async ({
     scrapper,
 }: NewScrapperData): Promise<void> => {
     const builtScrapper = scrapper({ companyId });
-    const listedJobPostsData = await builtScrapper.getListedJobPostsData();
+    let listedJobPostsData: ListedJobPostsData[];
+
+    try {
+        listedJobPostsData = await builtScrapper.getListedJobPostsData();
+    } catch (e) {
+        if (isJobListingUnavailableError(e)) {
+            logger.info(`Skipping ${company.name}: job listing unavailable`, {
+                companyId,
+                error: e instanceof Error ? e.message : String(e),
+            });
+            return;
+        }
+
+        throw e;
+    }
+
     const companyJobPosts =
         await jobPostRepository.getAllByCompanyId(companyId);
     const openJobPosts = companyJobPosts.filter(isOpen);
@@ -182,15 +198,20 @@ const scrapUsingNewScrapper = async ({
         const closedJobPost = closedJobPostByOriginalId.get(
             scrappedJobPost.originalId,
         );
+        const salaryRange = normalizeSalaryRange(scrappedJobPost.salaryRange);
 
         if (!closedJobPost) {
-            createJobPosts.push(scrappedJobPost);
+            createJobPosts.push({
+                ...scrappedJobPost,
+                salaryRange,
+            });
             return;
         }
 
         reopenJobPosts.push({
             ...closedJobPost,
             ...scrappedJobPost,
+            salaryRange,
             originalId: closedJobPost.originalId,
             closedAt: null,
             createdAt: scrappedJobPost.createdAt || Date.now(),
