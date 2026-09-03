@@ -265,6 +265,48 @@ describe('buildSocialSchedule', () => {
         );
     });
 
+    it('interleaves company threads among job promos instead of grouping them', () => {
+        const latestJobPosts = Array.from({ length: 20 }, (_, index) =>
+            job({
+                id: `j${index}`,
+                companyId: `c${index}`,
+                max: 200000 - index * 1000,
+            }),
+        );
+        const manyCompanies = latestJobPosts.map((_, index) =>
+            company(`c${index}`, `Co${index}`, 'A product company.'),
+        );
+        const manyById = new Map(manyCompanies.map((c) => [c.id, c]));
+
+        const scheduled = buildSocialSchedule({
+            latestJobPosts,
+            weekJobPosts: latestJobPosts,
+            companiesById: manyById,
+            now,
+            includeWeeklyTopPaid: false,
+        });
+
+        const types = scheduled.map((post) => post.type);
+        const threadIndices = types
+            .map((type, i) => (type === SocialPostType.CompanyThread ? i : -1))
+            .filter((i) => i >= 0);
+
+        expect(threadIndices).toHaveLength(COMPANY_THREADS_PER_DAY);
+
+        // Threads should not be consecutive
+        for (let i = 1; i < threadIndices.length; i++) {
+            expect(threadIndices[i] - threadIndices[i - 1]).toBeGreaterThan(1);
+        }
+
+        // Threads should have job promos both before and after them
+        for (const idx of threadIndices) {
+            const before = types.slice(0, idx);
+            const after = types.slice(idx + 1);
+            expect(before).toContain(SocialPostType.JobPromo);
+            expect(after).toContain(SocialPostType.JobPromo);
+        }
+    });
+
     it('leaves capacity unused when there are not enough job promos', () => {
         const latestJobPosts = [
             job({ id: 'j1', companyId: 'c1', max: 200000 }),

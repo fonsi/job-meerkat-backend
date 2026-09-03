@@ -68,6 +68,32 @@ const pickCompanyForThread = ({
     return ranked[0]?.company ?? null;
 };
 
+const interleaveEvenly = <T>(main: T[], toSpread: T[]): T[] => {
+    if (toSpread.length === 0) return [...main];
+    if (main.length === 0) return [...toSpread];
+
+    const result: T[] = [];
+    const gap = Math.floor(main.length / (toSpread.length + 1));
+    let spreadIndex = 0;
+
+    for (let i = 0; i < main.length; i++) {
+        result.push(main[i]);
+        if (
+            spreadIndex < toSpread.length &&
+            (i + 1) % gap === 0 &&
+            i + 1 !== main.length
+        ) {
+            result.push(toSpread[spreadIndex++]);
+        }
+    }
+
+    while (spreadIndex < toSpread.length) {
+        result.push(toSpread[spreadIndex++]);
+    }
+
+    return result;
+};
+
 export type BuildSocialScheduleParams = {
     latestJobPosts: JobPost[];
     weekJobPosts: JobPost[];
@@ -115,9 +141,8 @@ export const buildSocialSchedule = ({
     const jobPromoCandidates = pickBestPaidJobPerCompany(latestJobPosts);
     const usedCompanyThreadIds = new Set<string>();
 
+    const companyThreadDrafts: Array<Omit<ScheduledSocialPost, 'date'>> = [];
     for (let i = 0; i < COMPANY_THREADS_PER_DAY; i++) {
-        if (drafts.length >= MAX_PUBLICATIONS_PER_DAY) break;
-
         const companyForThread = pickCompanyForThread({
             jobPosts: latestJobPosts,
             companiesById,
@@ -126,7 +151,7 @@ export const buildSocialSchedule = ({
         if (!companyForThread) break;
 
         usedCompanyThreadIds.add(companyForThread.id);
-        drafts.push({
+        companyThreadDrafts.push({
             id: makeScheduledSocialPostId({
                 type: SocialPostType.CompanyThread,
                 companyId: companyForThread.id,
@@ -138,12 +163,17 @@ export const buildSocialSchedule = ({
         });
     }
 
+    const jobPromoDrafts: Array<Omit<ScheduledSocialPost, 'date'>> = [];
     for (const jobPost of jobPromoCandidates) {
-        if (drafts.length >= MAX_PUBLICATIONS_PER_DAY) {
+        if (
+            drafts.length +
+                companyThreadDrafts.length +
+                jobPromoDrafts.length >=
+            MAX_PUBLICATIONS_PER_DAY
+        )
             break;
-        }
 
-        drafts.push({
+        jobPromoDrafts.push({
             id: makeScheduledSocialPostId({
                 type: SocialPostType.JobPromo,
                 jobPostId: jobPost.id,
@@ -155,6 +185,9 @@ export const buildSocialSchedule = ({
             companyId: jobPost.companyId,
         });
     }
+
+    const mixed = interleaveEvenly(jobPromoDrafts, companyThreadDrafts);
+    drafts.push(...mixed);
 
     return drafts.map((draft, index) => ({
         ...draft,
