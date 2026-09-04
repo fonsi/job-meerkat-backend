@@ -11,7 +11,8 @@ import {
     COMPACT_MAX_JOB_POSTS_PER_COMPANY,
     COMPACT_TOTAL_JOB_POSTS_THRESHOLD,
     DEFAULT_MAX_JOB_POSTS_PER_COMPANY,
-    MAX_VISIBLE_JOB_POSTS,
+    SINGLE_COMPANY_COUNT_THRESHOLD,
+    SINGLE_MAX_JOB_POSTS_PER_COMPANY,
     maxJobPostsPerCompany,
     selectVisibleJobPostsForReport,
 } from './selectVisibleJobPostsForReport';
@@ -51,15 +52,30 @@ const jobsFor = (co: Company, count: number): JobPost[] =>
 
 describe('maxJobPostsPerCompany', () => {
     it('keeps 4 per company at or below the compact threshold', () => {
-        expect(maxJobPostsPerCompany(COMPACT_TOTAL_JOB_POSTS_THRESHOLD)).toBe(
-            DEFAULT_MAX_JOB_POSTS_PER_COMPANY,
-        );
+        expect(
+            maxJobPostsPerCompany(
+                COMPACT_TOTAL_JOB_POSTS_THRESHOLD,
+                SINGLE_COMPANY_COUNT_THRESHOLD + 1,
+            ),
+        ).toBe(DEFAULT_MAX_JOB_POSTS_PER_COMPANY);
     });
 
-    it('drops to 2 per company above the compact threshold', () => {
+    it('drops to 2 per company when there are more than 60 jobs and 25 or fewer companies', () => {
         expect(
-            maxJobPostsPerCompany(COMPACT_TOTAL_JOB_POSTS_THRESHOLD + 1),
+            maxJobPostsPerCompany(
+                COMPACT_TOTAL_JOB_POSTS_THRESHOLD + 1,
+                SINGLE_COMPANY_COUNT_THRESHOLD,
+            ),
         ).toBe(COMPACT_MAX_JOB_POSTS_PER_COMPANY);
+    });
+
+    it('drops to 1 per company when there are more than 60 jobs and more than 25 companies', () => {
+        expect(
+            maxJobPostsPerCompany(
+                COMPACT_TOTAL_JOB_POSTS_THRESHOLD + 1,
+                SINGLE_COMPANY_COUNT_THRESHOLD + 1,
+            ),
+        ).toBe(SINGLE_MAX_JOB_POSTS_PER_COMPANY);
     });
 });
 
@@ -67,16 +83,14 @@ describe('selectVisibleJobPostsForReport', () => {
     it('shows up to 4 jobs per company when the report is small', () => {
         const acme = company('aa', 'Acme');
         const beta = company('bb', 'Beta');
-        const { companies, hiddenCompanyCount } =
-            selectVisibleJobPostsForReport(
-                [
-                    { company: acme, jobPosts: jobsFor(acme, 6) },
-                    { company: beta, jobPosts: jobsFor(beta, 2) },
-                ],
-                8,
-            );
+        const { companies } = selectVisibleJobPostsForReport(
+            [
+                { company: acme, jobPosts: jobsFor(acme, 6) },
+                { company: beta, jobPosts: jobsFor(beta, 2) },
+            ],
+            8,
+        );
 
-        expect(hiddenCompanyCount).toBe(0);
         expect(companies[0].visibleJobPosts).toHaveLength(4);
         expect(companies[1].visibleJobPosts).toHaveLength(2);
     });
@@ -96,42 +110,41 @@ describe('selectVisibleJobPostsForReport', () => {
         expect(companies[1].visibleJobPosts).toHaveLength(2);
     });
 
-    it('fills companies round-robin so more companies appear before extras', () => {
-        const list = Array.from({ length: 30 }, (_, i) => {
-            const suffix = String(i).padStart(2, '0');
-            const co = company(suffix, `Co ${i}`);
-            return { company: co, jobPosts: jobsFor(co, 4) };
-        });
-        const { companies, hiddenCompanyCount } =
-            selectVisibleJobPostsForReport(
-                list,
-                COMPACT_TOTAL_JOB_POSTS_THRESHOLD + 1,
-            );
-
-        expect(hiddenCompanyCount).toBe(0);
-        expect(companies).toHaveLength(30);
-        const visibleCounts = companies.map((c) => c.visibleJobPosts.length);
-        expect(Math.max(...visibleCounts)).toBe(2);
-        expect(visibleCounts.reduce((sum, n) => sum + n, 0)).toBe(
-            Math.min(30 * 2, MAX_VISIBLE_JOB_POSTS),
-        );
-    });
-
-    it('hides leftover companies once the visible job cap is reached', () => {
+    it('shows up to 2 jobs per company when there are more than 60 jobs and 25 or fewer companies', () => {
         const list = Array.from(
-            { length: MAX_VISIBLE_JOB_POSTS + 10 },
+            { length: SINGLE_COMPANY_COUNT_THRESHOLD },
             (_, i) => {
                 const suffix = String(i).padStart(2, '0');
                 const co = company(suffix, `Co ${i}`);
-                return { company: co, jobPosts: jobsFor(co, 1) };
+                return { company: co, jobPosts: jobsFor(co, 4) };
             },
         );
-        const { companies, hiddenCompanyCount, remainingJobPostCount } =
-            selectVisibleJobPostsForReport(list, list.length);
+        const { companies } = selectVisibleJobPostsForReport(
+            list,
+            COMPACT_TOTAL_JOB_POSTS_THRESHOLD + 1,
+        );
 
-        expect(companies).toHaveLength(MAX_VISIBLE_JOB_POSTS);
-        expect(hiddenCompanyCount).toBe(10);
-        expect(remainingJobPostCount).toBe(10);
+        expect(companies).toHaveLength(SINGLE_COMPANY_COUNT_THRESHOLD);
+        expect(companies.every((c) => c.visibleJobPosts.length === 2)).toBe(
+            true,
+        );
+    });
+
+    it('shows 1 job per company when there are more than 60 jobs and more than 25 companies', () => {
+        const list = Array.from(
+            { length: SINGLE_COMPANY_COUNT_THRESHOLD + 1 },
+            (_, i) => {
+                const suffix = String(i).padStart(2, '0');
+                const co = company(suffix, `Co ${i}`);
+                return { company: co, jobPosts: jobsFor(co, 4) };
+            },
+        );
+        const { companies } = selectVisibleJobPostsForReport(
+            list,
+            COMPACT_TOTAL_JOB_POSTS_THRESHOLD + 1,
+        );
+
+        expect(companies).toHaveLength(SINGLE_COMPANY_COUNT_THRESHOLD + 1);
         expect(companies.every((c) => c.visibleJobPosts.length === 1)).toBe(
             true,
         );

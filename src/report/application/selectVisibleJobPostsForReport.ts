@@ -3,8 +3,9 @@ import { JobPost } from 'jobPost/domain/jobPost';
 
 export const DEFAULT_MAX_JOB_POSTS_PER_COMPANY = 4;
 export const COMPACT_MAX_JOB_POSTS_PER_COMPANY = 2;
+export const SINGLE_MAX_JOB_POSTS_PER_COMPANY = 1;
 export const COMPACT_TOTAL_JOB_POSTS_THRESHOLD = 60;
-export const MAX_VISIBLE_JOB_POSTS = 48;
+export const SINGLE_COMPANY_COUNT_THRESHOLD = 25;
 
 type CompanyJobs = {
     company: Company;
@@ -15,48 +16,38 @@ export type VisibleCompanyJobs = CompanyJobs & {
     visibleJobPosts: JobPost[];
 };
 
-export const maxJobPostsPerCompany = (totalJobPosts: number): number =>
-    totalJobPosts > COMPACT_TOTAL_JOB_POSTS_THRESHOLD
-        ? COMPACT_MAX_JOB_POSTS_PER_COMPANY
-        : DEFAULT_MAX_JOB_POSTS_PER_COMPANY;
+export const maxJobPostsPerCompany = (
+    totalJobPosts: number,
+    companyCount: number,
+): number => {
+    if (
+        totalJobPosts > COMPACT_TOTAL_JOB_POSTS_THRESHOLD &&
+        companyCount > SINGLE_COMPANY_COUNT_THRESHOLD
+    ) {
+        return SINGLE_MAX_JOB_POSTS_PER_COMPANY;
+    }
+
+    if (totalJobPosts > COMPACT_TOTAL_JOB_POSTS_THRESHOLD) {
+        return COMPACT_MAX_JOB_POSTS_PER_COMPANY;
+    }
+
+    return DEFAULT_MAX_JOB_POSTS_PER_COMPANY;
+};
 
 export const selectVisibleJobPostsForReport = (
     companies: CompanyJobs[],
     totalJobPosts: number,
-): {
-    companies: VisibleCompanyJobs[];
-    hiddenCompanyCount: number;
-    remainingJobPostCount: number;
-} => {
-    const maxPerCompany = maxJobPostsPerCompany(totalJobPosts);
-    const visibleCounts = new Array(companies.length).fill(0);
-    let remainingBudget = MAX_VISIBLE_JOB_POSTS;
-
-    for (let round = 0; round < maxPerCompany && remainingBudget > 0; round++) {
-        for (let i = 0; i < companies.length && remainingBudget > 0; i++) {
-            if (round < companies[i].jobPosts.length) {
-                visibleCounts[i]++;
-                remainingBudget--;
-            }
-        }
-    }
-
-    const visibleCompanies = companies
-        .map((entry, i) => ({
-            company: entry.company,
-            jobPosts: entry.jobPosts,
-            visibleJobPosts: entry.jobPosts.slice(0, visibleCounts[i]),
-        }))
-        .filter((entry) => entry.visibleJobPosts.length > 0);
-
-    const visibleJobPostCount = visibleCompanies.reduce(
-        (total, entry) => total + entry.visibleJobPosts.length,
-        0,
+): { companies: VisibleCompanyJobs[] } => {
+    const maxPerCompany = maxJobPostsPerCompany(
+        totalJobPosts,
+        companies.length,
     );
 
     return {
-        companies: visibleCompanies,
-        hiddenCompanyCount: companies.length - visibleCompanies.length,
-        remainingJobPostCount: totalJobPosts - visibleJobPostCount,
+        companies: companies.map((entry) => ({
+            company: entry.company,
+            jobPosts: entry.jobPosts,
+            visibleJobPosts: entry.jobPosts.slice(0, maxPerCompany),
+        })),
     };
 };

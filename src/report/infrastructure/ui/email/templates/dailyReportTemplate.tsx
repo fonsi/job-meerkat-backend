@@ -13,7 +13,6 @@ import {
 import {
     buildCompanyPageUrl,
     buildJobPostPageUrl,
-    buildPublicSiteUrl,
     UtmSource,
 } from 'shared/infrastructure/url/buildJobPostPageUrl';
 
@@ -46,11 +45,6 @@ const jobCountLabel = (count: number) =>
 const moreJobPostsLinkLabel = (remaining: number, frequency: ReportFrequency) =>
     `View the other ${remaining} opened ${openedWhenLabel(frequency)} →`;
 
-const remainingOpeningsLinkLabel = (remaining: number) =>
-    remaining === 1
-        ? 'Still 1 new opening to discover →'
-        : `Still ${remaining} new openings to discover →`;
-
 const categoryBadgeStyle = {
     backgroundColor: '#111111',
     borderRadius: '4px',
@@ -71,15 +65,10 @@ const JobReportTemplate = ({
     unsubscribeUrl,
 }: JobReportTemplateProps) => {
     const title = titleForFrequency(frequency);
-    const {
-        companies: visibleCompanies,
-        hiddenCompanyCount,
-        remainingJobPostCount,
-    } = selectVisibleJobPostsForReport(
+    const { companies: visibleCompanies } = selectVisibleJobPostsForReport(
         Object.values(jobPostsByCompany),
         totalJobPosts,
     );
-    const allJobsUrl = buildPublicSiteUrl(UtmSource.Newsletter);
 
     return (
         <EmailShell
@@ -345,27 +334,6 @@ const JobReportTemplate = ({
                     </Section>
                 );
             })}
-
-            {hiddenCompanyCount > 0 ? (
-                <Section style={{ marginTop: '28px' }}>
-                    <Text
-                        style={{
-                            color: emailColors.muted,
-                            fontSize: '15px',
-                            lineHeight: '1.6',
-                            margin: '0',
-                            textAlign: 'center',
-                        }}
-                    >
-                        <Link
-                            href={allJobsUrl}
-                            style={{ color: emailColors.link }}
-                        >
-                            {remainingOpeningsLinkLabel(remainingJobPostCount)}
-                        </Link>
-                    </Text>
-                </Section>
-            ) : null}
 
             <Section style={{ marginTop: '32px' }}>
                 <Text
