@@ -1,4 +1,3 @@
-import { fromURL } from 'cheerio';
 import {
     ListedJobPostsData,
     NewCompanyScrapper,
@@ -10,30 +9,57 @@ import {
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
 import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
+import { getAshbyJobPostContent } from '../ashbyGraphQLRequest';
+import { fetchJobListingJson } from '../fetchJobListingJson';
+import { JobListingUnavailableError } from '../jobListingUnavailableError';
 
 export const CIRCLE_NAME = 'circle';
-const CIRCLE_INITIAL_URL =
-    'https://boards-api.greenhouse.io/v1/boards/circleso/jobs?content=true';
+const ASHBY_COMPANY_NAME = 'circle';
+const CIRCLE_INITIAL_URL = `https://api.ashbyhq.com/posting-api/job-board/${ASHBY_COMPANY_NAME}`;
 
 type ScrapJobPostData = {
-    id: string | number;
-    url: string;
+    id: string;
 };
 
-const JOB_HEADER_SELECTOR = '.job__header';
-const JOB_CONTENT_SELECTOR = '.job__description';
+type AshbyJobListing = {
+    id: string;
+    title: string;
+    jobUrl: string;
+    publishedAt: string;
+    isListed: boolean;
+    employmentType?: string;
+};
+
+type AshbyJobsResponse = {
+    jobs?: AshbyJobListing[];
+};
+
+const shouldSkipListedJob = (
+    title: string,
+    employmentType?: string,
+): boolean => {
+    if (employmentType === 'Intern') return true;
+    const lower = title.toLowerCase();
+    if (
+        lower.includes('general application') ||
+        lower.includes('open application')
+    ) {
+        return true;
+    }
+
+    return /\bintern(?:ship)?s?\b/.test(lower);
+};
 
 const scrapJobPost = async ({
     id,
-    url,
 }: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
-        const $ = await fromURL(url);
+        const jobsData = await getAshbyJobPostContent({
+            companyName: ASHBY_COMPANY_NAME,
+            jobPostId: id,
+        });
 
-        const jobPostHeader = $(JOB_HEADER_SELECTOR).text();
-        const jobPostContent = $(JOB_CONTENT_SELECTOR).text();
-
-        return openaiJobPostAnalyzer(`${jobPostHeader} ${jobPostContent}`);
+        return openaiJobPostAnalyzer(JSON.stringify(jobsData));
     } catch (e) {
         const error = errorWithPrefix(
             e,
@@ -48,27 +74,41 @@ const scrapJobPost = async ({
 export const circleScrapper: NewCompanyScrapper = ({ companyId }) => {
     return {
         getListedJobPostsData: async () => {
-            const response = await fetch(CIRCLE_INITIAL_URL);
-            const jobsData = await response.json();
+            const jobsData = await fetchJobListingJson<AshbyJobsResponse>({
+                companyName: CIRCLE_NAME,
+                url: CIRCLE_INITIAL_URL,
+            });
 
-            const jobPosts: ListedJobPostsData[] = jobsData.jobs.map(
-                (jobData) => {
-                    const url = jobData.absolute_url;
+            if (!Array.isArray(jobsData.jobs)) {
+                throw new JobListingUnavailableError(
+                    CIRCLE_NAME,
+                    CIRCLE_INITIAL_URL,
+                );
+            }
 
-                    return {
+            return jobsData.jobs.flatMap((jobData) => {
+                const title = jobData.title.trim();
+                if (
+                    !jobData.isListed ||
+                    shouldSkipListedJob(title, jobData.employmentType)
+                ) {
+                    return [];
+                }
+
+                return [
+                    {
                         id: jobData.id,
-                        url,
-                        title: jobData.title,
-                        createdAt: new Date(jobData.updated_at).getTime(),
-                    };
-                },
-            );
-
-            return jobPosts;
+                        url: jobData.jobUrl,
+                        title,
+                        createdAt: new Date(jobData.publishedAt).getTime(),
+                    },
+                ];
+            });
         },
 
         scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
             const data: ScrappedJobPost[] = [];
+
             for (let i = 0; i < jobPosts.length; i++) {
                 try {
                     const jobPost = jobPosts[i];
@@ -78,13 +118,13 @@ export const circleScrapper: NewCompanyScrapper = ({ companyId }) => {
 
                     const jobPostData = await scrapJobPost({
                         id: jobPost.id,
-                        url: jobPost.url,
                     });
 
                     data.push({
                         ...jobPostData,
-                        originalId: jobPost.id.toString(),
+                        originalId: jobPost.id,
                         url: jobPost.url,
+                        title: jobPost.title,
                         companyId,
                         createdAt: jobPost.createdAt,
                     });
