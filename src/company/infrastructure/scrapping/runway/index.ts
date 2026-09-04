@@ -1,4 +1,3 @@
-import { fromURL } from 'cheerio';
 import {
     ListedJobPostsData,
     NewCompanyScrapper,
@@ -10,41 +9,57 @@ import {
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
 import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
+import { getAshbyJobPostContent } from '../ashbyGraphQLRequest';
 import { fetchJobListingJson } from '../fetchJobListingJson';
 import { JobListingUnavailableError } from '../jobListingUnavailableError';
 
 export const RUNWAY_NAME = 'runway';
-const RUNWAY_INITIAL_URL =
-    'https://boards-api.greenhouse.io/v1/boards/runwayml/jobs?content=true';
+const ASHBY_COMPANY_NAME = 'runway-ml';
+const RUNWAY_INITIAL_URL = `https://api.ashbyhq.com/posting-api/job-board/${ASHBY_COMPANY_NAME}`;
 
 type ScrapJobPostData = {
     id: string;
-    url: string;
 };
 
-type GreenhouseJobsResponse = {
-    jobs?: Array<{
-        id: number;
-        absolute_url: string;
-        title: string;
-        updated_at: string;
-    }>;
+type AshbyJobListing = {
+    id: string;
+    title: string;
+    jobUrl: string;
+    publishedAt: string;
+    isListed: boolean;
+    employmentType?: string;
 };
 
-const JOB_HEADER_SELECTOR = '.job__header';
-const JOB_CONTENT_SELECTOR = '.job__description';
+type AshbyJobsResponse = {
+    jobs?: AshbyJobListing[];
+};
+
+const shouldSkipListedJob = (
+    title: string,
+    employmentType?: string,
+): boolean => {
+    if (employmentType === 'Intern') return true;
+    const lower = title.toLowerCase();
+    if (
+        lower.includes('general application') ||
+        lower.includes('open application')
+    ) {
+        return true;
+    }
+
+    return /\bintern(?:ship)?s?\b/.test(lower);
+};
 
 const scrapJobPost = async ({
     id,
-    url,
 }: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
-        const $ = await fromURL(url);
+        const jobsData = await getAshbyJobPostContent({
+            companyName: ASHBY_COMPANY_NAME,
+            jobPostId: id,
+        });
 
-        const jobPostHeader = $(JOB_HEADER_SELECTOR).text();
-        const jobPostContent = $(JOB_CONTENT_SELECTOR).text();
-
-        return openaiJobPostAnalyzer(`${jobPostHeader} ${jobPostContent}`);
+        return openaiJobPostAnalyzer(JSON.stringify(jobsData));
     } catch (e) {
         const error = errorWithPrefix(
             e,
@@ -59,7 +74,7 @@ const scrapJobPost = async ({
 export const runwayScrapper: NewCompanyScrapper = ({ companyId }) => {
     return {
         getListedJobPostsData: async () => {
-            const jobsData = await fetchJobListingJson<GreenhouseJobsResponse>({
+            const jobsData = await fetchJobListingJson<AshbyJobsResponse>({
                 companyName: RUNWAY_NAME,
                 url: RUNWAY_INITIAL_URL,
             });
@@ -71,12 +86,24 @@ export const runwayScrapper: NewCompanyScrapper = ({ companyId }) => {
                 );
             }
 
-            return jobsData.jobs.map((jobData) => ({
-                id: jobData.id.toString(),
-                url: jobData.absolute_url,
-                title: jobData.title,
-                createdAt: new Date(jobData.updated_at).getTime(),
-            }));
+            return jobsData.jobs.flatMap((jobData) => {
+                const title = jobData.title.trim();
+                if (
+                    !jobData.isListed ||
+                    shouldSkipListedJob(title, jobData.employmentType)
+                ) {
+                    return [];
+                }
+
+                return [
+                    {
+                        id: jobData.id,
+                        url: jobData.jobUrl,
+                        title,
+                        createdAt: new Date(jobData.publishedAt).getTime(),
+                    },
+                ];
+            });
         },
 
         scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
@@ -91,13 +118,13 @@ export const runwayScrapper: NewCompanyScrapper = ({ companyId }) => {
 
                     const jobPostData = await scrapJobPost({
                         id: jobPost.id,
-                        url: jobPost.url,
                     });
 
                     data.push({
                         ...jobPostData,
                         originalId: jobPost.id,
                         url: jobPost.url,
+                        title: jobPost.title,
                         companyId,
                         createdAt: jobPost.createdAt,
                     });

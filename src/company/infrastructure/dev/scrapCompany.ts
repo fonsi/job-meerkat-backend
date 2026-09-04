@@ -13,6 +13,7 @@ initializeLogger();
 */
 export const index = async (event) => {
     const companyId = event.body;
+    const limit = typeof event.limit === 'number' ? event.limit : undefined;
     const company = await companyRepository.getById(companyId);
 
     if (!company) {
@@ -25,7 +26,15 @@ export const index = async (event) => {
     if (newScrapper) {
         const builtScrapper = newScrapper({ companyId });
         const listedJobPostsData = await builtScrapper.getListedJobPostsData();
-        scrappedJobPosts = await builtScrapper.scrapJobPost(listedJobPostsData);
+        const jobPostsToScrap = limit
+            ? listedJobPostsData.slice(0, limit)
+            : listedJobPostsData;
+
+        console.log(
+            `[LISTED: ${listedJobPostsData.length}] [SCRAPPING: ${jobPostsToScrap.length}]`,
+        );
+
+        scrappedJobPosts = await builtScrapper.scrapJobPost(jobPostsToScrap);
     } else {
         scrappedJobPosts = await scrapCompany({ company });
     }
