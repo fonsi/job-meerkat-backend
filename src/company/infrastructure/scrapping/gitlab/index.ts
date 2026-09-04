@@ -1,4 +1,4 @@
-import { fromURL } from 'cheerio';
+import { fromURL } from '../fromUrl';
 import {
     ListedJobPostsData,
     NewCompanyScrapper,
