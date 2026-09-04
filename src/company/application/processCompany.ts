@@ -2,7 +2,12 @@ import { Company, CompanyId, isCompanyDisabled } from 'company/domain/company';
 import { scrapCompany } from './scrapCompany';
 import { createJobPost } from 'jobPost/application/createJobPost';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
-import { isOpen, JobPost, normalizeSalaryRange } from 'jobPost/domain/jobPost';
+import {
+    hasAnalyzedJobPostFields,
+    isOpen,
+    JobPost,
+    normalizeSalaryRange,
+} from 'jobPost/domain/jobPost';
 import {
     getNewCompanyScrapper,
     NewCompanyScrapper,
@@ -93,13 +98,14 @@ const scrapUsingOldScrapper = async ({
         `[SCRAPPED: ${scrappedJobPosts.length}] [OPEN: ${openJobPosts.length}] [NEW: ${newJobPosts.length}] [CLOSED: ${closedJobPosts.length}]`,
     );
 
-    const createJobPostsPromises: Promise<JobPost>[] = newJobPosts.map(
-        (jobPost) =>
+    const createJobPostsPromises: Promise<JobPost>[] = newJobPosts
+        .filter(hasAnalyzedJobPostFields)
+        .map((jobPost) =>
             createJobPost({
                 ...jobPost,
                 company,
             }),
-    );
+        );
     const closeJobPostsPromises: Promise<void>[] =
         closedJobPosts.map(closeJobPost);
 
@@ -195,6 +201,17 @@ const scrapUsingNewScrapper = async ({
     const reopenJobPosts: JobPost[] = [];
 
     scrappedJobPosts.forEach((scrappedJobPost) => {
+        if (!hasAnalyzedJobPostFields(scrappedJobPost)) {
+            logger.info(
+                `Skipping incomplete scraped job post for ${company.name}`,
+                {
+                    companyId,
+                    originalId: scrappedJobPost.originalId,
+                },
+            );
+            return;
+        }
+
         const closedJobPost = closedJobPostByOriginalId.get(
             scrappedJobPost.originalId,
         );

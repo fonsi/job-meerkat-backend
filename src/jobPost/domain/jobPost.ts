@@ -269,6 +269,19 @@ export const closeJobPost = (jobPost: JobPost): JobPost => {
 
 export const isOpen = (jobPost: JobPost) => !jobPost.closedAt;
 
+export const hasAnalyzedJobPostFields = (
+    jobPost: Partial<
+        Pick<JobPost, 'title' | 'category' | 'type' | 'workplace' | 'location'>
+    >,
+): boolean =>
+    Boolean(
+        jobPost.title?.trim() &&
+            jobPost.category &&
+            jobPost.type &&
+            jobPost.workplace &&
+            jobPost.location != null,
+    );
+
 const SIX_MONTHS = 1000 * 60 * 60 * 24 * 30 * 6;
 
 export const wasPublishedLessThanSixMonthsAgo = (jobPost: JobPost): boolean =>

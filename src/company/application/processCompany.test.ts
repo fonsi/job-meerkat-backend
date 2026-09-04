@@ -161,4 +161,115 @@ describe('processCompany', () => {
         expect(createJobPost).not.toHaveBeenCalled();
         expect(closeJobPost).not.toHaveBeenCalled();
     });
+
+    it('skips incomplete scraped posts instead of creating them', async () => {
+        const companyId = '123e4567-e89b-12d3-a456-426614174000' as CompanyId;
+        const company = {
+            id: companyId,
+            name: 'test-company',
+            homePage: 'https://example.com',
+            logo: {
+                url: 'https://assets.example.com/company.png',
+            },
+        } as unknown as Company;
+
+        (companyRepository.getById as jest.Mock).mockResolvedValue(company);
+        (jobPostRepository.getAllByCompanyId as jest.Mock).mockResolvedValue(
+            [],
+        );
+        (getNewCompanyScrapper as jest.Mock).mockReturnValue(() => ({
+            getListedJobPostsData: jest.fn().mockResolvedValue([
+                {
+                    id: 'external-1',
+                    url: 'https://jobs.example.com/1',
+                    title: 'Backend Engineer',
+                },
+                {
+                    id: 'external-2',
+                    url: 'https://jobs.example.com/2',
+                    title: 'Frontend Engineer',
+                },
+            ]),
+            scrapJobPost: jest.fn().mockResolvedValue([
+                {
+                    originalId: 'external-1',
+                    companyId,
+                    url: 'https://jobs.example.com/1',
+                },
+                {
+                    originalId: 'external-2',
+                    companyId,
+                    type: JobType.FullTime,
+                    title: 'Frontend Engineer',
+                    url: 'https://jobs.example.com/2',
+                    category: Category.Frontend,
+                    salaryRange: null,
+                    workplace: Workplace.Remote,
+                    location: 'worldwide',
+                },
+            ]),
+        }));
+
+        await processCompany({ companyId });
+
+        expect(createJobPost).toHaveBeenCalledTimes(1);
+        expect(createJobPost).toHaveBeenCalledWith(
+            expect.objectContaining({ originalId: 'external-2' }),
+        );
+        expect(jobPostRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('does not reopen a closed job from an incomplete scrape', async () => {
+        const companyId = '123e4567-e89b-12d3-a456-426614174000' as CompanyId;
+        const company = {
+            id: companyId,
+            name: 'test-company',
+            homePage: 'https://example.com',
+            logo: {
+                url: 'https://assets.example.com/company.png',
+            },
+        } as unknown as Company;
+
+        const closedJobPost = {
+            id: '123e4567-e89b-12d3-a456-426614174111',
+            companyId,
+            originalId: 'external-1',
+            type: JobType.FullTime,
+            title: 'Backend Engineer',
+            url: 'https://jobs.example.com/1',
+            category: Category.Backend,
+            salaryRange: null,
+            workplace: Workplace.Remote,
+            location: 'worldwide',
+            createdAt: 1700000000000,
+            closedAt: 1701000000000,
+            slug: 'backend-engineer-at-test-company-post1',
+        } as unknown as JobPost;
+
+        (companyRepository.getById as jest.Mock).mockResolvedValue(company);
+        (jobPostRepository.getAllByCompanyId as jest.Mock).mockResolvedValue([
+            closedJobPost,
+        ]);
+        (getNewCompanyScrapper as jest.Mock).mockReturnValue(() => ({
+            getListedJobPostsData: jest.fn().mockResolvedValue([
+                {
+                    id: 'external-1',
+                    url: 'https://jobs.example.com/1',
+                    title: 'Backend Engineer',
+                },
+            ]),
+            scrapJobPost: jest.fn().mockResolvedValue([
+                {
+                    originalId: 'external-1',
+                    companyId,
+                    url: 'https://jobs.example.com/1',
+                },
+            ]),
+        }));
+
+        await processCompany({ companyId });
+
+        expect(jobPostRepository.update).not.toHaveBeenCalled();
+        expect(createJobPost).not.toHaveBeenCalled();
+    });
 });
