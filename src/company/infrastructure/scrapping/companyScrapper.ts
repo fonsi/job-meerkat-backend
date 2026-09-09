@@ -121,6 +121,13 @@ import { WAVE_NAME, waveScrapper } from './wave';
 import { WEBFLOW_NAME, webflowScrapper } from './webflow';
 import { WISPR_FLOW_NAME, wisprFlowScrapper } from './wisprFlow';
 import { WORKOS_NAME, workOsScrapper } from './workOs';
+import { AIRTABLE_NAME, airtableScrapper } from './airtable';
+import { AUTOMOX_NAME, automoxScrapper } from './automox';
+import { BACKBLAZE_NAME, backblazeScrapper } from './backblaze';
+import { GAMMA_NAME, gammaScrapper } from './gamma';
+import { HEX_NAME, hexScrapper } from './hex';
+import { OUTREACH_NAME, outreachScrapper } from './outreach';
+import { PYLON_NAME, pylonScrapper } from './pylon';
 import {
     ABNORMAL_SECURITY_NAME,
     abnormalSecurityScrapper,
@@ -424,6 +431,20 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return wisprFlowScrapper;
         case WORKOS_NAME:
             return workOsScrapper;
+        case AIRTABLE_NAME:
+            return airtableScrapper;
+        case AUTOMOX_NAME:
+            return automoxScrapper;
+        case BACKBLAZE_NAME:
+            return backblazeScrapper;
+        case GAMMA_NAME:
+            return gammaScrapper;
+        case HEX_NAME:
+            return hexScrapper;
+        case OUTREACH_NAME:
+            return outreachScrapper;
+        case PYLON_NAME:
+            return pylonScrapper;
         case ABNORMAL_SECURITY_NAME:
             return abnormalSecurityScrapper;
         case BITWARDEN_NAME:
