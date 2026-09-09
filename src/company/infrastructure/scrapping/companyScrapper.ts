@@ -62,6 +62,7 @@ import { DOCKER_NAME, dockerScrapper } from './docker';
 import { DUOLINGO_NAME, duolingoScrapper } from './duolingo';
 import { ONE_PASSWORD_NAME, onePasswordScrapper } from './1password';
 import { LIMITLESS_NAME, limitlessScrapper } from './limitless';
+import { LINEAR_NAME, linearScrapper } from './linear';
 import { REPLIT_NAME, replitScrapper } from './replit';
 import { RETOOL_NAME, retoolScrapper } from './retool';
 import { STRAVA_NAME, stravaScrapper } from './strava';
@@ -82,6 +83,7 @@ import { CHECKLY_NAME, checklyScrapper } from './checkly';
 import { CHROMATIC_NAME, chromaticScrapper } from './chromatic';
 import { CLICKUP_NAME, clickUpScrapper } from './clickUp';
 import { CONSENSYS_NAME, consensysScrapper } from './consensys';
+import { CURSOR_NAME, cursorScrapper } from './cursor';
 import { CYBERHAVEN_NAME, cyberhavenScrapper } from './cyberhaven';
 import { DEEPGRAM_NAME, deepgramScrapper } from './deepgram';
 import { DESCRIPT_NAME, descriptScrapper } from './descript';
@@ -100,7 +102,9 @@ import { KALEPA_NAME, kalepaScrapper } from './kalepa';
 import { LAUNCHDARKLY_NAME, launchDarklyScrapper } from './launchDarkly';
 import { MERCURY_NAME, mercuryScrapper } from './mercury';
 import { MYSTEN_LABS_NAME, mystenLabsScrapper } from './mystenLabs';
+import { NOTION_NAME, notionScrapper } from './notion';
 import { PARAGON_NAME, paragonScrapper } from './paragon';
+import { POSTHOG_NAME, posthogScrapper } from './posthog';
 import { PREFECT_NAME, prefectScrapper } from './prefect';
 import { REGRELLO_NAME, regrelloScrapper } from './regrello';
 import { RENDER_NAME, renderScrapper } from './render';
@@ -109,6 +113,7 @@ import { SANDBOX_AQ_NAME, sandboxAQScrapper } from './sandboxAQ';
 import { SENTRY_NAME, sentryScrapper } from './sentry';
 import { STRIPE_NAME, stripeScrapper } from './stripe';
 import { SUPERMOVE_NAME, supermoveScrapper } from './supermove';
+import { SUPABASE_NAME, supabaseScrapper } from './supabase';
 import { TAILSCALE_NAME, tailscaleScrapper } from './tailscale';
 import { TINES_NAME, tinesScrapper } from './tines';
 import { VERCEL_NAME, vercelScrapper } from './vercel';
@@ -219,6 +224,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return confiantScrapper;
         case CLOSE_NAME:
             return closeScrapper;
+        case CURSOR_NAME:
+            return cursorScrapper;
         case CUSTOMERIO_NAME:
             return customerioScrapper;
         case DISCORD_NAME:
@@ -273,6 +280,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return launchDarklyScrapper;
         case LIMITLESS_NAME:
             return limitlessScrapper;
+        case LINEAR_NAME:
+            return linearScrapper;
         case LATTICE_NAME:
             return latticeScrapper;
         case MAGIC_SCHOOL_NAME:
@@ -291,6 +300,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return mimoScrapper;
         case NETLIFY_NAME:
             return netlifyScrapper;
+        case NOTION_NAME:
+            return notionScrapper;
         case ONE_PASSWORD_NAME:
             return onePasswordScrapper;
         case PARAGON_NAME:
@@ -301,6 +312,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return photoroomScrapper;
         case PLANET_SCALE_NAME:
             return planetScaleScrapper;
+        case POSTHOG_NAME:
+            return posthogScrapper;
         case PREFECT_NAME:
             return prefectScrapper;
         case PROTONAI_NAME:
@@ -399,6 +412,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return sentryScrapper;
         case SUPERMOVE_NAME:
             return supermoveScrapper;
+        case SUPABASE_NAME:
+            return supabaseScrapper;
         case VERCEL_NAME:
             return vercelScrapper;
         case WAVE_NAME:
