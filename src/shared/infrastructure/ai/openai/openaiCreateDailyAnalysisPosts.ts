@@ -4,9 +4,9 @@ import {
     UtmSource,
 } from 'shared/infrastructure/url/buildJobPostPageUrl';
 import {
-    cleanUrlsInObject,
+    parseSocialMediaPosts,
     SocialMediaPosts,
-} from 'shared/infrastructure/ai/openai/openaiCreateSocialJobPost';
+} from 'shared/infrastructure/ai/openai/socialMediaPosts';
 import { SOCIAL_POST_CONTENT_RULES } from 'social/domain/socialPostContentRules';
 
 const OPENAI_MODEL = 'gpt-4o-mini';
@@ -66,7 +66,5 @@ Return JSON: ${JSON.stringify(example)}.
         ],
     });
 
-    return cleanUrlsInObject(
-        JSON.parse(completion.choices[0].message.content),
-    ) as SocialMediaPosts;
+    return parseSocialMediaPosts(completion.choices[0].message.content);
 };

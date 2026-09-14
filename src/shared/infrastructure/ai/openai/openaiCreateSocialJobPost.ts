@@ -8,31 +8,12 @@ import {
     UtmSource,
 } from 'shared/infrastructure/url/buildJobPostPageUrl';
 import { SOCIAL_POST_CONTENT_RULES } from 'social/domain/socialPostContentRules';
+import { parseSocialMediaPosts, SocialMediaPosts } from './socialMediaPosts';
 
-export type SocialMediaPosts = {
-    bluesky: string[];
-    threads: string[];
-};
+export type { SocialMediaPosts };
 
 const OPENAI_MODEL = 'gpt-4o-mini';
 const openai = new OpenAI();
-
-export const cleanUrlsInObject = (obj: unknown): unknown => {
-    if (typeof obj === 'string') {
-        return obj.replace(/(https?:\/\/[^\s]+)\.(?=[\s"}]|$)/g, '$1');
-    }
-    if (Array.isArray(obj)) {
-        return obj.map((item) => cleanUrlsInObject(item));
-    }
-    if (typeof obj === 'object' && obj !== null) {
-        const cleaned: Record<string, unknown> = {};
-        for (const [key, value] of Object.entries(obj)) {
-            cleaned[key] = cleanUrlsInObject(value);
-        }
-        return cleaned;
-    }
-    return obj;
-};
 
 const socialMediaPostsExample: SocialMediaPosts = {
     bluesky: ['bluesky post 1', 'bluesky post 2'],
@@ -111,9 +92,5 @@ Return JSON like: ${JSON.stringify(socialMediaPostsExample)}.
         ],
     });
 
-    const rawContent = completion.choices[0].message.content;
-    const parsedContent = JSON.parse(rawContent);
-    const cleanedContent = cleanUrlsInObject(parsedContent);
-
-    return cleanedContent as SocialMediaPosts;
+    return parseSocialMediaPosts(completion.choices[0].message.content);
 };

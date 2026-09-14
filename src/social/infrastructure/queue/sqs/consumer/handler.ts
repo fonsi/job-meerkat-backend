@@ -71,9 +71,13 @@ export const index = async (event) => {
                 );
                 if (result.status === 'rejected') {
                     const post = getScheduledPost(event.Records[index]);
+                    const error =
+                        result.reason instanceof Error
+                            ? result.reason
+                            : new Error(String(result.reason));
                     logger.error(
                         errorWithPrefix(
-                            new Error(result.reason),
+                            error,
                             `Error publishing social post: ${post.id}`,
                         ),
                     );
