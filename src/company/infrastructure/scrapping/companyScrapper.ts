@@ -151,6 +151,24 @@ import { TEMPORAL_NAME, temporalScrapper } from './temporal';
 import { TODOIST_NAME, todoistScrapper } from './todoist';
 import { VULTR_NAME, vultrScrapper } from './vultr';
 import { WIKIMEDIA_NAME, wikimediaScrapper } from './wikimedia';
+import { ABACUM_NAME, abacumScrapper } from './abacum';
+import { AIRBYTE_NAME, airbyteScrapper } from './airbyte';
+import { ANOMALO_NAME, anomaloScrapper } from './anomalo';
+import { DEEPNOTE_NAME, deepnoteScrapper } from './deepnote';
+import { DOPPLER_NAME, dopplerScrapper } from './doppler';
+import { HELIUS_NAME, heliusScrapper } from './helius';
+import { INFISICAL_NAME, infisicalScrapper } from './infisical';
+import { INNGEST_NAME, inngestScrapper } from './inngest';
+import { KESTRA_NAME, kestraScrapper } from './kestra';
+import { LEMLIST_NAME, lemlistScrapper } from './lemlist';
+import { NYLAS_NAME, nylasScrapper } from './nylas';
+import { OMNI_NAME, omniScrapper } from './omni';
+import { ONELEET_NAME, oneleetScrapper } from './oneleet';
+import { POLAR_NAME, polarScrapper } from './polar';
+import { RAILWAY_NAME, railwayScrapper } from './railway';
+import { RESTATE_NAME, restateScrapper } from './restate';
+import { STORYBLOK_NAME, storyblokScrapper } from './storyblok';
+import { TRIGGER_DEV_NAME, triggerDevScrapper } from './triggerDev';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -491,6 +509,42 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return zapierScrapper;
         case ZERO_X_NAME:
             return zeroXScrapper;
+        case ABACUM_NAME:
+            return abacumScrapper;
+        case AIRBYTE_NAME:
+            return airbyteScrapper;
+        case ANOMALO_NAME:
+            return anomaloScrapper;
+        case DEEPNOTE_NAME:
+            return deepnoteScrapper;
+        case DOPPLER_NAME:
+            return dopplerScrapper;
+        case HELIUS_NAME:
+            return heliusScrapper;
+        case INFISICAL_NAME:
+            return infisicalScrapper;
+        case INNGEST_NAME:
+            return inngestScrapper;
+        case KESTRA_NAME:
+            return kestraScrapper;
+        case LEMLIST_NAME:
+            return lemlistScrapper;
+        case NYLAS_NAME:
+            return nylasScrapper;
+        case OMNI_NAME:
+            return omniScrapper;
+        case ONELEET_NAME:
+            return oneleetScrapper;
+        case POLAR_NAME:
+            return polarScrapper;
+        case RAILWAY_NAME:
+            return railwayScrapper;
+        case RESTATE_NAME:
+            return restateScrapper;
+        case STORYBLOK_NAME:
+            return storyblokScrapper;
+        case TRIGGER_DEV_NAME:
+            return triggerDevScrapper;
     }
 
     return null;
