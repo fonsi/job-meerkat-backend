@@ -39,6 +39,7 @@ provider:
         STAGE: ${sls:stage}
         DYNAMODB_COMPANY_TABLE_NAME: ${sls:stage}-company
         DYNAMODB_JOB_POST_TABLE_NAME: ${sls:stage}-job-post
+        DYNAMODB_JOB_POST_DETAIL_TABLE_NAME: ${sls:stage}-job-post-detail
         DYNAMODB_CLOSED_JOB_POST_TABLE_NAME: ${sls:stage}-closed-job-post
         DYNAMODB_SCHEDULED_SOCIAL_POST_TABLE_NAME: ${sls:stage}-scheduled-social-post
         DYNAMODB_REPORT_TABLE_NAME: ${sls:stage}-report
@@ -127,6 +128,17 @@ resources:
                             KeyType: HASH
                       Projection:
                           ProjectionType: ALL
+        jobPostDetailTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+                TableName: ${self:provider.environment.DYNAMODB_JOB_POST_DETAIL_TABLE_NAME}
+                AttributeDefinitions:
+                    - AttributeName: jobPostId
+                      AttributeType: S
+                KeySchema:
+                    - AttributeName: jobPostId
+                      KeyType: HASH
+                BillingMode: PAY_PER_REQUEST
         closedJobPostTable:
             Type: AWS::DynamoDB::Table
             Properties:

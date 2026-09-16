@@ -18,7 +18,7 @@ export const marshall = (jobPost: JobPost): Record<string, AttributeValue> => {
     } = jobPost;
     const salaryRange = normalizeSalaryRange(jobPost.salaryRange);
 
-    const item = {
+    const item: Record<string, AttributeValue> = {
         id: {
             S: id,
         },

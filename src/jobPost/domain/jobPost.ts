@@ -176,6 +176,56 @@ export type SalaryRange = {
     period: Period;
 };
 
+export type JobPostDetails = {
+    summary?: string;
+    team?: string;
+    stack?: string[];
+    responsibilities?: string[];
+    requirements?: string[];
+    niceToHave?: string[];
+    benefits?: string[];
+    hiringProcess?: string[];
+};
+
+const TEXT_DETAIL_KEYS = ['summary', 'team'] as const;
+const LIST_DETAIL_KEYS = [
+    'stack',
+    'responsibilities',
+    'requirements',
+    'niceToHave',
+    'benefits',
+    'hiringProcess',
+] as const;
+const MAX_DETAIL_LIST_ITEMS = 8;
+
+export const normalizeJobPostDetails = (
+    details: JobPostDetails | null | undefined,
+): JobPostDetails | undefined => {
+    if (!details) return undefined;
+
+    const normalized: JobPostDetails = {};
+
+    for (const key of TEXT_DETAIL_KEYS) {
+        const value = details[key];
+        if (typeof value !== 'string') continue;
+        const trimmed = value.trim();
+        if (trimmed) normalized[key] = trimmed;
+    }
+
+    for (const key of LIST_DETAIL_KEYS) {
+        const value = details[key];
+        if (!Array.isArray(value)) continue;
+        const items = value
+            .filter((item): item is string => typeof item === 'string')
+            .map((item) => item.trim())
+            .filter(Boolean)
+            .slice(0, MAX_DETAIL_LIST_ITEMS);
+        if (items.length) normalized[key] = items;
+    }
+
+    return Object.keys(normalized).length ? normalized : undefined;
+};
+
 export type JobPost = {
     id: JobPostId;
     originalId: string;
@@ -190,6 +240,7 @@ export type JobPost = {
     createdAt: number;
     closedAt: number | null;
     slug: string;
+    details?: JobPostDetails;
 };
 
 export const normalizeSalaryRange = (
@@ -255,6 +306,7 @@ export const createJobPost = (data: CreateJobPostData): JobPost => {
         slug,
         ...data,
         salaryRange: normalizeSalaryRange(data.salaryRange),
+        details: normalizeJobPostDetails(data.details),
     };
 };
 

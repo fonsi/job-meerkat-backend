@@ -8,6 +8,7 @@ type JobPostWithCompany = JobPost & {
         id: CompanyId;
         name: string;
         logo: CompanyLogo;
+        description?: string;
     };
 };
 
@@ -28,6 +29,9 @@ export const getJobPostBySlug = async (
             id: company.id,
             name: company.name,
             logo: company.logo,
+            ...(company.description
+                ? { description: company.description }
+                : {}),
         },
     };
 };

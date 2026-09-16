@@ -61,6 +61,22 @@ describe('createJobPost', () => {
         expect(jobPost.createdAt).toBe(mockTimestamp);
     });
 
+    it('should persist normalized job post details', async () => {
+        const jobPost = await createJobPost({
+            ...createJobPostCommand,
+            details: {
+                summary: '  Own the API  ',
+                stack: [' TypeScript ', '', 'Kafka'],
+                benefits: [],
+            },
+        });
+
+        expect(jobPost.details).toEqual({
+            summary: 'Own the API',
+            stack: ['TypeScript', 'Kafka'],
+        });
+    });
+
     describe('slug generation scenarios', () => {
         const testCases = [
             {

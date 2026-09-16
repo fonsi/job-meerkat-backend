@@ -74,5 +74,6 @@ describe('getAllJobPosts', () => {
                 }),
             }),
         ]);
+        expect(allJobPosts[0]).not.toHaveProperty('details');
     });
 });

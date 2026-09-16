@@ -1,5 +1,6 @@
 import { marshall } from './marshall';
 import { unmarshall } from './unmarshall';
+import { jobPostDetailsRepository } from './dynamodbJobPostDetailsRepository';
 import { TransactWriteItem } from '@aws-sdk/client-dynamodb';
 import {
     putItem,
@@ -27,16 +28,39 @@ import {
     GetAllClosedBefore,
     MoveClosedToArchive,
 } from 'jobPost/domain/jobPostRepository';
-import { isOpen, normalizeSalaryRange } from 'jobPost/domain/jobPost';
+import { isOpen, JobPost, normalizeSalaryRange } from 'jobPost/domain/jobPost';
 
 const JOB_POST_TABLE = process.env.DYNAMODB_JOB_POST_TABLE_NAME;
 const CLOSED_JOB_POST_TABLE = process.env.DYNAMODB_CLOSED_JOB_POST_TABLE_NAME;
 
+const withDetails = async (jobPost: JobPost): Promise<JobPost> => {
+    const details = await jobPostDetailsRepository.getByJobPostId(jobPost.id);
+
+    return details ? { ...jobPost, details } : jobPost;
+};
+
 const create: Create = async (jobPost) => {
     try {
         const item = marshall(jobPost);
+        const detailsTransactItem = jobPostDetailsRepository.putTransactItem({
+            jobPostId: jobPost.id,
+            companyId: jobPost.companyId,
+            details: jobPost.details,
+        });
 
-        await putItem(JOB_POST_TABLE, item);
+        if (detailsTransactItem) {
+            await transactWriteItems([
+                {
+                    Put: {
+                        TableName: JOB_POST_TABLE,
+                        Item: item,
+                    },
+                },
+                detailsTransactItem,
+            ]);
+        } else {
+            await putItem(JOB_POST_TABLE, item);
+        }
 
         return jobPost;
     } catch (e) {
@@ -189,7 +213,7 @@ const update: Update = async (jobPost) => {
                     S: jobPost.companyId,
                 },
             },
-            UpdateExpression: `${baseUpdateExpression}${salaryUpdateExpression} REMOVE closedAt${salaryRemoveExpression}`,
+            UpdateExpression: `${baseUpdateExpression}${salaryUpdateExpression} REMOVE closedAt, details${salaryRemoveExpression}`,
             ExpressionAttributeNames: {
                 '#type': 'type',
                 '#title': 'title',
@@ -244,12 +268,18 @@ const update: Update = async (jobPost) => {
 
         const result = await updateItem(JOB_POST_TABLE, updateExpression);
         const item = result.Attributes;
+        if (!item) return null;
 
-        if (!item) {
-            return null;
-        }
+        const saved = unmarshall(item);
+        if (!jobPost.details) return saved;
 
-        return unmarshall(item);
+        const details = await jobPostDetailsRepository.put({
+            jobPostId: jobPost.id,
+            companyId: jobPost.companyId,
+            details: jobPost.details,
+        });
+
+        return details ? { ...saved, details } : saved;
     } catch (e) {
         throw new DynamodbError(e);
     }
@@ -272,7 +302,7 @@ const getBySlug: GetBySlug = async (slug) => {
             return null;
         }
 
-        return unmarshall(item);
+        return withDetails(unmarshall(item));
     } catch (e) {
         throw new DynamodbError(e);
     }
@@ -335,6 +365,7 @@ const moveClosedToArchive: MoveClosedToArchive = async (
                 },
             },
         },
+        jobPostDetailsRepository.deleteTransactItem(jobPost.id),
     ];
 
     try {

@@ -23,6 +23,7 @@ const mockCompany = {
     id: companyId,
     name: 'Test Company',
     homePage: 'https://test-company.com',
+    description: 'Test Company builds tools for remote teams.',
     logo: {
         url: 'https://test-company.com/logo.png',
     },
@@ -47,6 +48,10 @@ const mockJobPost: JobPost = {
     createdAt: Date.now(),
     closedAt: null,
     slug: 'senior-developer-at-test-company-123e4567',
+    details: {
+        summary: 'Build the web app used by customers every day.',
+        stack: ['TypeScript', 'React'],
+    },
 };
 
 describe('getJobPostBySlug', () => {
@@ -70,6 +75,7 @@ describe('getJobPostBySlug', () => {
                 id: mockCompany.id,
                 name: mockCompany.name,
                 logo: mockCompany.logo,
+                description: mockCompany.description,
             },
         });
         expect(jobPostRepository.getBySlug).toHaveBeenCalledWith(

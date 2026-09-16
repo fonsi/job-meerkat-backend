@@ -6,7 +6,7 @@ import {
 } from 'jobPost/domain/jobPost';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
 
-type JobPostWithCompany = JobPost & {
+type JobPostWithCompany = Omit<JobPost, 'details'> & {
     company: {
         id: CompanyId;
         name: string;
