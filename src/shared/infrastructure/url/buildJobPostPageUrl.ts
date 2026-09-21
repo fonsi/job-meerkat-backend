@@ -45,7 +45,7 @@ export const buildJobPostPageUrl = (
     slug: string,
     utmSource?: UtmSourceValue | string,
 ): string => {
-    const url = `${PUBLIC_SITE_BASE_URL}/job/?slug=${encodeURIComponent(slug)}`;
+    const url = `${PUBLIC_SITE_BASE_URL}/jobpost/${encodeURIComponent(slug)}`;
     return utmSource ? appendUtmSource(url, utmSource) : url;
 };
 

@@ -30,10 +30,7 @@ describe('truncateToGraphemes', () => {
 
     it('drops a trailing URL that was cut mid-string', () => {
         expect(
-            truncateToGraphemes(
-                'See https://jobmeerkat.com/job/?slug=long',
-                16,
-            ),
+            truncateToGraphemes('See https://jobmeerkat.com/jobpost/long', 16),
         ).toBe('See');
     });
 });

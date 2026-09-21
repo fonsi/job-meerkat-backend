@@ -27,10 +27,10 @@ describe('appendUtmSource', () => {
     it('appends utm_source with & when a query exists', () => {
         expect(
             appendUtmSource(
-                'https://jobmeerkat.com/job/?slug=a',
+                'https://jobmeerkat.com/jobpost/a?ref=1',
                 UtmSource.Newsletter,
             ),
-        ).toBe('https://jobmeerkat.com/job/?slug=a&utm_source=newsletter');
+        ).toBe('https://jobmeerkat.com/jobpost/a?ref=1&utm_source=newsletter');
     });
 
     it('replaces an existing utm_source', () => {
@@ -56,21 +56,21 @@ describe('buildPublicSiteUrl', () => {
 });
 
 describe('buildJobPostPageUrl', () => {
-    it('builds /job/?slug= with the hardcoded base', () => {
+    it('builds /jobpost/:slug with the hardcoded base', () => {
         expect(buildJobPostPageUrl('a-b-at-c-d')).toBe(
-            'https://jobmeerkat.com/job/?slug=a-b-at-c-d',
+            'https://jobmeerkat.com/jobpost/a-b-at-c-d',
         );
     });
 
-    it('encodes the slug query value', () => {
+    it('encodes the slug path segment', () => {
         expect(buildJobPostPageUrl('x y')).toBe(
-            'https://jobmeerkat.com/job/?slug=x%20y',
+            'https://jobmeerkat.com/jobpost/x%20y',
         );
     });
 
     it('appends utm_source when provided', () => {
         expect(buildJobPostPageUrl('a-b-at-c-d', UtmSource.Newsletter)).toBe(
-            'https://jobmeerkat.com/job/?slug=a-b-at-c-d&utm_source=newsletter',
+            'https://jobmeerkat.com/jobpost/a-b-at-c-d?utm_source=newsletter',
         );
     });
 });
@@ -99,9 +99,9 @@ describe('buildCompanyPageUrl', () => {
 describe('applyUtmSourceToJobmeerkatUrls', () => {
     it('tags every jobmeerkat URL in plain text', () => {
         const text =
-            'See https://jobmeerkat.com/job/?slug=foo and https://jobmeerkat.com';
+            'See https://jobmeerkat.com/jobpost/foo and https://jobmeerkat.com';
         expect(applyUtmSourceToJobmeerkatUrls(text, UtmSource.Bluesky)).toBe(
-            'See https://jobmeerkat.com/job/?slug=foo&utm_source=bluesky and https://jobmeerkat.com?utm_source=bluesky',
+            'See https://jobmeerkat.com/jobpost/foo?utm_source=bluesky and https://jobmeerkat.com?utm_source=bluesky',
         );
     });
 });
@@ -124,7 +124,7 @@ describe('applyUtmSourcesToSocialPosts', () => {
     it('rewrites the shared social placeholder per platform', () => {
         const url = buildJobPostPageUrl('foo', UtmSource.Social);
         expect(url).toBe(
-            'https://jobmeerkat.com/job/?slug=foo&utm_source=_social',
+            'https://jobmeerkat.com/jobpost/foo?utm_source=_social',
         );
 
         const tagged = applyUtmSourcesToSocialPosts({
