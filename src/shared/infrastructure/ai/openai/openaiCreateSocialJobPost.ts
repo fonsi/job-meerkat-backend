@@ -4,7 +4,6 @@ import OpenAI from 'openai';
 import {
     buildCompanyPageUrl,
     buildJobPostPageUrl,
-    buildPublicSiteUrl,
     UtmSource,
 } from 'shared/infrastructure/url/buildJobPostPageUrl';
 import { SOCIAL_POST_CONTENT_RULES } from 'social/domain/socialPostContentRules';
@@ -17,7 +16,7 @@ const openai = new OpenAI();
 
 const socialMediaPostsExample: SocialMediaPosts = {
     bluesky: ['bluesky post 1', 'bluesky post 2'],
-    threads: ['thread 1', 'thread 2', 'thread 3'],
+    threads: ['thread 1', 'thread 2'],
 };
 
 type OpenaiSocialMediaPostsCreator = {
@@ -39,10 +38,14 @@ export const openaiSocialMediaPostsCreator = async ({
         company.id,
         UtmSource.Threads,
     );
-    const siteThreads = buildPublicSiteUrl(UtmSource.Threads);
-    const jobPostForPrompt: JobPost = {
-        ...jobPost,
-        url: buildJobPostPageUrl(jobPost.slug, UtmSource.Social),
+    const jobContext = {
+        title: jobPost.title,
+        company: company.name,
+        location: jobPost.location,
+        workplace: jobPost.workplace,
+        category: jobPost.category,
+        type: jobPost.type,
+        salaryRange: jobPost.salaryRange,
     };
     const companyContext = company.description?.trim()
         ? `Internal company context (for you only — rewrite in your own words, never copy-paste): ${company.description.trim()}`
@@ -65,24 +68,17 @@ export const openaiSocialMediaPostsCreator = async ({
                     {
                         type: 'text',
                         text: `
-At Jobmeerkat we listed a job post with data ${JSON.stringify(jobPostForPrompt)} at company ${company.name}.
+At Jobmeerkat we listed a job: ${JSON.stringify(jobContext)}.
 ${companyContext}
 ${SOCIAL_POST_CONTENT_RULES}
 Write plain text only (no HTML/markdown).
 Never paste the company description verbatim. Use it only as background to write a fresh, shorter social line.
+Two posts. Do not add the Jobmeerkat homepage.
 
-Bluesky:
-- Prefer a SINGLE post (array length 1) with role, company, salary if available, and the listing link ${jobUrlBluesky}.
-- Optionally include company page ${companyUrlBluesky}.
-- Only use a 2-post thread if salary + links cannot fit.
-- No emojis. Hashtags OK if useful; do not hashtag the company name.
-- Hard limit 300 graphemes per post (prefer ≤280).
+Bluesky and Meta Threads use the same two-post shape. Bluesky: no emojis, hashtags OK if useful, do not hashtag the company name, 300 graphemes per post (prefer ≤280). Threads: max 500 characters per message, max one hashtag, no company-name hashtag.
 
-Meta Threads:
-- Message 1: job hook (title at company, location, salary) + note that the listing link is in the thread + link to Jobmeerkat ${siteThreads}. Max one hashtag. No company-name hashtag.
-- Message 2: one original sentence about what the company does (paraphrase from context; do not quote it) + company page ${companyUrlThreads}.
-- Message 3: job listing details link ${jobUrlThreads}.
-- Max 500 characters per message.
+- Post 1: job hook (title at company, location, salary) and the listing (${jobUrlBluesky} on Bluesky, ${jobUrlThreads} on Threads).
+- Post 2: one original sentence about what the company does, plus the company page (${companyUrlBluesky} on Bluesky, ${companyUrlThreads} on Threads).
 
 Return JSON like: ${JSON.stringify(socialMediaPostsExample)}.
 `,
