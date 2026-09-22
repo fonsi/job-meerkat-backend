@@ -5,6 +5,7 @@ import { companyRepository } from 'company/infrastructure/persistance/dynamodb/d
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
 import { getNewCompanyScrapper } from 'company/infrastructure/scrapping/companyScrapper';
 import { createJobPost } from 'jobPost/application/createJobPost';
+import { enqueueJobPostOgImage } from 'jobPost/infrastructure/queue/sqs/enqueue';
 import { closeJobPost } from 'jobPost/application/closeJobPost';
 
 jest.mock(
@@ -21,7 +22,7 @@ jest.mock(
     () => ({
         jobPostRepository: {
             getAllByCompanyId: jest.fn(),
-            update: jest.fn().mockResolvedValue(undefined),
+            update: jest.fn(async (jobPost) => jobPost),
         },
     }),
 );
@@ -31,7 +32,14 @@ jest.mock('company/infrastructure/scrapping/companyScrapper', () => ({
 }));
 
 jest.mock('jobPost/application/createJobPost', () => ({
-    createJobPost: jest.fn(),
+    createJobPost: jest.fn(async (command) => ({
+        id: '123e4567-e89b-12d3-a456-426614174222',
+        companyId: command.company.id,
+    })),
+}));
+
+jest.mock('jobPost/infrastructure/queue/sqs/enqueue', () => ({
+    enqueueJobPostOgImage: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('jobPost/application/closeJobPost', () => ({
@@ -110,6 +118,10 @@ describe('processCompany', () => {
         expect(jobPostRepository.update).toHaveBeenCalledTimes(1);
         expect(createJobPost).not.toHaveBeenCalled();
         expect(closeJobPost).not.toHaveBeenCalled();
+        expect(enqueueJobPostOgImage).toHaveBeenCalledWith({
+            companyId,
+            jobPostId: closedJobPost.id,
+        });
     });
 
     it('skips scraping when the company is disabled', async () => {
@@ -216,6 +228,10 @@ describe('processCompany', () => {
         expect(createJobPost).toHaveBeenCalledWith(
             expect.objectContaining({ originalId: 'external-2' }),
         );
+        expect(enqueueJobPostOgImage).toHaveBeenCalledWith({
+            companyId,
+            jobPostId: '123e4567-e89b-12d3-a456-426614174222',
+        });
         expect(jobPostRepository.update).not.toHaveBeenCalled();
     });
 

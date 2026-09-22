@@ -1,5 +1,8 @@
 import { Period } from './jobPost';
-import { formatSalaryRangeLabel } from './formatSalaryRange';
+import {
+    formatSalaryHighlight,
+    formatSalaryRangeLabel,
+} from './formatSalaryRange';
 
 describe('formatSalaryRangeLabel', () => {
     it('formats a range in compact thousands', () => {
@@ -42,6 +45,17 @@ describe('formatSalaryRangeLabel', () => {
                 period: Period.Hour,
             }),
         ).toBe('20 - 40 USD / hour');
+    });
+
+    it('splits a range into a highlight amount and caption', () => {
+        expect(
+            formatSalaryHighlight({
+                min: 215000,
+                max: 250000,
+                currency: 'usd',
+                period: Period.Year,
+            }),
+        ).toEqual({ amount: '215K–250K', caption: 'USD / year' });
     });
 
     it('returns null when there is no salary', () => {

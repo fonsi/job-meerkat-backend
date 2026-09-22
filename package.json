@@ -38,14 +38,17 @@
         "@aws-sdk/client-api-gateway": "^3.821.0",
         "@aws-sdk/client-dynamodb": "^3.821.0",
         "@aws-sdk/client-lambda": "^3.821.0",
+        "@aws-sdk/client-s3": "^3.821.0",
         "@aws-sdk/client-sqs": "^3.821.0",
         "@react-email/components": "^0.5.7",
+        "@resvg/resvg-js": "^2.6.2",
         "cheerio": "^1.0.0",
         "mailgun.js": "^12.1.1",
         "openai": "^5.3.0",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
-        "rollbar": "^2.26.5"
+        "rollbar": "^2.26.5",
+        "satori": "^0.33.4"
     },
     "lint-staged": {
         "*.{js,ts,mjs,json}": "prettier --list-different --write"

@@ -1,6 +1,7 @@
 import { Company, CompanyId, isCompanyDisabled } from 'company/domain/company';
 import { scrapCompany } from './scrapCompany';
 import { createJobPost } from 'jobPost/application/createJobPost';
+import { enqueueJobPostOgImage } from 'jobPost/infrastructure/queue/sqs/enqueue';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
 import {
     hasAnalyzedJobPostFields,
@@ -56,6 +57,12 @@ type OldScrapperData = {
 
 const MAX_JOB_POSTS_TO_SCRAP = 50;
 
+const enqueueOgImage = (jobPost: JobPost): Promise<void> =>
+    enqueueJobPostOgImage({
+        companyId: jobPost.companyId,
+        jobPostId: jobPost.id,
+    });
+
 const getNewAndClosedJobPosts = ({
     scrappedJobPosts,
     openJobPosts,
@@ -98,13 +105,13 @@ const scrapUsingOldScrapper = async ({
         `[SCRAPPED: ${scrappedJobPosts.length}] [OPEN: ${openJobPosts.length}] [NEW: ${newJobPosts.length}] [CLOSED: ${closedJobPosts.length}]`,
     );
 
-    const createJobPostsPromises: Promise<JobPost>[] = newJobPosts
+    const createJobPostsPromises: Promise<void>[] = newJobPosts
         .filter(hasAnalyzedJobPostFields)
         .map((jobPost) =>
             createJobPost({
                 ...jobPost,
                 company,
-            }),
+            }).then(enqueueOgImage),
         );
     const closeJobPostsPromises: Promise<void>[] =
         closedJobPosts.map(closeJobPost);
@@ -239,15 +246,15 @@ const scrapUsingNewScrapper = async ({
         `[LISTED: ${listedJobPostsData.length}] [OPEN: ${openJobPosts.length}] [NEW: ${newJobPosts.length}] [REOPENED: ${reopenJobPosts.length}] [CREATED: ${createJobPosts.length}] [CLOSED: ${closedJobPosts.length}]`,
     );
 
-    const createJobPostsPromises: Promise<JobPost>[] = createJobPosts.map(
+    const createJobPostsPromises: Promise<void>[] = createJobPosts.map(
         (jobPost) =>
             createJobPost({
                 ...jobPost,
                 company,
-            }),
+            }).then(enqueueOgImage),
     );
-    const reopenJobPostsPromises: Promise<JobPost>[] = reopenJobPosts.map(
-        (jobPost) => jobPostRepository.update(jobPost),
+    const reopenJobPostsPromises: Promise<void>[] = reopenJobPosts.map(
+        (jobPost) => jobPostRepository.update(jobPost).then(enqueueOgImage),
     );
     const closeJobPostsPromises: Promise<void>[] =
         closedJobPosts.map(closeJobPost);

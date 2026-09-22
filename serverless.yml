@@ -12,6 +12,8 @@ params:
         publishSocialPostsQueueVisibilityTimeout: 130
         sendReportTimeout: 120
         sendReportQueueVisibilityTimeout: 130
+        generateJobPostOgImageTimeout: 60
+        generateJobPostOgImageQueueVisibilityTimeout: 90
         companyEndpointTimeout: 30
         newsletterEndpointTimeout: 30
     dev:
@@ -30,6 +32,13 @@ params:
         weeklyReportsSchedule: cron(0 5 ? * MON *) # every Monday at 5 am
         archiveClosedJobPostsSchedule: cron(0 6 ? * SUN *) # every Sunday at 6 am
         processPendingSubscriptionsSchedule: cron(0 6 ? * * *) # every day at 6 am
+
+package:
+    patterns:
+        - src/jobPost/infrastructure/og/fonts/**
+        - src/jobPost/infrastructure/og/native/**
+        - src/jobPost/infrastructure/queue/sqs/consumer/hb.wasm
+
 provider:
     name: aws
     runtime: nodejs24.x
@@ -49,6 +58,9 @@ provider:
         SEND_REPORT_QUEUE_NAME: ${sls:stage}-send-report-sqs-queue
         SEND_REPORT_QUEUE_URL:
             Ref: sendReportQueue
+        GENERATE_JOB_POST_OG_IMAGE_QUEUE_URL:
+            Ref: generateJobPostOgImageQueue
+        ASSETS_BUCKET: ${env:ASSETS_BUCKET}
         OPENAI_API_KEY: ${env:OPENAI_API_KEY}
         ASSETS_URL: ${env:ASSETS_URL}
         ROLLBAR_ACCESS_TOKEN: ${env:ROLLBAR_ACCESS_TOKEN}
@@ -90,6 +102,12 @@ provider:
               - Fn::GetAtt: [processCompanyQueue, Arn]
               - Fn::GetAtt: [publishSocialPostQueue, Arn]
               - Fn::GetAtt: [sendReportQueue, Arn]
+              - Fn::GetAtt: [generateJobPostOgImageQueue, Arn]
+        - Effect: Allow
+          Action:
+              - s3:PutObject
+          Resource:
+              - arn:aws:s3:::${env:ASSETS_BUCKET}/company/*/jobpost/*/og.png
 
 resources:
     Resources:
@@ -231,6 +249,19 @@ resources:
             Properties:
                 QueueName: ${self:provider.environment.SEND_REPORT_QUEUE_NAME}
                 VisibilityTimeout: ${param:sendReportQueueVisibilityTimeout}
+        generateJobPostOgImageDeadLetterQueue:
+            Type: 'AWS::SQS::Queue'
+            Properties:
+                QueueName: ${sls:stage}-generate-job-post-og-image-dlq
+        generateJobPostOgImageQueue:
+            Type: 'AWS::SQS::Queue'
+            Properties:
+                QueueName: ${sls:stage}-generate-job-post-og-image-sqs-queue
+                VisibilityTimeout: ${param:generateJobPostOgImageQueueVisibilityTimeout}
+                RedrivePolicy:
+                    deadLetterTargetArn:
+                        Fn::GetAtt: [generateJobPostOgImageDeadLetterQueue, Arn]
+                    maxReceiveCount: 3
 
 functions:
     devScrapCompany:
@@ -301,6 +332,16 @@ functions:
                   arn:
                       Fn::GetAtt:
                           - publishSocialPostQueue
+                          - Arn
+                  batchSize: 1
+    generateJobPostOgImage:
+        handler: src/jobPost/infrastructure/queue/sqs/consumer/handler.index
+        timeout: ${param:generateJobPostOgImageTimeout}
+        events:
+            - sqs:
+                  arn:
+                      Fn::GetAtt:
+                          - generateJobPostOgImageQueue
                           - Arn
                   batchSize: 1
     sendReport:

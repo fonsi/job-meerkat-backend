@@ -5,7 +5,15 @@ const { compilerOptions } = require('./tsconfig');
 module.exports = {
     roots: ['<rootDir>/src'],
     transform: {
-        '^.+\\.tsx?$': 'ts-jest',
+        '^.+\\.tsx?$': [
+            'ts-jest',
+            {
+                tsconfig: {
+                    jsx: 'react',
+                    isolatedModules: true,
+                },
+            },
+        ],
     },
     testMatch: ['/src/.*\\.(ts|tsx)', '**/?(*.)(spec|test).ts?(x)'],
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
