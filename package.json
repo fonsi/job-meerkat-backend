@@ -6,6 +6,7 @@
         "local": "npm run lint && sls invoke local --function",
         "scrap-company": "npm run local devScrapCompany -- --path src/company/infrastructure/dev/scrapCompany.event.json",
         "send-test-report": "npm run local devSendTestReport -- --path src/report/infrastructure/dev/sendTestReport.event.json",
+        "generate-follower-growth-posts": "npm run local generateFollowerGrowthPosts -- --path src/social/infrastructure/dev/generateFollowerGrowthPosts.event.json",
         "deploy:dev": "npm run lint && serverless deploy -v",
         "deploy:prod": "npm run lint && serverless deploy -v --stage=production",
         "test": "jest",

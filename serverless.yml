@@ -51,6 +51,7 @@ provider:
         DYNAMODB_JOB_POST_DETAIL_TABLE_NAME: ${sls:stage}-job-post-detail
         DYNAMODB_CLOSED_JOB_POST_TABLE_NAME: ${sls:stage}-closed-job-post
         DYNAMODB_SCHEDULED_SOCIAL_POST_TABLE_NAME: ${sls:stage}-scheduled-social-post
+        DYNAMODB_FOLLOWER_GROWTH_CONTENT_TABLE_NAME: ${sls:stage}-follower-growth-content
         DYNAMODB_REPORT_TABLE_NAME: ${sls:stage}-report
         DYNAMODB_MAGIC_LINK_TABLE_NAME: ${sls:stage}-magic-link
         PROCESS_COMPANY_QUEUE_NAME: ${sls:stage}-process-company-sqs-queue.fifo
@@ -185,6 +186,17 @@ resources:
                 ProvisionedThroughput:
                     ReadCapacityUnits: 1
                     WriteCapacityUnits: 1
+        followerGrowthContentTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+                TableName: ${self:provider.environment.DYNAMODB_FOLLOWER_GROWTH_CONTENT_TABLE_NAME}
+                AttributeDefinitions:
+                    - AttributeName: id
+                      AttributeType: S
+                KeySchema:
+                    - AttributeName: id
+                      KeyType: HASH
+                BillingMode: PAY_PER_REQUEST
         reportsTable:
             Type: AWS::DynamoDB::Table
             Properties:
@@ -270,6 +282,10 @@ functions:
     devSendTestReport:
         # function used in development to preview report emails
         handler: src/report/infrastructure/dev/sendTestReport.index
+    generateFollowerGrowthPosts:
+        # manually invoked generator; prints content without publishing it
+        handler: src/social/infrastructure/dev/generateFollowerGrowthPosts.index
+        timeout: 120
     companyId:
         handler: src/company/infrastructure/api/id/handler.index
         events:
