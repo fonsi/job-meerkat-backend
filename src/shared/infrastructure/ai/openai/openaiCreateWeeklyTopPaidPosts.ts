@@ -1,5 +1,9 @@
 import OpenAI from 'openai';
 import {
+    buildPublicSiteUrl,
+    UtmSource,
+} from 'shared/infrastructure/url/buildJobPostPageUrl';
+import {
     parseSocialMediaPosts,
     SocialMediaPosts,
 } from 'shared/infrastructure/ai/openai/socialMediaPosts';
@@ -11,7 +15,7 @@ const openai = new OpenAI();
 
 const example: SocialMediaPosts = {
     bluesky: ['bluesky 1', 'bluesky 2'],
-    threads: ['thread 1', 'thread 2'],
+    threads: ['thread 1', 'thread 2', 'thread 3'],
 };
 
 export const openaiCreateWeeklyTopPaidPosts = async ({
@@ -19,16 +23,8 @@ export const openaiCreateWeeklyTopPaidPosts = async ({
 }: {
     topJobs: DailyAnalysisJobSummary[];
 }): Promise<SocialMediaPosts> => {
-    const roles = topJobs.slice(0, 3).map((job, index) =>
-        index === 0
-            ? job
-            : {
-                  title: job.title,
-                  companyName: job.companyName,
-                  salaryLabel: job.salaryLabel,
-                  category: job.category,
-              },
-    );
+    const siteBluesky = buildPublicSiteUrl(UtmSource.Bluesky);
+    const siteThreads = buildPublicSiteUrl(UtmSource.Threads);
 
     const completion = await openai.chat.completions.create({
         model: OPENAI_MODEL,
@@ -42,15 +38,13 @@ export const openaiCreateWeeklyTopPaidPosts = async ({
             {
                 role: 'user',
                 content: `
-Create a weekly "top paid remote jobs" roundup from: ${JSON.stringify(roles)}.
+Create a weekly "top paid remote jobs" roundup from: ${JSON.stringify(topJobs)}.
 ${SOCIAL_POST_CONTENT_RULES}
 Salaries are USD or EUR only — keep each amount in its given currency.
-The first post links the first role's jobUrl. Mention the other salaries with no extra URL. Do not add the Jobmeerkat homepage.
+When including listing links from the data, keep their query strings.
 
-Bluesky and Threads use the same two-post shape. Bluesky: no emojis, ≤300 graphemes per post (prefer ≤280). Threads: ≤500 chars, max one hashtag.
-
-- Post 1: hook and the lead listing link.
-- Post 2: the other roles and salaries, no URL.
+Bluesky: 1–2 posts. Hook + 2–3 standout salaries, then ${siteBluesky}. No emojis. ≤300 graphemes (prefer ≤280).
+Threads: 2–3 messages listing the top roles with salaries and listing links where useful, ending with ${siteThreads}. ≤500 chars. Max one hashtag.
 
 Return JSON: ${JSON.stringify(example)}.
 `,

@@ -73,7 +73,7 @@ ${companyContext}
 ${SOCIAL_POST_CONTENT_RULES}
 Write plain text only (no HTML/markdown).
 Never paste the company description verbatim. Use it only as background to write a fresh, shorter social line.
-Two posts. Do not add the Jobmeerkat homepage.
+Two posts. The first post must include the job listing URL. Do not add the Jobmeerkat homepage.
 
 Bluesky and Meta Threads use the same two-post shape. Bluesky: no emojis, hashtags OK if useful, do not hashtag the company name, 300 graphemes per post (prefer ≤280). Threads: max 500 characters per message, max one hashtag, no company-name hashtag.
 

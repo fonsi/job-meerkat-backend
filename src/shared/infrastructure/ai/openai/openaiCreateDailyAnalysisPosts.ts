@@ -1,5 +1,9 @@
 import OpenAI from 'openai';
 import {
+    buildPublicSiteUrl,
+    UtmSource,
+} from 'shared/infrastructure/url/buildJobPostPageUrl';
+import {
     parseSocialMediaPosts,
     SocialMediaPosts,
 } from 'shared/infrastructure/ai/openai/socialMediaPosts';
@@ -33,29 +37,8 @@ const example: SocialMediaPosts = {
 export const openaiCreateDailyAnalysisPosts = async (
     stats: DailyAnalysisStats,
 ): Promise<SocialMediaPosts> => {
-    const [lead, ...otherJobs] = stats.topJobs;
-    const promptStats = {
-        ...stats,
-        topJobs: [
-            lead
-                ? {
-                      title: lead.title,
-                      companyName: lead.companyName,
-                      salaryLabel: lead.salaryLabel,
-                      category: lead.category,
-                      jobUrl: lead.jobUrl,
-                  }
-                : null,
-            ...otherJobs.map(
-                ({ title, companyName, salaryLabel, category }) => ({
-                    title,
-                    companyName,
-                    salaryLabel,
-                    category,
-                }),
-            ),
-        ].filter((job) => job != null),
-    };
+    const siteBluesky = buildPublicSiteUrl(UtmSource.Bluesky);
+    const siteThreads = buildPublicSiteUrl(UtmSource.Threads);
 
     const completion = await openai.chat.completions.create({
         model: OPENAI_MODEL,
@@ -69,15 +52,13 @@ export const openaiCreateDailyAnalysisPosts = async (
             {
                 role: 'user',
                 content: `
-Create a "daily new jobs" analysis post from this data: ${JSON.stringify(promptStats)}.
+Create a "daily new jobs" analysis post from this data: ${JSON.stringify(stats)}.
 ${SOCIAL_POST_CONTENT_RULES}
 Salaries in this dataset are USD or EUR only — keep amounts in their given currency.
-The first post links the lead role's jobUrl. Do not link the other roles or the Jobmeerkat homepage.
+When including listing links from the data, keep their query strings.
 
-Bluesky and Threads use the same two-post shape. Bluesky: no emojis, ≤300 graphemes per post (prefer ≤280). Threads: ≤500 chars, max one hashtag total.
-
-- Post 1: the daily hook (count, salary median/max) and the lead listing link.
-- Post 2: other standout salaries, no URL.
+Bluesky: 1–2 posts max (prefer 1 if it fits). Lead with a data hook (count, salary median/max). Include ${siteBluesky}. No emojis. ≤300 graphemes (prefer ≤280).
+Threads: 2 messages — (1) the daily hook + invite to browse listings on ${siteThreads}; (2) highlight 1–2 top paid roles with salary and encourage following for more. ≤500 chars. Max one hashtag total.
 
 Return JSON: ${JSON.stringify(example)}.
 `,
