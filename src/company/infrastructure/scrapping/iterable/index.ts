@@ -9,25 +9,39 @@ import {
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
 import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
-import { getAshbyJobPostContent } from '../ashbyGraphQLRequest';
+import { fetchJobListingJson } from '../fetchJobListingJson';
+import { JobListingUnavailableError } from '../jobListingUnavailableError';
 
 export const ITERABLE_NAME = 'iterable';
-const INITIAL_URL = 'https://api.ashbyhq.com/posting-api/job-board/iterable';
+const ITERABLE_INITIAL_URL =
+    'https://boards-api.greenhouse.io/v1/boards/iterable/jobs?content=true';
 
 type ScrapJobPostData = {
     id: string;
+    title: string;
+    content: string;
+};
+
+type GreenhouseJob = {
+    id: number;
+    title: string;
+    absolute_url: string;
+    updated_at: string;
+    content: string;
+    location?: { name?: string };
+};
+
+type GreenhouseJobsResponse = {
+    jobs?: GreenhouseJob[];
 };
 
 const scrapJobPost = async ({
     id,
+    title,
+    content,
 }: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
-        const jobsData = await getAshbyJobPostContent({
-            companyName: 'iterable',
-            jobPostId: id,
-        });
-
-        return openaiJobPostAnalyzer(JSON.stringify(jobsData));
+        return openaiJobPostAnalyzer(`${title}\n${content}`);
     } catch (e) {
         const error = errorWithPrefix(
             e,
@@ -42,26 +56,36 @@ const scrapJobPost = async ({
 export const iterableScrapper: NewCompanyScrapper = ({ companyId }) => {
     return {
         getListedJobPostsData: async () => {
-            const response = await fetch(INITIAL_URL);
-            const jobsData = await response.json();
-            const jobPosts: ListedJobPostsData[] = [];
-
-            jobsData.jobs.forEach((jobData) => {
-                if (jobData.isListed) {
-                    jobPosts.push({
-                        id: jobData.id,
-                        url: jobData.jobUrl,
-                        title: jobData.title,
-                        createdAt: new Date(jobData.publishedAt).getTime(),
-                    });
-                }
+            const jobsData = await fetchJobListingJson<GreenhouseJobsResponse>({
+                companyName: ITERABLE_NAME,
+                url: ITERABLE_INITIAL_URL,
             });
 
-            return jobPosts;
+            if (!Array.isArray(jobsData.jobs)) {
+                throw new JobListingUnavailableError(
+                    ITERABLE_NAME,
+                    ITERABLE_INITIAL_URL,
+                );
+            }
+
+            return jobsData.jobs.map((jobData) => {
+                const location = jobData.location?.name?.trim();
+
+                return {
+                    id: jobData.id.toString(),
+                    url: jobData.absolute_url,
+                    title: jobData.title,
+                    createdAt: new Date(jobData.updated_at).getTime(),
+                    content: location
+                        ? `${location}\n${jobData.content}`
+                        : jobData.content,
+                };
+            });
         },
 
         scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
             const data: ScrappedJobPost[] = [];
+
             for (let i = 0; i < jobPosts.length; i++) {
                 try {
                     const jobPost = jobPosts[i];
@@ -69,13 +93,16 @@ export const iterableScrapper: NewCompanyScrapper = ({ companyId }) => {
                         `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
                     );
 
-                    const jobPostData = await scrapJobPost({ id: jobPost.id });
+                    const jobPostData = await scrapJobPost({
+                        id: jobPost.id,
+                        title: jobPost.title,
+                        content: jobPost.content,
+                    });
 
                     data.push({
                         ...jobPostData,
-                        originalId: jobPost.id,
+                        originalId: jobPost.id.toString(),
                         url: jobPost.url,
-                        title: jobPost.title,
                         companyId,
                         createdAt: jobPost.createdAt,
                     });
