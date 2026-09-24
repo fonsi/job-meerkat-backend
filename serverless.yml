@@ -285,7 +285,7 @@ functions:
     generateFollowerGrowthPosts:
         # manually invoked generator; prints content without publishing it
         handler: src/social/infrastructure/dev/generateFollowerGrowthPosts.index
-        timeout: 120
+        timeout: 300
     companyId:
         handler: src/company/infrastructure/api/id/handler.index
         events:

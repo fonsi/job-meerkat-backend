@@ -1,10 +1,7 @@
 import { Category } from 'jobPost/domain/jobPost';
 import {
-    FollowerGrowthFamily,
-    normalizeFollowerGrowthFamily,
-} from 'social/domain/followerGrowthContent';
-import {
     FOLLOWER_GROWTH_DETAIL_FIELDS,
+    FollowerGrowthConcept,
     FollowerGrowthCurrency,
     FollowerGrowthDataRequest,
     FollowerGrowthDetailField,
@@ -193,8 +190,8 @@ const parseDataRequest = (value: unknown): FollowerGrowthDataRequest => {
 
 export const parseFollowerGrowthPlan = (
     rawContent: string | null | undefined,
-    requestedFamily?: FollowerGrowthFamily,
-): FollowerGrowthPlan => {
+    concept: FollowerGrowthConcept,
+): FollowerGrowthPlan | null => {
     if (!rawContent) throw new Error('Follower growth plan response was empty');
 
     let parsed: unknown;
@@ -205,26 +202,12 @@ export const parseFollowerGrowthPlan = (
     }
     const record = asRecord(parsed, 'response');
     const planRecord =
-        record.family == null && record.plan != null
+        record.supported == null && record.plan != null
             ? asRecord(record.plan, 'plan')
             : record;
-    const family = normalizeFollowerGrowthFamily(planRecord.family);
-    if (!family) {
-        throw new Error(
-            `Follower growth plan family was invalid: ${JSON.stringify(planRecord.family)}`,
-        );
-    }
-    if (requestedFamily && family !== requestedFamily) {
-        throw new Error(
-            `Follower growth plan family must be ${requestedFamily}`,
-        );
-    }
-    if (
-        typeof planRecord.angle !== 'string' ||
-        !planRecord.angle.trim() ||
-        planRecord.angle.length > 280
-    ) {
-        throw new Error('Follower growth plan angle must be 1-280 characters');
+    if (planRecord.supported === false) return null;
+    if (planRecord.supported !== true) {
+        throw new Error('Follower growth plan supported must be a boolean');
     }
     if (
         !Array.isArray(planRecord.dataRequests) ||
@@ -235,10 +218,18 @@ export const parseFollowerGrowthPlan = (
             `Follower growth plan dataRequests must contain 1-${MAX_DATA_REQUESTS} items`,
         );
     }
+    const dataRequests = planRecord.dataRequests.map(parseDataRequest);
+    if (
+        dataRequests.length === 1 &&
+        dataRequests[0].kind === 'categoryDistribution'
+    ) {
+        throw new Error(
+            'Follower growth plan categoryDistribution cannot be the only request',
+        );
+    }
 
     return {
-        family,
-        angle: planRecord.angle.trim(),
-        dataRequests: planRecord.dataRequests.map(parseDataRequest),
+        ...concept,
+        dataRequests,
     };
 };

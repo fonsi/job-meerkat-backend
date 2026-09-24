@@ -4,7 +4,9 @@ import { JobPost, JobPostDetails } from 'jobPost/domain/jobPost';
 import { jobPostDetailsRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostDetailsRepository';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
 import { openaiCreateFollowerGrowthPosts } from 'shared/infrastructure/ai/openai/openaiCreateFollowerGrowthPosts';
+import { openaiPlanFollowerGrowthConcept } from 'shared/infrastructure/ai/openai/openaiPlanFollowerGrowthConcept';
 import { openaiPlanFollowerGrowthContent } from 'shared/infrastructure/ai/openai/openaiPlanFollowerGrowthContent';
+import { openaiReviewFollowerGrowthPosts } from 'shared/infrastructure/ai/openai/openaiReviewFollowerGrowthPosts';
 import { FollowerGrowthPosts } from 'shared/infrastructure/ai/openai/followerGrowthPosts';
 import {
     createFollowerGrowthContent,
@@ -17,6 +19,7 @@ import { FollowerGrowthPlan } from 'social/domain/followerGrowthPlan';
 import { followerGrowthContentRepository } from 'social/infrastructure/persistance/dynamodb/dynamodbFollowerGrowthContentRepository';
 import {
     buildFollowerGrowthInventory,
+    FollowerGrowthDataset,
     followerGrowthDataIsComplete,
     resolveFollowerGrowthData,
     selectFollowerGrowthPlanDetailJobs,
@@ -26,6 +29,9 @@ export type GenerateFollowerGrowthPostsInput = {
     family?: unknown;
     topic?: unknown;
 };
+
+const MAX_CONCEPT_ATTEMPTS = 3;
+const MAX_EVIDENCE_PLAN_ATTEMPTS = 3;
 
 const parseFamily = (
     requestedFamily: unknown,
@@ -96,65 +102,65 @@ export const generateFollowerGrowthPosts = async ({
         jobPosts,
         companies,
     });
-    let plan = await openaiPlanFollowerGrowthContent({
-        requestedFamily: family,
-        topic,
-        inventory,
-        history,
-    });
-    let detailsByJobPostId = await loadDetails(plan, jobPosts, companies);
-    let dataset = resolveFollowerGrowthData({
-        plan,
-        jobPosts,
-        companies,
-        detailsByJobPostId,
-    });
-    if (!followerGrowthDataIsComplete(dataset)) {
-        const availabilityFeedback = [
-            `The previous angle could not be resolved: ${plan.angle}`,
-            ...dataset.availability
-                .filter(({ status }) => status === 'unavailable')
-                .map(({ message }) => message),
-        ];
-        plan = await openaiPlanFollowerGrowthContent({
+    const excludedConcepts: string[] = [];
+    let detailsByJobPostId = new Map<JobPost['id'], JobPostDetails>();
+    let plan: FollowerGrowthPlan | undefined;
+    let dataset: FollowerGrowthDataset | undefined;
+    for (
+        let conceptAttempt = 0;
+        conceptAttempt < MAX_CONCEPT_ATTEMPTS && !plan;
+        conceptAttempt += 1
+    ) {
+        const concept = await openaiPlanFollowerGrowthConcept({
             requestedFamily: family,
             topic,
-            inventory,
             history,
-            availabilityFeedback,
+            excludedConcepts,
         });
-        detailsByJobPostId = await loadDetails(
-            plan,
-            jobPosts,
-            companies,
-            detailsByJobPostId,
-        );
-        dataset = resolveFollowerGrowthData({
-            plan,
-            jobPosts,
-            companies,
-            detailsByJobPostId,
-        });
-    }
-    if (!followerGrowthDataIsComplete(dataset)) {
-        const available = dataset.availability.filter(
-            ({ status }) => status === 'available',
-        );
-        if (available.length > 0) {
-            dataset = { ...dataset, availability: available };
-        } else {
-            plan = {
-                family: plan.family,
-                angle: 'What the current Jobmeerkat category mix shows remote job seekers',
-                dataRequests: [{ kind: 'categoryDistribution' }],
-            };
-            dataset = resolveFollowerGrowthData({
-                plan,
+        let availabilityFeedback: string[] = [];
+        for (
+            let evidenceAttempt = 0;
+            evidenceAttempt < MAX_EVIDENCE_PLAN_ATTEMPTS;
+            evidenceAttempt += 1
+        ) {
+            const candidatePlan = await openaiPlanFollowerGrowthContent({
+                concept,
+                inventory,
+                availabilityFeedback,
+            });
+            if (!candidatePlan) break;
+
+            detailsByJobPostId = await loadDetails(
+                candidatePlan,
+                jobPosts,
+                companies,
+                detailsByJobPostId,
+            );
+            const candidateDataset = resolveFollowerGrowthData({
+                plan: candidatePlan,
                 jobPosts,
                 companies,
                 detailsByJobPostId,
             });
+            if (followerGrowthDataIsComplete(candidateDataset)) {
+                plan = candidatePlan;
+                dataset = candidateDataset;
+                break;
+            }
+            availabilityFeedback = candidateDataset.availability
+                .filter(({ status }) => status === 'unavailable')
+                .map(({ message }) => message);
         }
+        if (!plan) {
+            excludedConcepts.push(
+                `${concept.readerProblem} — ${concept.editorialThesis}`,
+            );
+        }
+    }
+    if (!plan || !dataset) {
+        throw new Error(
+            'No broad follower-growth concept could be supported by the available evidence',
+        );
     }
 
     let posts = await openaiCreateFollowerGrowthPosts({
@@ -171,6 +177,17 @@ export const generateFollowerGrowthPosts = async ({
             excludedTopicKeys: [posts.topicKey],
         });
     }
+    if (isRepeatedTopic(posts, history)) {
+        throw new Error(
+            `OpenAI repeated an existing follower-growth topic: ${posts.topicKey}`,
+        );
+    }
+
+    posts = await openaiReviewFollowerGrowthPosts({
+        plan,
+        dataset,
+        draft: posts,
+    });
     if (isRepeatedTopic(posts, history)) {
         throw new Error(
             `OpenAI repeated an existing follower-growth topic: ${posts.topicKey}`,

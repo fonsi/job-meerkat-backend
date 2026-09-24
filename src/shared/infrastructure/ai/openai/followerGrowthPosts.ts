@@ -25,14 +25,22 @@ export type FollowerGrowthPosts = {
     linkedin: string[];
 };
 
+const stripEvidenceMarkers = (post: string): string =>
+    post
+        .replace(/\[\s*request-\d+(?:\s*,\s*request-\d+)*\s*\]/g, '')
+        .replace(/\(\s*request-\d+(?:\s*,\s*request-\d+)*\s*\)/g, '')
+        .replace(/[ \t]{2,}/g, ' ')
+        .replace(/\s+([.,;:!?])/g, '$1')
+        .trim();
+
 const toStringList = (value: unknown, field: string): string[] => {
     if (!Array.isArray(value)) {
         throw new Error(`Follower growth posts ${field} must be an array`);
     }
-    const posts = value.filter(
-        (item): item is string =>
-            typeof item === 'string' && item.trim().length > 0,
-    );
+    const posts = value
+        .filter((item): item is string => typeof item === 'string')
+        .map(stripEvidenceMarkers)
+        .filter((item) => item.length > 0);
     if (posts.length !== value.length || posts.length === 0) {
         throw new Error(
             `Follower growth posts ${field} must contain non-empty strings`,
@@ -56,12 +64,50 @@ const assertCodePointLimit = (
     }
 };
 
+export const MIN_THREAD_POSTS = 5;
+export const MAX_THREAD_POSTS = 10;
+export const LINKEDIN_MIN_CHARACTERS = 1500;
+
 const assertThreadPostCount = (platform: string, posts: string[]): void => {
-    if (posts.length < 2 || posts.length > 5) {
+    if (posts.length < MIN_THREAD_POSTS || posts.length > MAX_THREAD_POSTS) {
         throw new Error(
-            `Follower growth ${platform} output must contain 2-5 posts`,
+            `Follower growth ${platform} output must contain ${MIN_THREAD_POSTS}-${MAX_THREAD_POSTS} posts`,
         );
     }
+};
+
+const assertFollowerGrowthPostLimits = ({
+    bluesky,
+    threads,
+    x,
+    linkedin,
+}: Pick<
+    FollowerGrowthPosts,
+    'bluesky' | 'threads' | 'x' | 'linkedin'
+>): void => {
+    assertThreadPostCount('Bluesky', bluesky);
+    assertThreadPostCount('Threads', threads);
+    assertThreadPostCount('X', x);
+    if (linkedin.length !== 1) {
+        throw new Error(
+            'Follower growth LinkedIn output must contain exactly one post',
+        );
+    }
+    if ([...linkedin[0]].length < LINKEDIN_MIN_CHARACTERS) {
+        throw new Error(
+            `Follower growth LinkedIn post must be at least ${LINKEDIN_MIN_CHARACTERS} characters`,
+        );
+    }
+    for (const post of bluesky) {
+        if (graphemeCount(post) > BLUESKY_MAX_GRAPHEMES) {
+            throw new Error(
+                `Follower growth Bluesky post exceeds ${BLUESKY_MAX_GRAPHEMES} graphemes`,
+            );
+        }
+    }
+    assertCodePointLimit('Threads', threads, THREADS_MAX_CHARACTERS);
+    assertCodePointLimit('X', x, X_MAX_CHARACTERS);
+    assertCodePointLimit('LinkedIn', linkedin, LINKEDIN_MAX_CHARACTERS);
 };
 
 const normalizeTopicKey = (topicKey: string): string =>
@@ -75,6 +121,7 @@ export const parseFollowerGrowthPosts = (
     rawContent: string | null | undefined,
     dataset: FollowerGrowthDataset,
     expectedFamily: FollowerGrowthFamily,
+    { enforceLimits = true }: { enforceLimits?: boolean } = {},
 ): FollowerGrowthPosts => {
     if (!rawContent)
         throw new Error('Follower growth posts response was empty');
@@ -139,24 +186,9 @@ export const parseFollowerGrowthPosts = (
     const x = toStringList(posts.x, 'x');
     const linkedin = toStringList(posts.linkedin, 'linkedin');
 
-    assertThreadPostCount('Bluesky', bluesky);
-    assertThreadPostCount('Threads', threads);
-    assertThreadPostCount('X', x);
-    if (linkedin.length !== 1) {
-        throw new Error(
-            'Follower growth LinkedIn output must contain exactly one post',
-        );
+    if (enforceLimits) {
+        assertFollowerGrowthPostLimits({ bluesky, threads, x, linkedin });
     }
-    for (const post of bluesky) {
-        if (graphemeCount(post) > BLUESKY_MAX_GRAPHEMES) {
-            throw new Error(
-                `Follower growth Bluesky post exceeds ${BLUESKY_MAX_GRAPHEMES} graphemes`,
-            );
-        }
-    }
-    assertCodePointLimit('Threads', threads, THREADS_MAX_CHARACTERS);
-    assertCodePointLimit('X', x, X_MAX_CHARACTERS);
-    assertCodePointLimit('LinkedIn', linkedin, LINKEDIN_MAX_CHARACTERS);
 
     return {
         family,

@@ -27,6 +27,23 @@ export type FollowerGrowthCurrency = 'USD' | 'EUR';
 export type FollowerGrowthDetailField =
     (typeof FOLLOWER_GROWTH_DETAIL_FIELDS)[number];
 
+export const FOLLOWER_GROWTH_EVIDENCE_ROLES = [
+    'illustrate',
+    'support',
+    'challenge',
+] as const;
+
+export type FollowerGrowthEvidenceRole =
+    (typeof FOLLOWER_GROWTH_EVIDENCE_ROLES)[number];
+
+export type FollowerGrowthConcept = {
+    family: FollowerGrowthFamily;
+    readerProblem: string;
+    editorialThesis: string;
+    readerValue: string;
+    evidenceRole: FollowerGrowthEvidenceRole;
+};
+
 type DataFilters = {
     category?: Category;
     currency?: FollowerGrowthCurrency;
@@ -59,8 +76,6 @@ export type FollowerGrowthDataRequest =
           currency?: FollowerGrowthCurrency;
       };
 
-export type FollowerGrowthPlan = {
-    family: FollowerGrowthFamily;
-    angle: string;
+export type FollowerGrowthPlan = FollowerGrowthConcept & {
     dataRequests: FollowerGrowthDataRequest[];
 };

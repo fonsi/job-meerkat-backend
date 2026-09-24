@@ -1,12 +1,22 @@
 import { parseFollowerGrowthPlan } from './followerGrowthPlan';
 
+const concept = {
+    family: 'applicationGuidance' as const,
+    readerProblem:
+        'A long requirement list makes qualified candidates unsure whether to apply',
+    editorialThesis:
+        'Requirement lists are better read as priorities than as perfect-match checklists',
+    readerValue:
+        'Readers can distinguish application-stopping gaps from gaps worth discussing',
+    evidenceRole: 'support' as const,
+};
+
 describe('parseFollowerGrowthPlan', () => {
     it('parses bounded supported data requests', () => {
         expect(
             parseFollowerGrowthPlan(
                 JSON.stringify({
-                    family: 'applicationGuidance',
-                    angle: 'Recurring backend requirements',
+                    supported: true,
                     dataRequests: [
                         {
                             kind: 'detailPatterns',
@@ -23,11 +33,10 @@ describe('parseFollowerGrowthPlan', () => {
                         },
                     ],
                 }),
-                'applicationGuidance',
+                concept,
             ),
         ).toEqual({
-            family: 'applicationGuidance',
-            angle: 'Recurring backend requirements',
+            ...concept,
             dataRequests: [
                 {
                     kind: 'detailPatterns',
@@ -46,35 +55,29 @@ describe('parseFollowerGrowthPlan', () => {
         });
     });
 
-    it('normalizes equivalent family labels', () => {
+    it('returns null when the concept is unsupported', () => {
         expect(
             parseFollowerGrowthPlan(
-                JSON.stringify({
-                    plan: {
-                        family: 'salary_intelligence',
-                        angle: 'Current salary ceilings',
-                        dataRequests: [{ kind: 'categoryDistribution' }],
-                    },
-                }),
-            ).family,
-        ).toBe('salaryIntelligence');
+                JSON.stringify({ supported: false }),
+                concept,
+            ),
+        ).toBeNull();
     });
 
     it('rejects arbitrary query kinds and excessive samples', () => {
         expect(() =>
             parseFollowerGrowthPlan(
                 JSON.stringify({
-                    family: 'marketSnapshot',
-                    angle: 'Run a custom query',
+                    supported: true,
                     dataRequests: [{ kind: 'rawDynamoQuery', expression: '*' }],
                 }),
+                concept,
             ),
         ).toThrow('data request kind is invalid');
         expect(() =>
             parseFollowerGrowthPlan(
                 JSON.stringify({
-                    family: 'listingTeardown',
-                    angle: 'Review requirements',
+                    supported: true,
                     dataRequests: [
                         {
                             kind: 'listingDetails',
@@ -83,26 +86,16 @@ describe('parseFollowerGrowthPlan', () => {
                         },
                     ],
                 }),
+                concept,
             ),
         ).toThrow('sampleSize must be an integer from 1 to 20');
     });
 
-    it('requires the requested family and safe salary comparisons', () => {
+    it('requires safe comparisons and an explicit support decision', () => {
         expect(() =>
             parseFollowerGrowthPlan(
                 JSON.stringify({
-                    family: 'marketSnapshot',
-                    angle: 'Salary comparison',
-                    dataRequests: [{ kind: 'salaryDistribution' }],
-                }),
-                'salaryIntelligence',
-            ),
-        ).toThrow('family must be salaryIntelligence');
-        expect(() =>
-            parseFollowerGrowthPlan(
-                JSON.stringify({
-                    family: 'salaryIntelligence',
-                    angle: 'Salary comparison',
+                    supported: true,
                     dataRequests: [
                         {
                             kind: 'compareGroups',
@@ -112,7 +105,25 @@ describe('parseFollowerGrowthPlan', () => {
                         },
                     ],
                 }),
+                concept,
             ),
         ).toThrow('salary comparisons require currency');
+        expect(() =>
+            parseFollowerGrowthPlan(
+                JSON.stringify({
+                    dataRequests: [{ kind: 'categoryDistribution' }],
+                }),
+                concept,
+            ),
+        ).toThrow('supported must be a boolean');
+        expect(() =>
+            parseFollowerGrowthPlan(
+                JSON.stringify({
+                    supported: true,
+                    dataRequests: [{ kind: 'categoryDistribution' }],
+                }),
+                concept,
+            ),
+        ).toThrow('categoryDistribution cannot be the only request');
     });
 });

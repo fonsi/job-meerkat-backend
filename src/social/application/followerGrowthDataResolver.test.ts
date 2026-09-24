@@ -15,6 +15,16 @@ import {
     selectFollowerGrowthPlanDetailJobs,
 } from './followerGrowthDataResolver';
 
+const editorialScenario = {
+    readerProblem:
+        'A listing leaves the reader unsure whether the role merits an application',
+    editorialThesis:
+        'Responsibilities and constraints deserve more weight than labels',
+    readerValue:
+        'Readers can decide what to verify before investing in an application',
+    evidenceRole: 'illustrate' as const,
+};
+
 const company = (id: string, status?: Company['status']): Company => ({
     id: id as CompanyId,
     name: `Company ${id}`,
@@ -95,7 +105,7 @@ describe('follower growth adaptive data resolution', () => {
     it('resolves only the evidence requested by the approved plan', () => {
         const plan: FollowerGrowthPlan = {
             family: 'applicationGuidance',
-            angle: 'Backend salary and stack preparation',
+            ...editorialScenario,
             dataRequests: [
                 {
                     kind: 'salaryDistribution',
@@ -136,7 +146,7 @@ describe('follower growth adaptive data resolution', () => {
     it('uses listing details beyond the highest-paid jobs', () => {
         const plan: FollowerGrowthPlan = {
             family: 'listingTeardown',
-            angle: 'Backend responsibilities',
+            ...editorialScenario,
             dataRequests: [
                 {
                     kind: 'listingDetails',
@@ -167,7 +177,7 @@ describe('follower growth adaptive data resolution', () => {
     it('reports unavailable data for one controlled re-planning attempt', () => {
         const plan: FollowerGrowthPlan = {
             family: 'listingTeardown',
-            angle: 'Review hiring processes',
+            ...editorialScenario,
             dataRequests: [
                 {
                     kind: 'listingDetails',
@@ -195,7 +205,7 @@ describe('follower growth adaptive data resolution', () => {
     it('requires every comparison group to have data', () => {
         const plan: FollowerGrowthPlan = {
             family: 'salaryIntelligence',
-            angle: 'Backend versus missing category',
+            ...editorialScenario,
             dataRequests: [
                 {
                     kind: 'compareGroups',
@@ -213,5 +223,41 @@ describe('follower growth adaptive data resolution', () => {
         });
 
         expect(followerGrowthDataIsComplete(dataset)).toBe(false);
+    });
+
+    it('rejects distributions without a meaningful alternative', () => {
+        const plan: FollowerGrowthPlan = {
+            family: 'decisionFramework',
+            ...editorialScenario,
+            dataRequests: [
+                {
+                    kind: 'jobTypeDistribution',
+                    category: Category.Design,
+                },
+            ],
+        };
+        const designJobs = Array.from({ length: 10 }, (_, index) =>
+            job({
+                id: `design-${index}`,
+                category: Category.Design,
+                max: 100000 + index,
+            }),
+        );
+        designJobs.push({
+            ...job({
+                id: 'design-contract',
+                category: Category.Design,
+                max: 90000,
+            }),
+            type: JobType.Contract,
+        });
+        const dataset = resolveFollowerGrowthData({
+            plan,
+            jobPosts: designJobs,
+            companies,
+        });
+
+        expect(followerGrowthDataIsComplete(dataset)).toBe(false);
+        expect(dataset.evidence).toEqual([]);
     });
 });

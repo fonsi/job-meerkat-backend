@@ -1,12 +1,8 @@
 import OpenAI from 'openai';
 import { FollowerGrowthInventory } from 'social/application/followerGrowthDataResolver';
 import {
-    FOLLOWER_GROWTH_FAMILIES,
-    FollowerGrowthContent,
-    FollowerGrowthFamily,
-} from 'social/domain/followerGrowthContent';
-import {
     FOLLOWER_GROWTH_DETAIL_FIELDS,
+    FollowerGrowthConcept,
     FollowerGrowthPlan,
 } from 'social/domain/followerGrowthPlan';
 import { parseFollowerGrowthPlan } from './followerGrowthPlan';
@@ -15,10 +11,8 @@ const OPENAI_MODEL = 'gpt-6-luna';
 const openai = new OpenAI();
 
 type PlanFollowerGrowthContentInput = {
-    requestedFamily?: FollowerGrowthFamily;
-    topic?: string;
+    concept: FollowerGrowthConcept;
     inventory: FollowerGrowthInventory;
-    history: FollowerGrowthContent[];
     availabilityFeedback?: string[];
 };
 
@@ -63,8 +57,7 @@ const dataCapabilities = [
 ];
 
 const example = {
-    family: 'applicationGuidance',
-    angle: 'What recurring backend requirements imply for applicants',
+    supported: true,
     dataRequests: [
         {
             kind: 'detailPatterns',
@@ -76,24 +69,13 @@ const example = {
 };
 
 export const openaiPlanFollowerGrowthContent = async ({
-    requestedFamily,
-    topic,
+    concept,
     inventory,
-    history,
     availabilityFeedback = [],
     validationError,
 }: PlanFollowerGrowthContentInput & {
     validationError?: string;
-}): Promise<FollowerGrowthPlan> => {
-    const historyForPrompt = [...history]
-        .sort((a, b) => b.generatedAt - a.generatedAt)
-        .slice(0, 100)
-        .map(({ generatedAt, family, topicKey, summary }) => ({
-            date: new Date(generatedAt).toISOString().slice(0, 10),
-            family,
-            topicKey,
-            summary,
-        }));
+}): Promise<FollowerGrowthPlan | null> => {
     const completion = await openai.chat.completions.create({
         model: OPENAI_MODEL,
         response_format: { type: 'json_object' },
@@ -101,35 +83,35 @@ export const openaiPlanFollowerGrowthContent = async ({
             {
                 role: 'system',
                 content:
-                    'You are Jobmeerkat’s social content planner. Select a useful, non-repetitive editorial angle and request only the minimum supported data needed to write it.',
+                    'You are Jobmeerkat’s evidence planner. Find listing evidence for an approved broad editorial concept without changing or narrowing that concept.',
             },
             {
                 role: 'user',
                 content: `
-Plan one data-backed social package for remote job seekers.
+Select evidence for one approved editorial concept.
 
-Allowed families, use exactly one: ${FOLLOWER_GROWTH_FAMILIES.join(', ')}
-Requested family: ${requestedFamily ?? 'choose one allowed family'}
-Optional editorial direction: ${topic ?? 'none'}
+Approved concept: ${JSON.stringify(concept)}
 Available data inventory: ${JSON.stringify(inventory)}
 Supported data requests: ${JSON.stringify(dataCapabilities)}
-Previously generated content to avoid: ${JSON.stringify(historyForPrompt)}
-Feedback from an unavailable previous plan: ${JSON.stringify(availabilityFeedback)}
+Feedback from unavailable previous requests: ${JSON.stringify(availabilityFeedback)}
 Previous response validation error: ${validationError ?? 'none'}
 
 Rules:
-- family must be exactly one allowed family value.
-- Respect requestedFamily when supplied.
-- Choose an angle materially different from prior summaries and topic keys.
+- Do not rewrite, specialize, or narrow readerProblem, editorialThesis, or readerValue to fit the inventory.
+- A role, category, country, or location may be an example in the evidence, but it must not become the target audience or thesis.
+- Request evidence only when it can ${concept.evidenceRole} the approved thesis while preserving its broad relevance.
+- Return supported=false when this inventory cannot credibly support the concept. Do not force an easier statistic into an unrelated point.
 - Use only request kinds and fields in the supported catalog.
 - Use exact category, job type, location, and currency values shown in inventory.
 - Request the minimum data needed; no more than four data requests.
-- Use listingDetails for concrete examples and detailPatterns only when recurring fields support the angle.
+- Prefer listingDetails for concrete examples and detailPatterns for recurring requirements or language.
 - Salary comparisons must specify USD or EUR and must never compare different currencies.
 - Current inventory is a snapshot. Do not plan claims about growth, decline, or historical trends.
-- If availability feedback says a detail request is unavailable, do not request listingDetails or detailPatterns again. Use category, salary, job type, location, top listings, or comparisons instead.
+- If availability feedback says a detail request is unavailable, do not request listingDetails or detailPatterns again.
+- categoryDistribution cannot be the only request. Counts of unrelated professions do not support career advice.
+- Do not request a comparison when one visible inventory group is negligible.
 
-Return JSON matching this shape: ${JSON.stringify(example)}
+Return JSON matching ${JSON.stringify(example)} when supported, or {"supported":false} when the available data cannot support the concept.
 `,
             },
         ],
@@ -138,16 +120,14 @@ Return JSON matching this shape: ${JSON.stringify(example)}
     try {
         return parseFollowerGrowthPlan(
             completion.choices[0].message.content,
-            requestedFamily,
+            concept,
         );
     } catch (error) {
         if (validationError) throw error;
 
         return openaiPlanFollowerGrowthContent({
-            requestedFamily,
-            topic,
+            concept,
             inventory,
-            history,
             availabilityFeedback,
             validationError:
                 error instanceof Error ? error.message : 'Invalid plan',

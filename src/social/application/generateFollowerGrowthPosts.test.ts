@@ -11,9 +11,14 @@ import {
 import { jobPostDetailsRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostDetailsRepository';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
 import { openaiCreateFollowerGrowthPosts } from 'shared/infrastructure/ai/openai/openaiCreateFollowerGrowthPosts';
+import { openaiPlanFollowerGrowthConcept } from 'shared/infrastructure/ai/openai/openaiPlanFollowerGrowthConcept';
 import { openaiPlanFollowerGrowthContent } from 'shared/infrastructure/ai/openai/openaiPlanFollowerGrowthContent';
+import { openaiReviewFollowerGrowthPosts } from 'shared/infrastructure/ai/openai/openaiReviewFollowerGrowthPosts';
 import { FollowerGrowthContent } from 'social/domain/followerGrowthContent';
-import { FollowerGrowthPlan } from 'social/domain/followerGrowthPlan';
+import {
+    FollowerGrowthConcept,
+    FollowerGrowthPlan,
+} from 'social/domain/followerGrowthPlan';
 import { followerGrowthContentRepository } from 'social/infrastructure/persistance/dynamodb/dynamodbFollowerGrowthContentRepository';
 import { generateFollowerGrowthPosts } from './generateFollowerGrowthPosts';
 
@@ -48,6 +53,18 @@ jest.mock(
     'shared/infrastructure/ai/openai/openaiCreateFollowerGrowthPosts',
     () => ({
         openaiCreateFollowerGrowthPosts: jest.fn(),
+    }),
+);
+jest.mock(
+    'shared/infrastructure/ai/openai/openaiReviewFollowerGrowthPosts',
+    () => ({
+        openaiReviewFollowerGrowthPosts: jest.fn(),
+    }),
+);
+jest.mock(
+    'shared/infrastructure/ai/openai/openaiPlanFollowerGrowthConcept',
+    () => ({
+        openaiPlanFollowerGrowthConcept: jest.fn(),
     }),
 );
 jest.mock(
@@ -93,9 +110,18 @@ const generatedPosts = {
     x: ['X 1', 'X 2'],
     linkedin: ['LinkedIn'],
 };
-const plan: FollowerGrowthPlan = {
+const concept: FollowerGrowthConcept = {
     family: 'salaryIntelligence',
-    angle: 'Compare current USD salary ceilings',
+    readerProblem:
+        'A salary range reaches a reader’s minimum, but only at its ceiling',
+    editorialThesis:
+        'A range ceiling is a boundary to investigate, not an expected offer',
+    readerValue:
+        'Readers can decide what to verify before investing in an application',
+    evidenceRole: 'illustrate',
+};
+const plan: FollowerGrowthPlan = {
+    ...concept,
     dataRequests: [
         {
             kind: 'topListings',
@@ -121,6 +147,12 @@ describe('generateFollowerGrowthPosts', () => {
         (openaiCreateFollowerGrowthPosts as jest.Mock).mockResolvedValue(
             generatedPosts,
         );
+        (openaiReviewFollowerGrowthPosts as jest.Mock).mockImplementation(
+            async ({ draft }: { draft: typeof generatedPosts }) => draft,
+        );
+        (openaiPlanFollowerGrowthConcept as jest.Mock).mockResolvedValue(
+            concept,
+        );
         (openaiPlanFollowerGrowthContent as jest.Mock).mockResolvedValue(plan);
     });
 
@@ -133,20 +165,32 @@ describe('generateFollowerGrowthPosts', () => {
         ).resolves.toEqual(generatedPosts);
 
         expect(jobPostDetailsRepository.getByJobPostId).not.toHaveBeenCalled();
-        expect(openaiPlanFollowerGrowthContent).toHaveBeenCalledWith(
+        expect(openaiPlanFollowerGrowthConcept).toHaveBeenCalledWith(
             expect.objectContaining({
                 requestedFamily: 'salaryIntelligence',
                 topic: 'Backend salaries',
                 history: [],
             }),
         );
+        expect(openaiPlanFollowerGrowthContent).toHaveBeenCalledWith(
+            expect.objectContaining({ concept }),
+        );
         expect(openaiCreateFollowerGrowthPosts).toHaveBeenCalledWith(
             expect.objectContaining({
                 plan,
                 history: [],
                 dataset: expect.objectContaining({
-                    angle: plan.angle,
+                    editorialThesis: plan.editorialThesis,
                     evidence: expect.any(Array),
+                }),
+            }),
+        );
+        expect(openaiReviewFollowerGrowthPosts).toHaveBeenCalledWith(
+            expect.objectContaining({
+                plan,
+                draft: generatedPosts,
+                dataset: expect.objectContaining({
+                    editorialThesis: plan.editorialThesis,
                 }),
             }),
         );
@@ -156,6 +200,23 @@ describe('generateFollowerGrowthPosts', () => {
                 topicKey: generatedPosts.topicKey,
                 summary: generatedPosts.summary,
             }),
+        );
+    });
+
+    it('returns and records the reviewed package', async () => {
+        const reviewedPosts = {
+            ...generatedPosts,
+            summary: 'Reviewed backend salary comparison.',
+        };
+        (openaiReviewFollowerGrowthPosts as jest.Mock).mockResolvedValue(
+            reviewedPosts,
+        );
+
+        await expect(
+            generateFollowerGrowthPosts({ family: 'salaryIntelligence' }),
+        ).resolves.toEqual(reviewedPosts);
+        expect(followerGrowthContentRepository.add).toHaveBeenCalledWith(
+            expect.objectContaining({ summary: reviewedPosts.summary }),
         );
     });
 
@@ -185,6 +246,10 @@ describe('generateFollowerGrowthPosts', () => {
         ).resolves.toEqual(freshPosts);
 
         expect(openaiCreateFollowerGrowthPosts).toHaveBeenCalledTimes(2);
+        expect(openaiReviewFollowerGrowthPosts).toHaveBeenCalledTimes(1);
+        expect(openaiReviewFollowerGrowthPosts).toHaveBeenCalledWith(
+            expect.objectContaining({ draft: freshPosts }),
+        );
         expect(openaiCreateFollowerGrowthPosts).toHaveBeenLastCalledWith(
             expect.objectContaining({
                 excludedTopicKeys: [generatedPosts.topicKey],
@@ -209,13 +274,36 @@ describe('generateFollowerGrowthPosts', () => {
         await expect(
             generateFollowerGrowthPosts({ family: 'salaryIntelligence' }),
         ).rejects.toThrow('repeated an existing follower-growth topic');
+        expect(openaiReviewFollowerGrowthPosts).not.toHaveBeenCalled();
+        expect(followerGrowthContentRepository.add).not.toHaveBeenCalled();
+    });
+
+    it('does not persist when the review repeats an existing topic', async () => {
+        (followerGrowthContentRepository.getAll as jest.Mock).mockResolvedValue(
+            [
+                {
+                    id: 'history-1',
+                    generatedAt: 1000,
+                    family: 'salaryIntelligence',
+                    topicKey: 'reviewed-repeat',
+                    summary: 'Already used.',
+                },
+            ],
+        );
+        (openaiReviewFollowerGrowthPosts as jest.Mock).mockResolvedValue({
+            ...generatedPosts,
+            topicKey: 'reviewed-repeat',
+        });
+
+        await expect(
+            generateFollowerGrowthPosts({ family: 'salaryIntelligence' }),
+        ).rejects.toThrow('repeated an existing follower-growth topic');
         expect(followerGrowthContentRepository.add).not.toHaveBeenCalled();
     });
 
     it('re-plans once when requested data is unavailable', async () => {
         const unavailablePlan: FollowerGrowthPlan = {
-            family: 'salaryIntelligence',
-            angle: 'Analyze listed technology stacks',
+            ...concept,
             dataRequests: [
                 {
                     kind: 'listingDetails',
@@ -239,52 +327,37 @@ describe('generateFollowerGrowthPosts', () => {
         expect(openaiPlanFollowerGrowthContent).toHaveBeenLastCalledWith(
             expect.objectContaining({
                 availabilityFeedback: expect.arrayContaining([
-                    expect.stringContaining('could not be resolved'),
                     expect.stringContaining('No sufficient data'),
                 ]),
             }),
         );
     });
 
-    it('falls back to category data when re-planning stays unavailable', async () => {
-        const unavailablePlan: FollowerGrowthPlan = {
-            family: 'listingTeardown',
-            angle: 'Backend stack and responsibilities',
-            dataRequests: [
-                {
-                    kind: 'listingDetails',
-                    category: Category.Backend,
-                    fields: ['stack', 'responsibilities'],
-                    sampleSize: 3,
-                },
-            ],
+    it('replaces a concept that the inventory cannot support', async () => {
+        const unsupportedConcept: FollowerGrowthConcept = {
+            ...concept,
+            editorialThesis:
+                'Long requirement lists should always be treated as optional',
         };
-        (openaiPlanFollowerGrowthContent as jest.Mock).mockResolvedValue(
-            unavailablePlan,
-        );
-        (
-            jobPostDetailsRepository.getByJobPostId as jest.Mock
-        ).mockResolvedValue(undefined);
+        (openaiPlanFollowerGrowthConcept as jest.Mock)
+            .mockResolvedValueOnce(unsupportedConcept)
+            .mockResolvedValueOnce(concept);
+        (openaiPlanFollowerGrowthContent as jest.Mock)
+            .mockResolvedValueOnce(null)
+            .mockResolvedValueOnce(plan);
 
         await expect(
-            generateFollowerGrowthPosts({ family: 'listingTeardown' }),
+            generateFollowerGrowthPosts({ family: 'salaryIntelligence' }),
         ).resolves.toEqual(generatedPosts);
 
-        expect(openaiCreateFollowerGrowthPosts).toHaveBeenCalledWith(
+        expect(openaiPlanFollowerGrowthConcept).toHaveBeenCalledTimes(2);
+        expect(openaiPlanFollowerGrowthConcept).toHaveBeenLastCalledWith(
             expect.objectContaining({
-                plan: expect.objectContaining({
-                    dataRequests: [{ kind: 'categoryDistribution' }],
-                }),
-                dataset: expect.objectContaining({
-                    evidence: [
-                        expect.objectContaining({
-                            statement: expect.stringContaining(
-                                'categoryDistribution',
-                            ),
-                        }),
-                    ],
-                }),
+                excludedConcepts: [
+                    `${unsupportedConcept.readerProblem} — ${unsupportedConcept.editorialThesis}`,
+                ],
             }),
         );
+        expect(openaiCreateFollowerGrowthPosts).toHaveBeenCalledTimes(1);
     });
 });

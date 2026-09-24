@@ -15,6 +15,8 @@ import {
 const MAX_GROUPS = 20;
 const MAX_PATTERN_VALUES = 12;
 const MAX_TOTAL_DETAIL_JOBS = 20;
+const MIN_MEANINGFUL_GROUP_COUNT = 3;
+const MIN_MEANINGFUL_GROUP_SHARE = 0.1;
 
 export type FollowerGrowthEvidence = {
     id: string;
@@ -42,7 +44,7 @@ export type FollowerGrowthDataAvailability = {
 export type FollowerGrowthDataset = {
     generatedAt: string;
     scope: string;
-    angle: string;
+    editorialThesis: string;
     availability: FollowerGrowthDataAvailability[];
     evidence: FollowerGrowthEvidence[];
 };
@@ -239,6 +241,16 @@ const distributionEvidence = (
                     (job) => job.location.trim() || 'Not specified',
                 )
               : countBy(filtered, (job) => job.type);
+    if (
+        request.kind !== 'categoryDistribution' &&
+        values.filter(
+            ({ count }) =>
+                count >= MIN_MEANINGFUL_GROUP_COUNT &&
+                count / filtered.length >= MIN_MEANINGFUL_GROUP_SHARE,
+        ).length < 2
+    ) {
+        return null;
+    }
 
     return `${request.kind}${'category' in request && request.category ? ` for ${request.category}` : ''}: ${JSON.stringify(values)}.`;
 };
@@ -374,6 +386,16 @@ const compareGroupsEvidence = (
         };
     });
     if (comparison.some((result) => result == null)) return null;
+    if (request.metric === 'count') {
+        const counts = comparison.map((result) => result?.count ?? 0);
+        const total = counts.reduce((sum, count) => sum + count, 0);
+        const meaningfulGroups = counts.filter(
+            (count) =>
+                count >= MIN_MEANINGFUL_GROUP_COUNT &&
+                count / total >= MIN_MEANINGFUL_GROUP_SHARE,
+        );
+        if (meaningfulGroups.length < 2) return null;
+    }
 
     return `${request.metric} comparison by ${request.dimension}: ${JSON.stringify(comparison)}.`;
 };
@@ -449,7 +471,7 @@ export const resolveFollowerGrowthData = ({
     return {
         generatedAt: new Date(now).toISOString(),
         scope: 'Evidence retrieved from currently open remote Jobmeerkat listings with public USD or EUR salaries; this is not longitudinal data.',
-        angle: plan.angle,
+        editorialThesis: plan.editorialThesis,
         availability,
         evidence,
     };
