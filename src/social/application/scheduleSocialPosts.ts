@@ -7,11 +7,13 @@ import { scheduledSocialPostRepository } from 'social/infrastructure/persistance
 
 export const scheduleSocialPosts = async (): Promise<void> => {
     const now = Date.now();
-    const [latestJobPosts, weekJobPosts, companies] = await Promise.all([
-        jobPostRepository.getLatest(),
-        jobPostRepository.getLatestSince(FROM_WHEN_WEEKLY),
-        companyRepository.getAll(),
-    ]);
+    const [latestJobPosts, weekJobPosts, openJobPosts, companies] =
+        await Promise.all([
+            jobPostRepository.getLatest(),
+            jobPostRepository.getLatestSince(FROM_WHEN_WEEKLY),
+            jobPostRepository.getAllOpen(),
+            companyRepository.getAll(),
+        ]);
 
     const companiesById = new Map(
         companies
@@ -29,6 +31,7 @@ export const scheduleSocialPosts = async (): Promise<void> => {
     const scheduled = buildSocialSchedule({
         latestJobPosts,
         weekJobPosts,
+        openJobPosts,
         companiesById,
         now,
     });

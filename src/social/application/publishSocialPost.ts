@@ -13,6 +13,7 @@ import {
 } from 'shared/infrastructure/url/buildJobPostPageUrl';
 import { ScheduledSocialPost } from 'social/domain/scheduledSocialPost';
 import { SocialPostType } from 'social/domain/socialPostType';
+import { newsletterSubscribeSocialPosts } from 'social/application/newsletterSubscribePost';
 import { publishToPlatforms } from 'social/application/publishToPlatforms';
 import {
     annualSalaryMax,
@@ -247,6 +248,24 @@ const publishCompanyThread = async (
     });
 };
 
+const publishNewsletterSubscribe = async (
+    post: ScheduledSocialPost,
+): Promise<void> => {
+    const latestJobPosts = await jobPostRepository.getLatest();
+    const jobCount = latestJobPosts.filter(isEligibleForSocial).length;
+    if (jobCount === 0) {
+        console.log(
+            '[PUBLISH POST]: newsletter subscribe skipped (no remote jobs with public salary)',
+        );
+        return;
+    }
+
+    await publishToPlatforms({
+        platforms: post.platforms,
+        posts: newsletterSubscribeSocialPosts(jobCount),
+    });
+};
+
 export const publishSocialPost = async (
     post: ScheduledSocialPost,
 ): Promise<void> => {
@@ -266,6 +285,9 @@ export const publishSocialPost = async (
             return;
         case SocialPostType.CompanyThread:
             await publishCompanyThread(post);
+            return;
+        case SocialPostType.NewsletterSubscribe:
+            await publishNewsletterSubscribe(post);
             return;
         default:
             logger.error(new Error('Unknown social post type'), { post });

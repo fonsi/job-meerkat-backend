@@ -3,6 +3,7 @@ import {
     applyUtmSourceToJobmeerkatUrls,
     buildCompanyPageUrl,
     buildJobPostPageUrl,
+    buildNewsletterPageUrl,
     buildPublicSiteUrl,
     getPublicSiteBaseUrl,
     PUBLIC_SITE_BASE_URL,
@@ -71,6 +72,20 @@ describe('buildJobPostPageUrl', () => {
     it('appends utm_source when provided', () => {
         expect(buildJobPostPageUrl('a-b-at-c-d', UtmSource.Newsletter)).toBe(
             'https://jobmeerkat.com/jobpost/a-b-at-c-d?utm_source=newsletter',
+        );
+    });
+});
+
+describe('buildNewsletterPageUrl', () => {
+    it('builds /newsletter with the hardcoded base', () => {
+        expect(buildNewsletterPageUrl()).toBe(
+            'https://jobmeerkat.com/newsletter',
+        );
+    });
+
+    it('appends utm_source when provided', () => {
+        expect(buildNewsletterPageUrl(UtmSource.Social)).toBe(
+            'https://jobmeerkat.com/newsletter?utm_source=_social',
         );
     });
 });

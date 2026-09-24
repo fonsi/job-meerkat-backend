@@ -12,7 +12,10 @@ import { SocialPostType } from 'social/domain/socialPostType';
 import { SocialPlatform } from 'social/domain/socialPlatform';
 import {
     COMPANY_THREADS_PER_DAY,
+    companyThreadCountForPromos,
     MAX_PUBLICATIONS_PER_DAY,
+    MIN_JOB_PROMOS_BEFORE_EXTRA_COMPANY_THREADS,
+    NEWSLETTER_SUBSCRIBE_MIN_NEW_JOBS,
     SOCIAL_POST_SLOT_MS,
 } from 'social/domain/socialScheduleConfig';
 
@@ -89,11 +92,15 @@ describe('buildSocialSchedule', () => {
             includeWeeklyTopPaid: false,
         });
 
-        expect(scheduled[0].type).toBe(SocialPostType.DailyAnalysis);
-        expect(scheduled[0].platforms).toEqual([
+        const analysis = scheduled.find(
+            (post) => post.type === SocialPostType.DailyAnalysis,
+        );
+        expect(analysis?.date).toBe(Date.UTC(2026, 6, 21, 15));
+        expect(analysis?.platforms).toEqual([
             SocialPlatform.Threads,
             SocialPlatform.Bluesky,
         ]);
+        expect(scheduled[0].type).toBe(SocialPostType.JobPromo);
 
         const companyThreads = scheduled.filter(
             (post) => post.type === SocialPostType.CompanyThread,
@@ -136,6 +143,7 @@ describe('buildSocialSchedule', () => {
         const weekly = scheduled.find(
             (post) => post.type === SocialPostType.WeeklyTopPaid,
         );
+        expect(weekly?.date).toBe(Date.UTC(2026, 6, 21, 16));
         expect(weekly?.platforms).toEqual([
             SocialPlatform.Threads,
             SocialPlatform.Bluesky,
@@ -235,13 +243,15 @@ describe('buildSocialSchedule', () => {
         ).toBe(true);
     });
 
-    it('schedules up to three distinct company threads when available', () => {
-        const latestJobPosts = Array.from({ length: 5 }, (_, index) =>
-            job({
-                id: `j${index}`,
-                companyId: `c${index}`,
-                max: 200000 - index * 1000,
-            }),
+    it('schedules up to three distinct company threads when there are at least 12 job promos', () => {
+        const latestJobPosts = Array.from(
+            { length: MIN_JOB_PROMOS_BEFORE_EXTRA_COMPANY_THREADS },
+            (_, index) =>
+                job({
+                    id: `j${index}`,
+                    companyId: `c${index}`,
+                    max: 200000 - index * 1000,
+                }),
         );
         const manyCompanies = latestJobPosts.map((_, index) =>
             company(`c${index}`, `Co${index}`, 'A product company.'),
@@ -324,5 +334,235 @@ describe('buildSocialSchedule', () => {
         expect(
             scheduled.filter((post) => post.type === SocialPostType.JobPromo),
         ).toHaveLength(1);
+    });
+
+    it('fills a day with no new jobs using company threads from open roles', () => {
+        const openJobPosts = Array.from({ length: 12 }, (_, index) =>
+            job({
+                id: `open${index}`,
+                companyId: `c${index}`,
+                max: 200000 - index,
+            }),
+        );
+        const openCompanies = openJobPosts.map((_, index) =>
+            company(`c${index}`, `Co${index}`, 'A product company.'),
+        );
+
+        const scheduled = buildSocialSchedule({
+            latestJobPosts: [],
+            weekJobPosts: [],
+            openJobPosts,
+            companiesById: new Map(openCompanies.map((c) => [c.id, c])),
+            now,
+            includeWeeklyTopPaid: false,
+        });
+
+        const threads = scheduled.filter(
+            (post) => post.type === SocialPostType.CompanyThread,
+        );
+        expect(threads).toHaveLength(companyThreadCountForPromos(0));
+        expect(
+            scheduled.every(
+                (post) => post.type === SocialPostType.CompanyThread,
+            ),
+        ).toBe(true);
+        expect(new Set(threads.map((post) => post.companyId)).size).toBe(12);
+    });
+
+    it('adds company threads when there are fewer than 12 job promos', () => {
+        const latestJobPosts = Array.from({ length: 4 }, (_, index) =>
+            job({
+                id: `new${index}`,
+                companyId: `new${index}`,
+                max: 180000 - index,
+            }),
+        );
+        const olderJobPosts = Array.from({ length: 10 }, (_, index) =>
+            job({
+                id: `old${index}`,
+                companyId: `old${index}`,
+                max: 120000 - index,
+            }),
+        );
+        const companies = [...latestJobPosts, ...olderJobPosts].map((jobPost) =>
+            company(jobPost.companyId, jobPost.companyId, 'A product company.'),
+        );
+
+        const scheduled = buildSocialSchedule({
+            latestJobPosts,
+            weekJobPosts: latestJobPosts,
+            openJobPosts: [...latestJobPosts, ...olderJobPosts],
+            companiesById: new Map(companies.map((c) => [c.id, c])),
+            now,
+            includeWeeklyTopPaid: false,
+        });
+
+        const threads = scheduled.filter(
+            (post) => post.type === SocialPostType.CompanyThread,
+        );
+        expect(threads).toHaveLength(companyThreadCountForPromos(4));
+        expect(threads.map((post) => post.companyId)).toEqual(
+            expect.arrayContaining(['new0', 'new1', 'new2', 'new3']),
+        );
+        expect(threads.some((post) => post.companyId.startsWith('old'))).toBe(
+            true,
+        );
+    });
+
+    it('adds one newsletter subscribe post when more than 50 new remote jobs have a public salary', () => {
+        const latestJobPosts = Array.from(
+            { length: NEWSLETTER_SUBSCRIBE_MIN_NEW_JOBS + 1 },
+            (_, index) =>
+                job({
+                    id: `j${index}`,
+                    companyId: `c${index}`,
+                    max: 300000 - index,
+                }),
+        );
+        const manyCompanies = latestJobPosts.map((_, index) =>
+            company(`c${index}`, `Co${index}`, 'A product company.'),
+        );
+
+        const scheduled = buildSocialSchedule({
+            latestJobPosts,
+            weekJobPosts: latestJobPosts,
+            companiesById: new Map(manyCompanies.map((c) => [c.id, c])),
+            now,
+            includeWeeklyTopPaid: false,
+        });
+
+        const newsletter = scheduled.filter(
+            (post) => post.type === SocialPostType.NewsletterSubscribe,
+        );
+        expect(newsletter).toHaveLength(1);
+        expect(newsletter[0].id).toBe('newsletterSubscribe_2026-07-21');
+        expect(newsletter[0].date).toBe(Date.UTC(2026, 6, 21, 17));
+        expect(newsletter[0].platforms).toEqual([
+            SocialPlatform.Threads,
+            SocialPlatform.Bluesky,
+        ]);
+
+        const analysisIndex = scheduled.findIndex(
+            (post) => post.type === SocialPostType.DailyAnalysis,
+        );
+        const newsletterIndex = scheduled.findIndex(
+            (post) => post.type === SocialPostType.NewsletterSubscribe,
+        );
+        for (const index of [analysisIndex, newsletterIndex]) {
+            expect(scheduled[index - 1].date).toBe(
+                scheduled[index].date - SOCIAL_POST_SLOT_MS,
+            );
+            expect(scheduled[index + 1].date).toBe(
+                scheduled[index].date + SOCIAL_POST_SLOT_MS,
+            );
+            expect([
+                SocialPostType.JobPromo,
+                SocialPostType.CompanyThread,
+            ]).toContain(scheduled[index - 1].type);
+            expect([
+                SocialPostType.JobPromo,
+                SocialPostType.CompanyThread,
+            ]).toContain(scheduled[index + 1].type);
+        }
+        expect(scheduled.length).toBeLessThanOrEqual(MAX_PUBLICATIONS_PER_DAY);
+    });
+
+    it('keeps 17:00 and 19:00 Madrid after the clock change', () => {
+        const winterNow = Date.UTC(2026, 0, 15, 2);
+        const latestJobPosts = Array.from(
+            { length: NEWSLETTER_SUBSCRIBE_MIN_NEW_JOBS + 1 },
+            (_, index) =>
+                job({
+                    id: `j${index}`,
+                    companyId: `c${index}`,
+                    max: 300000 - index,
+                }),
+        );
+        const manyCompanies = latestJobPosts.map((_, index) =>
+            company(`c${index}`, `Co${index}`, 'A product company.'),
+        );
+
+        const scheduled = buildSocialSchedule({
+            latestJobPosts,
+            weekJobPosts: latestJobPosts,
+            companiesById: new Map(manyCompanies.map((c) => [c.id, c])),
+            now: winterNow,
+            includeWeeklyTopPaid: true,
+        });
+
+        expect(
+            scheduled.find((post) => post.type === SocialPostType.DailyAnalysis)
+                ?.date,
+        ).toBe(Date.UTC(2026, 0, 15, 16));
+        expect(
+            scheduled.find((post) => post.type === SocialPostType.WeeklyTopPaid)
+                ?.date,
+        ).toBe(Date.UTC(2026, 0, 15, 17));
+        expect(
+            scheduled.find(
+                (post) => post.type === SocialPostType.NewsletterSubscribe,
+            )?.date,
+        ).toBe(Date.UTC(2026, 0, 15, 18));
+    });
+
+    it('skips the newsletter post at 50 or fewer eligible jobs', () => {
+        const latestJobPosts = Array.from(
+            { length: NEWSLETTER_SUBSCRIBE_MIN_NEW_JOBS },
+            (_, index) =>
+                job({
+                    id: `j${index}`,
+                    companyId: `c${index}`,
+                    max: 200000 - index,
+                }),
+        );
+        const manyCompanies = latestJobPosts.map((_, index) =>
+            company(`c${index}`, `Co${index}`, 'A product company.'),
+        );
+
+        const scheduled = buildSocialSchedule({
+            latestJobPosts,
+            weekJobPosts: latestJobPosts,
+            companiesById: new Map(manyCompanies.map((c) => [c.id, c])),
+            now,
+            includeWeeklyTopPaid: false,
+        });
+
+        expect(
+            scheduled.some(
+                (post) => post.type === SocialPostType.NewsletterSubscribe,
+            ),
+        ).toBe(false);
+    });
+
+    it('ignores on-site and hidden-salary jobs when deciding the newsletter post', () => {
+        const remote = Array.from({ length: 40 }, (_, index) =>
+            job({
+                id: `remote${index}`,
+                companyId: `c${index}`,
+                max: 200000 - index,
+            }),
+        );
+        const onsite = Array.from({ length: 20 }, (_, index) =>
+            job({
+                id: `onsite${index}`,
+                companyId: `o${index}`,
+                max: 250000,
+                workplace: Workplace.OnSite,
+            }),
+        );
+
+        const scheduled = buildSocialSchedule({
+            latestJobPosts: [...remote, ...onsite],
+            weekJobPosts: remote,
+            companiesById,
+            now,
+            includeWeeklyTopPaid: false,
+        });
+
+        expect(
+            scheduled.some(
+                (post) => post.type === SocialPostType.NewsletterSubscribe,
+            ),
+        ).toBe(false);
     });
 });

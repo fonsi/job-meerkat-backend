@@ -36,11 +36,17 @@ type CompanyThreadIdData = {
     dateKey: string;
 };
 
+type NewsletterSubscribeIdData = {
+    type: SocialPostType.NewsletterSubscribe;
+    dateKey: string;
+};
+
 export type MakeScheduledSocialPostIdData =
     | JobPromoIdData
     | DailyAnalysisIdData
     | WeeklyTopPaidIdData
-    | CompanyThreadIdData;
+    | CompanyThreadIdData
+    | NewsletterSubscribeIdData;
 
 export const makeScheduledSocialPostId = (
     data: MakeScheduledSocialPostIdData,
@@ -54,6 +60,8 @@ export const makeScheduledSocialPostId = (
             return `${SocialPostType.WeeklyTopPaid}_${data.weekKey}`;
         case SocialPostType.CompanyThread:
             return `${SocialPostType.CompanyThread}_${data.companyId}_${data.dateKey}`;
+        case SocialPostType.NewsletterSubscribe:
+            return `${SocialPostType.NewsletterSubscribe}_${data.dateKey}`;
     }
 };
 

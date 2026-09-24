@@ -3,4 +3,5 @@ export enum SocialPostType {
     DailyAnalysis = 'dailyAnalysis',
     WeeklyTopPaid = 'weeklyTopPaid',
     CompanyThread = 'companyThread',
+    NewsletterSubscribe = 'newsletterSubscribe',
 }
