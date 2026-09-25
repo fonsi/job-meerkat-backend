@@ -51,28 +51,28 @@ const jobsFor = (co: Company, count: number): JobPost[] =>
     );
 
 describe('maxJobPostsPerCompany', () => {
-    it('keeps 4 per company at or below the compact threshold', () => {
+    it('keeps 4 per company below the compact threshold', () => {
         expect(
             maxJobPostsPerCompany(
-                COMPACT_TOTAL_JOB_POSTS_THRESHOLD,
+                COMPACT_TOTAL_JOB_POSTS_THRESHOLD - 1,
                 SINGLE_COMPANY_COUNT_THRESHOLD + 1,
             ),
         ).toBe(DEFAULT_MAX_JOB_POSTS_PER_COMPANY);
     });
 
-    it('drops to 2 per company when there are more than 60 jobs and 25 or fewer companies', () => {
+    it('drops to 3 per company at the compact threshold with 25 or fewer companies', () => {
         expect(
             maxJobPostsPerCompany(
-                COMPACT_TOTAL_JOB_POSTS_THRESHOLD + 1,
+                COMPACT_TOTAL_JOB_POSTS_THRESHOLD,
                 SINGLE_COMPANY_COUNT_THRESHOLD,
             ),
         ).toBe(COMPACT_MAX_JOB_POSTS_PER_COMPANY);
     });
 
-    it('drops to 1 per company when there are more than 60 jobs and more than 25 companies', () => {
+    it('drops to 1 per company at the compact threshold with more than 25 companies', () => {
         expect(
             maxJobPostsPerCompany(
-                COMPACT_TOTAL_JOB_POSTS_THRESHOLD + 1,
+                COMPACT_TOTAL_JOB_POSTS_THRESHOLD,
                 SINGLE_COMPANY_COUNT_THRESHOLD + 1,
             ),
         ).toBe(SINGLE_MAX_JOB_POSTS_PER_COMPANY);
@@ -95,7 +95,7 @@ describe('selectVisibleJobPostsForReport', () => {
         expect(companies[1].visibleJobPosts).toHaveLength(2);
     });
 
-    it('shows up to 2 jobs per company when there are more than 60 jobs', () => {
+    it('shows up to 3 jobs per company at the compact threshold', () => {
         const acme = company('aa', 'Acme');
         const beta = company('bb', 'Beta');
         const { companies } = selectVisibleJobPostsForReport(
@@ -103,34 +103,34 @@ describe('selectVisibleJobPostsForReport', () => {
                 { company: acme, jobPosts: jobsFor(acme, 8) },
                 { company: beta, jobPosts: jobsFor(beta, 8) },
             ],
-            COMPACT_TOTAL_JOB_POSTS_THRESHOLD + 1,
+            COMPACT_TOTAL_JOB_POSTS_THRESHOLD,
         );
 
-        expect(companies[0].visibleJobPosts).toHaveLength(2);
-        expect(companies[1].visibleJobPosts).toHaveLength(2);
+        expect(companies[0].visibleJobPosts).toHaveLength(3);
+        expect(companies[1].visibleJobPosts).toHaveLength(3);
     });
 
-    it('shows up to 2 jobs per company when there are more than 60 jobs and 25 or fewer companies', () => {
+    it('shows up to 3 jobs per company for compact reports with 25 or fewer companies', () => {
         const list = Array.from(
             { length: SINGLE_COMPANY_COUNT_THRESHOLD },
             (_, i) => {
                 const suffix = String(i).padStart(2, '0');
                 const co = company(suffix, `Co ${i}`);
-                return { company: co, jobPosts: jobsFor(co, 4) };
+                return { company: co, jobPosts: jobsFor(co, 5) };
             },
         );
         const { companies } = selectVisibleJobPostsForReport(
             list,
-            COMPACT_TOTAL_JOB_POSTS_THRESHOLD + 1,
+            COMPACT_TOTAL_JOB_POSTS_THRESHOLD,
         );
 
         expect(companies).toHaveLength(SINGLE_COMPANY_COUNT_THRESHOLD);
-        expect(companies.every((c) => c.visibleJobPosts.length === 2)).toBe(
+        expect(companies.every((c) => c.visibleJobPosts.length === 3)).toBe(
             true,
         );
     });
 
-    it('shows 1 job per company when there are more than 60 jobs and more than 25 companies', () => {
+    it('shows 1 job per company for compact reports with more than 25 companies', () => {
         const list = Array.from(
             { length: SINGLE_COMPANY_COUNT_THRESHOLD + 1 },
             (_, i) => {
@@ -141,7 +141,7 @@ describe('selectVisibleJobPostsForReport', () => {
         );
         const { companies } = selectVisibleJobPostsForReport(
             list,
-            COMPACT_TOTAL_JOB_POSTS_THRESHOLD + 1,
+            COMPACT_TOTAL_JOB_POSTS_THRESHOLD,
         );
 
         expect(companies).toHaveLength(SINGLE_COMPANY_COUNT_THRESHOLD + 1);

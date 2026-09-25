@@ -46,4 +46,22 @@ describe('formatJobPlaceLabel', () => {
             }),
         ).toBe('On-site — Berlin');
     });
+
+    it('does not repeat Remote — Remote', () => {
+        expect(
+            formatJobPlaceLabel({
+                workplace: Workplace.Remote,
+                location: 'Remote',
+            }),
+        ).toBe('Remote');
+    });
+
+    it('drops location when it is only a workplace word', () => {
+        expect(
+            formatJobPlaceLabel({
+                workplace: Workplace.OnSite,
+                location: 'Remote',
+            }),
+        ).toBe('On-site');
+    });
 });

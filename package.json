@@ -9,8 +9,8 @@
         "generate-follower-growth-posts": "npm run local generateFollowerGrowthPosts -- --path src/social/infrastructure/dev/generateFollowerGrowthPosts.event.json",
         "deploy:dev": "npm run lint && serverless deploy -v",
         "deploy:prod": "npm run lint && serverless deploy -v --stage=production",
-        "test": "jest",
-        "test:watch": "jest --watch",
+        "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+        "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
         "prepare": "husky",
         "pre-commit": "lint-staged && npm run typecheck && npm test"
     },
@@ -41,7 +41,6 @@
         "@aws-sdk/client-lambda": "^3.821.0",
         "@aws-sdk/client-s3": "^3.821.0",
         "@aws-sdk/client-sqs": "^3.821.0",
-        "@react-email/components": "^0.5.7",
         "@resvg/resvg-js": "^2.6.2",
         "cheerio": "^1.0.0",
         "mailgun.js": "^12.1.1",

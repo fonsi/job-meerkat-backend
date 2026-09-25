@@ -16,7 +16,6 @@ export const sendConfirmSubscriptionEmail = async ({
 }) => {
     const { html, text } = await buildSimpleEmailTemplate({
         title: 'Confirm your subscription',
-        preview: 'Confirm your JobMeerkat newsletter subscription',
         paragraphs: [
             'Thanks for joining JobMeerkat job digests. Confirm your email to start receiving curated opportunities.',
         ],
@@ -40,7 +39,6 @@ export const sendConfirmSubscriptionReminderEmail = async ({
 }) => {
     const { html, text } = await buildSimpleEmailTemplate({
         title: 'Still want job digests?',
-        preview: 'Your JobMeerkat subscription is waiting for confirmation',
         paragraphs: [
             'You signed up for JobMeerkat job digests a few days ago, but we haven’t confirmed your email yet.',
             'Confirm once and we’ll start sending curated opportunities your way. If you didn’t mean to subscribe, you can ignore this email — we’ll remove the pending request soon.',
@@ -65,7 +63,6 @@ export const sendNewsletterMagicLinkEmail = async ({
 }) => {
     const { html, text } = await buildSimpleEmailTemplate({
         title: 'Manage your newsletter settings',
-        preview: 'Open this link to edit your JobMeerkat newsletter filters',
         paragraphs: [
             'Use the button below to view or edit your newsletter filters, frequency, and preferences.',
         ],
@@ -89,7 +86,6 @@ export const sendUnsubscribeLinkEmail = async ({
 }) => {
     const { html, text } = await buildSimpleEmailTemplate({
         title: 'Unsubscribe from job digests',
-        preview: 'Open this link to unsubscribe from JobMeerkat digests',
         paragraphs: [
             'Sorry to see you go. Open the link below to confirm you want to unsubscribe from JobMeerkat job digests.',
         ],

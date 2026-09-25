@@ -6,6 +6,14 @@ const WORKPLACE_LABEL: Partial<Record<Workplace, string>> = {
     [Workplace.Hybrid]: 'Hybrid',
 };
 
+const WORKPLACE_LOCATION_WORDS = new Set([
+    'remote',
+    'on-site',
+    'onsite',
+    'on site',
+    'hybrid',
+]);
+
 const isUnknownLocation = (location: string | null | undefined): boolean => {
     const trimmed = location?.trim();
 
@@ -19,9 +27,18 @@ export const formatJobPlaceLabel = (
         jobPost.workplace === Workplace.Unknown
             ? null
             : (WORKPLACE_LABEL[jobPost.workplace] ?? null);
-    const location = isUnknownLocation(jobPost.location)
+    const rawLocation = isUnknownLocation(jobPost.location)
         ? null
         : jobPost.location.trim();
+    const locationIsWorkplaceWord =
+        rawLocation !== null &&
+        WORKPLACE_LOCATION_WORDS.has(rawLocation.toLowerCase());
+    const location =
+        rawLocation &&
+        !locationIsWorkplaceWord &&
+        (!workplace || rawLocation.toLowerCase() !== workplace.toLowerCase())
+            ? rawLocation
+            : null;
     const parts = [workplace, location].filter(Boolean);
 
     return parts.length > 0 ? parts.join(' — ') : null;

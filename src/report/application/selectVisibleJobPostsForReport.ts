@@ -2,9 +2,10 @@ import { Company } from 'company/domain/company';
 import { JobPost } from 'jobPost/domain/jobPost';
 
 export const DEFAULT_MAX_JOB_POSTS_PER_COMPANY = 4;
-export const COMPACT_MAX_JOB_POSTS_PER_COMPANY = 2;
+export const COMPACT_MAX_JOB_POSTS_PER_COMPANY = 3;
 export const SINGLE_MAX_JOB_POSTS_PER_COMPANY = 1;
-export const COMPACT_TOTAL_JOB_POSTS_THRESHOLD = 60;
+/** At or above this total, cap jobs shown per company to keep emails under client clip limits. */
+export const COMPACT_TOTAL_JOB_POSTS_THRESHOLD = 40;
 export const SINGLE_COMPANY_COUNT_THRESHOLD = 25;
 
 type CompanyJobs = {
@@ -21,13 +22,13 @@ export const maxJobPostsPerCompany = (
     companyCount: number,
 ): number => {
     if (
-        totalJobPosts > COMPACT_TOTAL_JOB_POSTS_THRESHOLD &&
+        totalJobPosts >= COMPACT_TOTAL_JOB_POSTS_THRESHOLD &&
         companyCount > SINGLE_COMPANY_COUNT_THRESHOLD
     ) {
         return SINGLE_MAX_JOB_POSTS_PER_COMPANY;
     }
 
-    if (totalJobPosts > COMPACT_TOTAL_JOB_POSTS_THRESHOLD) {
+    if (totalJobPosts >= COMPACT_TOTAL_JOB_POSTS_THRESHOLD) {
         return COMPACT_MAX_JOB_POSTS_PER_COMPANY;
     }
 
