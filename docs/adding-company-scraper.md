@@ -12,13 +12,13 @@ Step-by-step process to add a scrapeable company in the **development** environm
 
 From the careers URL (or by probing the page HTML), determine platform + board slug:
 
-| Platform | List URL pattern | Job content |
-|---|---|---|
+| Platform   | List URL pattern                                                      | Job content                                                                             |
+| ---------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | Greenhouse | `https://boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=true` | HTML via Cheerio (`.job__header`, `.job__description`) — or API `content` if HTML fails |
-| Ashby | `https://api.ashbyhq.com/posting-api/job-board/{slug}` | `getAshbyJobPostContent` GraphQL helper |
-| Lever | `https://api.lever.co/v0/postings/{slug}?mode=json` | HTML `.content`, or `descriptionPlain` from API if HTML fails |
-| Gem | boardId in Gem GraphQL (`jobs.gem.com/{boardId}`) | `getGemJobPosts` / `getGemJobPostContent` |
-| Workable | `apply.workable.com/api/v3/accounts/{slug}/jobs` | existing Workable scrapers as reference |
+| Ashby      | `https://api.ashbyhq.com/posting-api/job-board/{slug}`                | `getAshbyJobPostContent` GraphQL helper                                                 |
+| Lever      | `https://api.lever.co/v0/postings/{slug}?mode=json`                   | HTML `.content`, or `descriptionPlain` from API if HTML fails                           |
+| Gem        | boardId in Gem GraphQL (`jobs.gem.com/{boardId}`)                     | `getGemJobPosts` / `getGemJobPostContent`                                               |
+| Workable   | `apply.workable.com/api/v3/accounts/{slug}/jobs`                      | existing Workable scrapers as reference                                                 |
 
 Quick checks:
 
@@ -68,18 +68,29 @@ aws dynamodb update-item \
   --update-expression "SET description = :d" \
   --expression-attribute-values '{":d":{"S":"<description>"}}'
 ```
-## 3. Create the scraper
+
+## 3. Generate the Open Graph image
+
+The company page uses `https://assets.jobmeerkat.com/company/{companyId}/og.png`. The logo must already be at `company/{companyId}/logo.png`. The card is the Jobmeerkat lockup plus “Jobs at {name}” with that logo.
+
+After the logo is in the assets bucket, from the repo root:
+
+```bash
+npx tsx src/company/infrastructure/dev/generateCompanyOgImages.ts --stage dev <companyId>
+```
+
+## 4. Create the scraper
 
 1. Add `src/company/infrastructure/scrapping/{folder}/index.ts`.
 2. Copy the closest existing scraper for that ATS (good references):
-   - Greenhouse: `discord`, `twitch`
-   - Ashby: `astronomer`, `limitless`
-   - Lever: `supermove` (HTML) or `regrello` (API content fallback)
-   - Gem: `gem`
+    - Greenhouse: `discord`, `twitch`
+    - Ashby: `astronomer`, `limitless`
+    - Lever: `supermove` (HTML) or `regrello` (API content fallback)
+    - Gem: `gem`
 3. Export `COMPANY_NAME` and `companyScrapper`.
 4. Implement:
-   - `getListedJobPostsData` — list open roles (`id`, `url`, `title`, `createdAt`)
-   - `scrapJobPost` — fetch/analyze each post via `openaiJobPostAnalyzer`
+    - `getListedJobPostsData` — list open roles (`id`, `url`, `title`, `createdAt`)
+    - `scrapJobPost` — fetch/analyze each post via `openaiJobPostAnalyzer`
 
 ### Title filters (skip non-jobs)
 
@@ -93,7 +104,7 @@ In `getListedJobPostsData`, filter out talent-pool / catch-all posts when presen
 - `intern` / internship (astronomer, 1password, super)
 - `future openings` / `talent pool` / `future opportunities` when they are waitlists, not real roles
 
-After listing works, **scan all titles** before enabling full scrapes (see §5).
+After listing works, **scan all titles** before enabling full scrapes (see §6).
 
 ### Special cases
 
@@ -101,7 +112,7 @@ After listing works, **scan all titles** before enabling full scrapes (see §5).
 - **Regrello-style Lever**: HTML scrape fails → use Lever `descriptionPlain` (or equivalent API field).
 - Ashby: only include jobs with `jobData.isListed`.
 
-## 4. Register the scraper
+## 5. Register the scraper
 
 In `src/company/infrastructure/scrapping/companyScrapper.ts`:
 
@@ -110,9 +121,9 @@ In `src/company/infrastructure/scrapping/companyScrapper.ts`:
 
 The switch matches `company.name?.toLowerCase()`, so DB name lowercased must equal `COMPANY_NAME`.
 
-## 5. Validate (list titles first, then sample scrape)
+## 6. Validate (list titles first, then sample scrape)
 
-### 5a. List-only check for skippable titles
+### 6a. List-only check for skippable titles
 
 Temporarily in `getListedJobPostsData`, after building the list:
 
@@ -137,7 +148,7 @@ npm run scrap-company
 
 Review titles for open/general/spontaneous applications, internships, talent pools. Add filters, then remove the temporary early return / log-only hack.
 
-### 5b. Sample scrape validation
+### 6b. Sample scrape validation
 
 - Temporarily slice listed jobs to ~5 in `getListedJobPostsData` (or in `devScrapCompany` before `scrapJobPost`).
 - Run `npm run scrap-company`.
@@ -145,12 +156,12 @@ Review titles for open/general/spontaneous applications, internships, talent poo
 - Revert the slice so production-like listing returns all jobs again.
 - Leave `devScrapCompany.ts` clean (no permanent list-only / slice helpers unless the user asks to keep them).
 
-## 6. Track status
+## 7. Track status
 
 Update (or create) `.local/company-scraper-tracking.md` with:
 
 | Company | Company ID | Platform | API slug | Jobs | Status |
-|---|---|---|---|---:|---|
+| ------- | ---------- | -------- | -------- | ---: | ------ |
 
 Statuses used previously: pending, validated, validated (API content), no openings, skipped (&gt;100 jobs), not scrapeable.
 
@@ -158,6 +169,7 @@ Statuses used previously: pending, validated, validated (API content), no openin
 
 - [ ] ATS + slug confirmed; job count acceptable
 - [ ] Company created in DB **with `description`**; `companyId` saved
+- [ ] Logo is on S3 and the company OG image was generated
 - [ ] Scraper folder + `*_NAME` + list/detail logic
 - [ ] Registered in `companyScrapper.ts`
 - [ ] Title skip filters for open application / internship / talent community as needed

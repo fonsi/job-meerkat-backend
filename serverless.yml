@@ -36,6 +36,7 @@ params:
 package:
     patterns:
         - src/jobPost/infrastructure/og/fonts/**
+        - src/jobPost/infrastructure/og/brand/**
         - src/jobPost/infrastructure/og/native/**
         - src/jobPost/infrastructure/queue/sqs/consumer/hb.wasm
 

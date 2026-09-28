@@ -30,6 +30,19 @@ export const pngSize = (
     };
 };
 
+export const fitBox = (
+    size: { width: number; height: number },
+    maxWidth: number,
+    maxHeight: number,
+) => {
+    const scale = Math.min(maxWidth / size.width, maxHeight / size.height);
+
+    return {
+        width: Math.max(1, Math.round(size.width * scale)),
+        height: Math.max(1, Math.round(size.height * scale)),
+    };
+};
+
 export const logoDataUrl = (logo: Buffer): string => {
     const isJpeg = logo[0] === 0xff && logo[1] === 0xd8;
     const mime = isJpeg ? 'image/jpeg' : 'image/png';
