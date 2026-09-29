@@ -9,7 +9,7 @@ describe('newsletterSubscribeSocialPosts', () => {
         expect(posts.threads).toHaveLength(1);
         expect(posts.bluesky[0]).toBe(posts.threads[0]);
         expect(posts.bluesky[0]).toBe(
-            '73 new remote jobs with public salaries today. Get them in your inbox: https://jobmeerkat.com/newsletter?utm_source=_social',
+            '73 new job posts today. Get them in your inbox: https://jobmeerkat.com/newsletter?utm_source=_social',
         );
     });
 

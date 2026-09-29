@@ -195,8 +195,7 @@ export const buildSocialSchedule = ({
         });
     }
 
-    const newRemoteWithSalary = latestJobPosts.filter(isEligibleForSocial);
-    if (newRemoteWithSalary.length > NEWSLETTER_SUBSCRIBE_MIN_NEW_JOBS) {
+    if (latestJobPosts.length > NEWSLETTER_SUBSCRIBE_MIN_NEW_JOBS) {
         const date = nextZonedHour(
             now,
             NEWSLETTER_SUBSCRIBE_HOUR,

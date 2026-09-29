@@ -409,15 +409,13 @@ describe('buildSocialSchedule', () => {
         );
     });
 
-    it('adds one newsletter subscribe post when more than 50 new remote jobs have a public salary', () => {
-        const latestJobPosts = Array.from(
-            { length: NEWSLETTER_SUBSCRIBE_MIN_NEW_JOBS + 1 },
-            (_, index) =>
-                job({
-                    id: `j${index}`,
-                    companyId: `c${index}`,
-                    max: 300000 - index,
-                }),
+    it('adds one newsletter subscribe post when there are more than 20 new job posts', () => {
+        const latestJobPosts = Array.from({ length: 40 }, (_, index) =>
+            job({
+                id: `j${index}`,
+                companyId: `c${index}`,
+                max: 300000 - index,
+            }),
         );
         const manyCompanies = latestJobPosts.map((_, index) =>
             company(`c${index}`, `Co${index}`, 'A product company.'),
@@ -505,7 +503,7 @@ describe('buildSocialSchedule', () => {
         ).toBe(Date.UTC(2026, 0, 15, 18));
     });
 
-    it('skips the newsletter post at 50 or fewer eligible jobs', () => {
+    it('skips the newsletter post at 20 or fewer new job posts', () => {
         const latestJobPosts = Array.from(
             { length: NEWSLETTER_SUBSCRIBE_MIN_NEW_JOBS },
             (_, index) =>
@@ -534,15 +532,15 @@ describe('buildSocialSchedule', () => {
         ).toBe(false);
     });
 
-    it('ignores on-site and hidden-salary jobs when deciding the newsletter post', () => {
-        const remote = Array.from({ length: 40 }, (_, index) =>
+    it('counts every new job post toward the newsletter threshold', () => {
+        const remote = Array.from({ length: 15 }, (_, index) =>
             job({
                 id: `remote${index}`,
                 companyId: `c${index}`,
                 max: 200000 - index,
             }),
         );
-        const onsite = Array.from({ length: 20 }, (_, index) =>
+        const onsite = Array.from({ length: 6 }, (_, index) =>
             job({
                 id: `onsite${index}`,
                 companyId: `o${index}`,
@@ -563,6 +561,6 @@ describe('buildSocialSchedule', () => {
             scheduled.some(
                 (post) => post.type === SocialPostType.NewsletterSubscribe,
             ),
-        ).toBe(false);
+        ).toBe(true);
     });
 });

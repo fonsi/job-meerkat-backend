@@ -15,8 +15,8 @@ export const companyThreadCountForPromos = (jobPromoCount: number): number =>
               MIN_JOB_PROMOS_BEFORE_EXTRA_COMPANY_THREADS - jobPromoCount,
           );
 
-/** Newsletter subscribe post when today's new remote jobs with a public salary exceed this. */
-export const NEWSLETTER_SUBSCRIBE_MIN_NEW_JOBS = 50;
+/** Newsletter subscribe post when today's new job posts exceed this. */
+export const NEWSLETTER_SUBSCRIBE_MIN_NEW_JOBS = 20;
 
 /** Local clock for posts pinned to the evening activity window. */
 export const SOCIAL_SCHEDULE_TIME_ZONE = 'Europe/Madrid';

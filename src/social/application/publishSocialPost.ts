@@ -252,10 +252,10 @@ const publishNewsletterSubscribe = async (
     post: ScheduledSocialPost,
 ): Promise<void> => {
     const latestJobPosts = await jobPostRepository.getLatest();
-    const jobCount = latestJobPosts.filter(isEligibleForSocial).length;
+    const jobCount = latestJobPosts.length;
     if (jobCount === 0) {
         console.log(
-            '[PUBLISH POST]: newsletter subscribe skipped (no remote jobs with public salary)',
+            '[PUBLISH POST]: newsletter subscribe skipped (no new job posts)',
         );
         return;
     }

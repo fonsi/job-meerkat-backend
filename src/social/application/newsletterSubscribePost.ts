@@ -9,8 +9,8 @@ export const newsletterSubscribeSocialPosts = (
 ): SocialMediaPosts => {
     const jobs =
         jobCount === 1
-            ? '1 new remote job with a public salary'
-            : `${jobCount.toLocaleString('en-US')} new remote jobs with public salaries`;
+            ? '1 new job post'
+            : `${jobCount.toLocaleString('en-US')} new job posts`;
     const message = `${jobs} today. Get them in your inbox: ${buildNewsletterPageUrl(UtmSource.Social)}`;
 
     return { bluesky: [message], threads: [message] };

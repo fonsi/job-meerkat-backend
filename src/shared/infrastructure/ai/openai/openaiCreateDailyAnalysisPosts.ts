@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import {
-    buildPublicSiteUrl,
+    buildRemoteJobsWithSalaryPageUrl,
     UtmSource,
 } from 'shared/infrastructure/url/buildJobPostPageUrl';
 import {
@@ -37,8 +37,8 @@ const example: SocialMediaPosts = {
 export const openaiCreateDailyAnalysisPosts = async (
     stats: DailyAnalysisStats,
 ): Promise<SocialMediaPosts> => {
-    const siteBluesky = buildPublicSiteUrl(UtmSource.Bluesky);
-    const siteThreads = buildPublicSiteUrl(UtmSource.Threads);
+    const siteBluesky = buildRemoteJobsWithSalaryPageUrl(UtmSource.Bluesky);
+    const siteThreads = buildRemoteJobsWithSalaryPageUrl(UtmSource.Threads);
 
     const completion = await openai.chat.completions.create({
         model: OPENAI_MODEL,
@@ -57,8 +57,8 @@ ${SOCIAL_POST_CONTENT_RULES}
 Salaries in this dataset are USD or EUR only — keep amounts in their given currency.
 When including listing links from the data, keep their query strings.
 
-Bluesky: 1–2 posts max (prefer 1 if it fits). Lead with a data hook (count, salary median/max). Include ${siteBluesky}. No emojis. ≤300 graphemes (prefer ≤280).
-Threads: 2 messages — (1) the daily hook + invite to browse listings on ${siteThreads}; (2) highlight 1–2 top paid roles with salary and encourage following for more. ≤500 chars. Max one hashtag total.
+Bluesky: 1–2 posts max (prefer 1 if it fits). Lead with a data hook (count, salary median/max). The browse link is the remote jobs with public salaries page, ${siteBluesky}, not the homepage. No emojis. ≤300 graphemes (prefer ≤280).
+Threads: 2 messages — (1) the daily hook + invite to browse those listings on ${siteThreads}; (2) highlight 1–2 top paid roles with salary and encourage following for more. ≤500 chars. Max one hashtag total.
 
 Return JSON: ${JSON.stringify(example)}.
 `,

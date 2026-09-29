@@ -4,6 +4,7 @@ import {
     buildCompanyPageUrl,
     buildJobPostPageUrl,
     buildNewsletterPageUrl,
+    buildRemoteJobsWithSalaryPageUrl,
     buildPublicSiteUrl,
     getPublicSiteBaseUrl,
     PUBLIC_SITE_BASE_URL,
@@ -72,6 +73,20 @@ describe('buildJobPostPageUrl', () => {
     it('appends utm_source when provided', () => {
         expect(buildJobPostPageUrl('a-b-at-c-d', UtmSource.Newsletter)).toBe(
             'https://jobmeerkat.com/jobpost/a-b-at-c-d?utm_source=newsletter',
+        );
+    });
+});
+
+describe('buildRemoteJobsWithSalaryPageUrl', () => {
+    it('builds /remote-jobs-with-salary with the hardcoded base', () => {
+        expect(buildRemoteJobsWithSalaryPageUrl()).toBe(
+            'https://jobmeerkat.com/remote-jobs-with-salary',
+        );
+    });
+
+    it('appends utm_source when provided', () => {
+        expect(buildRemoteJobsWithSalaryPageUrl(UtmSource.Threads)).toBe(
+            'https://jobmeerkat.com/remote-jobs-with-salary?utm_source=threads',
         );
     });
 });

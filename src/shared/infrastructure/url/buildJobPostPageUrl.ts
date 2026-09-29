@@ -49,6 +49,13 @@ export const buildJobPostPageUrl = (
     return utmSource ? appendUtmSource(url, utmSource) : url;
 };
 
+export const buildRemoteJobsWithSalaryPageUrl = (
+    utmSource?: UtmSourceValue | string,
+): string => {
+    const url = `${PUBLIC_SITE_BASE_URL}/remote-jobs-with-salary`;
+    return utmSource ? appendUtmSource(url, utmSource) : url;
+};
+
 export const buildNewsletterPageUrl = (
     utmSource?: UtmSourceValue | string,
 ): string => {
