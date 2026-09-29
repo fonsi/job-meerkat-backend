@@ -37,7 +37,7 @@ export const scheduleSocialPosts = async (): Promise<void> => {
     });
 
     console.log(
-        `Scheduling ${scheduled.length} social posts (~1/hour). Types: ${scheduled
+        `Scheduling ${scheduled.length} social posts across the day. Types: ${scheduled
             .map((post) => `${post.type}[${post.platforms.join(',')}]`)
             .join(', ')}`,
     );

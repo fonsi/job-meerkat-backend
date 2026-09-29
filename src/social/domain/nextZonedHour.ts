@@ -5,6 +5,17 @@ const part = (
     type: Intl.DateTimeFormatPartTypes,
 ): string => parts.find((entry) => entry.type === type)?.value ?? '';
 
+export const zonedHour = (timestamp: number, timeZone: string): number => {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone,
+        hourCycle: 'h23',
+        hour: '2-digit',
+    }).formatToParts(new Date(timestamp));
+    const hour = Number(part(parts, 'hour'));
+
+    return hour === 24 ? 0 : hour;
+};
+
 export const zonedDateKey = (timestamp: number, timeZone: string): string => {
     const parts = new Intl.DateTimeFormat('en-GB', {
         timeZone,

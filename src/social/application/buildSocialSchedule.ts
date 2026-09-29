@@ -12,11 +12,15 @@ import { SocialPostType } from 'social/domain/socialPostType';
 import {
     companyThreadCountForPromos,
     DAILY_ANALYSIS_HOUR,
+    isSocialLocalDaytime,
+    isSocialUsAwake,
     MAX_PUBLICATIONS_PER_DAY,
     NEWSLETTER_SUBSCRIBE_HOUR,
     NEWSLETTER_SUBSCRIBE_MIN_NEW_JOBS,
     SOCIAL_POST_SLOT_MS,
+    SOCIAL_SCHEDULE_HORIZON_MS,
     SOCIAL_SCHEDULE_TIME_ZONE,
+    SOCIAL_US_AWAKE_SLOT_WEIGHT,
     WEEKLY_TOP_PAID_HOUR,
 } from 'social/domain/socialScheduleConfig';
 import {
@@ -138,13 +142,84 @@ const interleaveEvenly = <T>(main: T[], toSpread: T[]): T[] => {
 
 type SocialPostDraft = Omit<ScheduledSocialPost, 'date'>;
 
-const gridDates = (
-    now: number,
+const openSlots = (now: number, reserved: number[]): number[] => {
+    const end = now + SOCIAL_SCHEDULE_HORIZON_MS;
+    const slots: number[] = [];
+    for (
+        let cursor = now + SOCIAL_POST_SLOT_MS;
+        cursor < end;
+        cursor += SOCIAL_POST_SLOT_MS
+    ) {
+        const taken = reserved.some(
+            (date) => Math.abs(date - cursor) < SOCIAL_POST_SLOT_MS / 2,
+        );
+        if (!taken) slots.push(cursor);
+    }
+
+    return slots;
+};
+
+const takeEvenly = (slots: number[], count: number): number[] => {
+    if (count <= 0) return [];
+    if (count >= slots.length) return [...slots];
+    if (count === 1) return [slots[Math.floor((slots.length - 1) / 2)]];
+
+    return Array.from({ length: count }, (_, index) => {
+        const slotIndex = Math.round(
+            (index * (slots.length - 1)) / (count - 1),
+        );
+
+        return slots[slotIndex];
+    });
+};
+
+type SlotGroup = { slots: number[]; weight: number };
+
+const groupCounts = (groups: SlotGroup[], target: number): number[] => {
+    const weightTotal = groups.reduce(
+        (sum, group) => sum + group.slots.length * group.weight,
+        0,
+    );
+    const counts =
+        weightTotal === 0
+            ? groups.map(() => 0)
+            : groups.map((group) =>
+                  Math.min(
+                      group.slots.length,
+                      Math.round(
+                          (target * group.slots.length * group.weight) /
+                              weightTotal,
+                      ),
+                  ),
+              );
+    let assigned = counts.reduce((sum, value) => sum + value, 0);
+    for (let index = 0; assigned < target && index < groups.length; index++) {
+        const room = groups[index].slots.length - counts[index];
+        if (room <= 0) continue;
+        const add = Math.min(room, target - assigned);
+        counts[index] += add;
+        assigned += add;
+    }
+    for (
+        let index = groups.length - 1;
+        assigned > target && index >= 0;
+        index--
+    ) {
+        const remove = Math.min(counts[index], assigned - target);
+        counts[index] -= remove;
+        assigned -= remove;
+    }
+
+    return counts;
+};
+
+const extendPastHorizon = (
+    dates: number[],
     count: number,
+    now: number,
     reserved: number[],
 ): number[] => {
-    const dates: number[] = [];
-    let cursor = now + SOCIAL_POST_SLOT_MS;
+    let cursor = (dates[dates.length - 1] ?? now) + SOCIAL_POST_SLOT_MS;
     while (dates.length < count) {
         const taken = reserved.some(
             (date) => Math.abs(date - cursor) < SOCIAL_POST_SLOT_MS / 2,
@@ -154,6 +229,38 @@ const gridDates = (
     }
 
     return dates;
+};
+
+/** US waking hours first, then the Madrid morning before that, then leftover night slots. */
+const gridDates = (
+    now: number,
+    count: number,
+    reserved: number[],
+): number[] => {
+    const candidates = openSlots(now, reserved);
+    if (count >= candidates.length) {
+        return extendPastHorizon([...candidates], count, now, reserved);
+    }
+
+    const usAwake = candidates.filter(isSocialUsAwake);
+    const firstUsAwake = usAwake[0];
+    const localDaytime = candidates.filter(
+        (date) =>
+            !isSocialUsAwake(date) &&
+            isSocialLocalDaytime(date) &&
+            (firstUsAwake == null || date < firstUsAwake),
+    );
+    const placed = new Set([...usAwake, ...localDaytime]);
+    const groups: SlotGroup[] = [
+        { slots: usAwake, weight: SOCIAL_US_AWAKE_SLOT_WEIGHT },
+        { slots: localDaytime, weight: 1 },
+        { slots: candidates.filter((date) => !placed.has(date)), weight: 0 },
+    ];
+    const counts = groupCounts(groups, count);
+
+    return groups
+        .flatMap((group, index) => takeEvenly(group.slots, counts[index]))
+        .sort((a, b) => a - b);
 };
 
 export type BuildSocialScheduleParams = {

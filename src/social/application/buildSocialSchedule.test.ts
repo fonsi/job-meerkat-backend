@@ -13,6 +13,7 @@ import { SocialPlatform } from 'social/domain/socialPlatform';
 import {
     COMPANY_THREADS_PER_DAY,
     companyThreadCountForPromos,
+    isSocialUsAwake,
     MAX_PUBLICATIONS_PER_DAY,
     MIN_JOB_PROMOS_BEFORE_EXTRA_COMPANY_THREADS,
     NEWSLETTER_SUBSCRIBE_MIN_NEW_JOBS,
@@ -67,8 +68,28 @@ const job = ({
     closedAt: null,
 });
 
+const expectSlotSpacing = (dates: number[]) => {
+    for (let index = 1; index < dates.length; index++) {
+        expect(dates[index] - dates[index - 1]).toBeGreaterThanOrEqual(
+            SOCIAL_POST_SLOT_MS,
+        );
+    }
+};
+
+describe('isSocialUsAwake', () => {
+    it('covers 08:00 New York through 21:30 Los Angeles', () => {
+        expect(isSocialUsAwake(Date.UTC(2026, 6, 21, 12))).toBe(true);
+        expect(isSocialUsAwake(Date.UTC(2026, 6, 22, 4, 30))).toBe(true);
+        expect(isSocialUsAwake(Date.UTC(2026, 6, 21, 11, 30))).toBe(false);
+        expect(isSocialUsAwake(Date.UTC(2026, 6, 22, 5))).toBe(false);
+        expect(isSocialUsAwake(Date.UTC(2026, 0, 15, 13))).toBe(true);
+        expect(isSocialUsAwake(Date.UTC(2026, 0, 16, 5, 30))).toBe(true);
+        expect(isSocialUsAwake(Date.UTC(2026, 0, 16, 6))).toBe(false);
+    });
+});
+
 describe('buildSocialSchedule', () => {
-    const now = Date.UTC(2026, 6, 21, 2); // Tuesday
+    const now = Date.UTC(2026, 6, 21, 7); // Tuesday, planner hour
     const companies = [
         company('c1', 'Acme', 'Acme builds tools.'),
         company('c2', 'Beta'),
@@ -116,7 +137,10 @@ describe('buildSocialSchedule', () => {
         );
         expect(jobPromos).toHaveLength(3);
         expect(scheduled.length).toBeLessThanOrEqual(MAX_PUBLICATIONS_PER_DAY);
-        expect(scheduled[1].date - scheduled[0].date).toBe(SOCIAL_POST_SLOT_MS);
+        expectSlotSpacing(scheduled.map((post) => post.date));
+        expect(
+            scheduled[scheduled.length - 1].date - scheduled[0].date,
+        ).toBeGreaterThan(6 * 60 * 60 * 1000);
     });
 
     it('includes weekly top paid when requested', () => {
@@ -447,12 +471,12 @@ describe('buildSocialSchedule', () => {
             (post) => post.type === SocialPostType.NewsletterSubscribe,
         );
         for (const index of [analysisIndex, newsletterIndex]) {
-            expect(scheduled[index - 1].date).toBe(
-                scheduled[index].date - SOCIAL_POST_SLOT_MS,
-            );
-            expect(scheduled[index + 1].date).toBe(
-                scheduled[index].date + SOCIAL_POST_SLOT_MS,
-            );
+            expect(
+                scheduled[index].date - scheduled[index - 1].date,
+            ).toBeGreaterThanOrEqual(SOCIAL_POST_SLOT_MS);
+            expect(
+                scheduled[index + 1].date - scheduled[index].date,
+            ).toBeGreaterThanOrEqual(SOCIAL_POST_SLOT_MS);
             expect([
                 SocialPostType.JobPromo,
                 SocialPostType.CompanyThread,
@@ -466,7 +490,7 @@ describe('buildSocialSchedule', () => {
     });
 
     it('keeps 17:00 and 19:00 Madrid after the clock change', () => {
-        const winterNow = Date.UTC(2026, 0, 15, 2);
+        const winterNow = Date.UTC(2026, 0, 15, 7);
         const latestJobPosts = Array.from(
             { length: NEWSLETTER_SUBSCRIBE_MIN_NEW_JOBS + 1 },
             (_, index) =>
@@ -501,6 +525,12 @@ describe('buildSocialSchedule', () => {
                 (post) => post.type === SocialPostType.NewsletterSubscribe,
             )?.date,
         ).toBe(Date.UTC(2026, 0, 15, 18));
+        expect(scheduled[scheduled.length - 1].date).toBeGreaterThan(
+            Date.UTC(2026, 0, 15, 18),
+        );
+        expect(isSocialUsAwake(scheduled[scheduled.length - 1].date)).toBe(
+            true,
+        );
     });
 
     it('skips the newsletter post at 20 or fewer new job posts', () => {
@@ -562,5 +592,56 @@ describe('buildSocialSchedule', () => {
                 (post) => post.type === SocialPostType.NewsletterSubscribe,
             ),
         ).toBe(true);
+    });
+
+    it('keeps hot hours and spreads the rest toward US waking hours', () => {
+        const latestJobPosts = Array.from({ length: 24 }, (_, index) =>
+            job({
+                id: `j${index}`,
+                companyId: `c${index}`,
+                max: 300000 - index,
+            }),
+        );
+        const manyCompanies = latestJobPosts.map((_, index) =>
+            company(`c${index}`, `Co${index}`, 'A product company.'),
+        );
+        const usStart = Date.UTC(2026, 6, 21, 12);
+        const usEnd = Date.UTC(2026, 6, 22, 5);
+
+        const scheduled = buildSocialSchedule({
+            latestJobPosts,
+            weekJobPosts: latestJobPosts,
+            companiesById: new Map(manyCompanies.map((c) => [c.id, c])),
+            now,
+            includeWeeklyTopPaid: false,
+        });
+
+        expect(
+            scheduled.find((post) => post.type === SocialPostType.DailyAnalysis)
+                ?.date,
+        ).toBe(Date.UTC(2026, 6, 21, 15));
+        expect(
+            scheduled.find(
+                (post) => post.type === SocialPostType.NewsletterSubscribe,
+            )?.date,
+        ).toBe(Date.UTC(2026, 6, 21, 17));
+
+        const flowing = scheduled.filter(
+            (post) =>
+                post.type === SocialPostType.JobPromo ||
+                post.type === SocialPostType.CompanyThread,
+        );
+        const duringUsHours = flowing.filter(
+            (post) => post.date >= usStart && post.date < usEnd,
+        );
+        expectSlotSpacing(scheduled.map((post) => post.date));
+        expect(duringUsHours.length).toBeGreaterThan(flowing.length / 2);
+        expect(flowing.some((post) => post.date < usStart)).toBe(true);
+        expect(scheduled[scheduled.length - 1].date).toBeGreaterThanOrEqual(
+            Date.UTC(2026, 6, 22, 3),
+        );
+        expect(isSocialUsAwake(scheduled[scheduled.length - 1].date)).toBe(
+            true,
+        );
     });
 });
