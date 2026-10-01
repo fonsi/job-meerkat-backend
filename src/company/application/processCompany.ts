@@ -16,6 +16,7 @@ import {
     ScrappedJobPost,
 } from 'company/infrastructure/scrapping/companyScrapper';
 import { closeJobPost } from 'jobPost/application/closeJobPost';
+import { storeJobPostPageCache } from 'jobPost/application/storeJobPostPageCache';
 import { companyRepository } from 'company/infrastructure/persistance/dynamodb/dynamodbCompanyRepository';
 import { logger } from 'shared/infrastructure/logger/logger';
 import { isJobListingUnavailableError } from 'company/infrastructure/scrapping/jobListingUnavailableError';
@@ -254,7 +255,12 @@ const scrapUsingNewScrapper = async ({
             }).then(enqueueOgImage),
     );
     const reopenJobPostsPromises: Promise<void>[] = reopenJobPosts.map(
-        (jobPost) => jobPostRepository.update(jobPost).then(enqueueOgImage),
+        (jobPost) =>
+            jobPostRepository.update(jobPost).then(async (saved) => {
+                const pageJob = saved ?? jobPost;
+                await storeJobPostPageCache(pageJob, company);
+                await enqueueOgImage(pageJob);
+            }),
     );
     const closeJobPostsPromises: Promise<void>[] =
         closedJobPosts.map(closeJobPost);

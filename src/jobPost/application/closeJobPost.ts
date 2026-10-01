@@ -4,6 +4,7 @@ import {
     closeJobPost as closeJobPostEntity,
 } from 'jobPost/domain/jobPost';
 import { logger } from 'shared/infrastructure/logger/logger';
+import { storeJobPostPageCache } from './storeJobPostPageCache';
 
 type CloseJobPostCommand = JobPost;
 
@@ -30,4 +31,5 @@ export const closeJobPost = async (command: CloseJobPostCommand) => {
     const { closedAt } = closeJobPostEntity(jobPost);
 
     await jobPostRepository.close(id, companyId, closedAt);
+    await storeJobPostPageCache({ ...jobPost, closedAt });
 };

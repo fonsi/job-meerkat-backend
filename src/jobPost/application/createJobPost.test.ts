@@ -3,6 +3,10 @@ import { createJobPost, CreateJobPostCommand } from './createJobPost';
 import { CompanyId, Company } from 'company/domain/company';
 import { JobType, Period, Workplace, Category } from 'jobPost/domain/jobPost';
 
+jest.mock('jobPost/application/storeJobPostPageCache', () => ({
+    storeJobPostPageCache: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock(
     'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository',
     () => ({

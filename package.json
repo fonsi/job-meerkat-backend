@@ -7,6 +7,7 @@
         "scrap-company": "npm run local devScrapCompany -- --path src/company/infrastructure/dev/scrapCompany.event.json",
         "send-test-report": "npm run local devSendTestReport -- --path src/report/infrastructure/dev/sendTestReport.event.json",
         "generate-follower-growth-posts": "npm run local generateFollowerGrowthPosts -- --path src/social/infrastructure/dev/generateFollowerGrowthPosts.event.json",
+        "backfill-job-post-cache": "npm run local backfillJobPostCache -- --path src/jobPost/infrastructure/dev/backfillJobPostCache.event.json",
         "deploy:dev": "npm run lint && serverless deploy -v",
         "deploy:prod": "npm run lint && serverless deploy -v --stage=production",
         "test": "NODE_OPTIONS=--experimental-vm-modules jest",

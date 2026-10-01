@@ -5,6 +5,7 @@ import {
     JobPost,
 } from 'jobPost/domain/jobPost';
 import { Company } from 'company/domain/company';
+import { storeJobPostPageCache } from './storeJobPostPageCache';
 
 export type CreateJobPostCommand = CreateJobPostData & {
     company: Company;
@@ -14,6 +15,8 @@ export const createJobPost = async (
     command: CreateJobPostCommand,
 ): Promise<JobPost> => {
     const jobPost = createJobPostEntity(command);
+    await jobPostRepository.create(jobPost);
+    await storeJobPostPageCache(jobPost, command.company);
 
-    return await jobPostRepository.create(jobPost);
+    return jobPost;
 };

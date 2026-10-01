@@ -46,6 +46,10 @@ jest.mock('jobPost/application/closeJobPost', () => ({
     closeJobPost: jest.fn(),
 }));
 
+jest.mock('jobPost/application/storeJobPostPageCache', () => ({
+    storeJobPostPageCache: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('shared/infrastructure/logger/logger', () => ({
     logger: {
         info: jest.fn(),

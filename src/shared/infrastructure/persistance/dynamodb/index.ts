@@ -25,12 +25,14 @@ import {
 
 export type UpdateItemExpression = Omit<UpdateItemInput, 'TableName'>;
 
+// One client per Lambda isolate — creating a client per call leaks sockets (EMFILE).
+const dynamodb = new DynamoDB({});
+
 export const getItem = (
     table: string,
     key: Record<string, AttributeValue>,
 ): Promise<GetItemOutput> => {
     return new Promise((resolve, reject) => {
-        const dynamodb = new DynamoDB();
         const input: GetItemInput = {
             TableName: table,
             Key: key,
@@ -50,7 +52,6 @@ export const batchGetItems = (
     batchInput: Array<{ table: string; keysAndAttributes: KeysAndAttributes }>,
 ): Promise<BatchGetItemOutput> => {
     return new Promise((resolve, reject) => {
-        const dynamodb = new DynamoDB();
         const input: BatchGetItemInput = {
             RequestItems: batchInput.reduce((acc, input) => {
                 return {
@@ -75,7 +76,6 @@ export const putItem = (
     item: Record<string, AttributeValue>,
 ): Promise<PutItemOutput> => {
     return new Promise((resolve, reject) => {
-        const dynamodb = new DynamoDB();
         const input: PutItemInput = {
             TableName: table,
             Item: item,
@@ -96,7 +96,6 @@ export const updateItem = (
     update: UpdateItemExpression,
 ): Promise<UpdateItemOutput> => {
     return new Promise((resolve, reject) => {
-        const dynamodb = new DynamoDB();
         const input: UpdateItemInput = {
             TableName: table,
             ...update,
@@ -117,7 +116,6 @@ export const deleteItem = (
     key: Record<string, AttributeValue>,
 ): Promise<DeleteItemOutput> => {
     return new Promise((resolve, reject) => {
-        const dynamodb = new DynamoDB();
         const input: DeleteItemInput = {
             TableName: table,
             Key: key,
@@ -138,7 +136,6 @@ export const batchWriteItems = (
     items: Record<string, AttributeValue>[],
 ): Promise<BatchWriteItemOutput> =>
     new Promise((resolve, reject) => {
-        const dynamodb = new DynamoDB();
         const input: BatchWriteItemInput = {
             RequestItems: {
                 [table]: items.map((item) => ({
@@ -163,7 +160,6 @@ export const query = (
     query: Omit<QueryInput, 'TableName'>,
 ): Promise<QueryOutput> => {
     return new Promise((resolve, reject) => {
-        const dynamodb = new DynamoDB();
         const input: QueryInput = {
             TableName: table,
             ...query,
@@ -183,7 +179,6 @@ export const scan = async (
     table: string,
     query: Omit<ScanInput, 'TableName'>,
 ): Promise<ScanOutput> => {
-    const dynamodb = new DynamoDB();
     const allItems: Record<string, AttributeValue>[] = [];
     let lastEvaluatedKey: Record<string, AttributeValue> | undefined =
         undefined;
@@ -224,7 +219,6 @@ export const transactWriteItems = (
     transactItems: TransactWriteItem[],
 ): Promise<TransactWriteItemsOutput> => {
     return new Promise((resolve, reject) => {
-        const dynamodb = new DynamoDB();
         const input: TransactWriteItemsInput = {
             TransactItems: transactItems,
         };
