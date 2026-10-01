@@ -1,6 +1,7 @@
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
+import { deleteJobPostPageCache } from 'jobPost/infrastructure/cache/s3/deleteJobPostPageCache';
 
-const SIX_MONTHS_IN_MS = 1000 * 60 * 60 * 24 * 30 * 6;
+const TWO_MONTHS_IN_MS = 1000 * 60 * 60 * 24 * 30 * 2;
 
 type ArchiveClosedJobPostsResult = {
     scanned: number;
@@ -9,7 +10,7 @@ type ArchiveClosedJobPostsResult = {
 };
 
 export const getArchiveClosedBefore = (now: number = Date.now()): number =>
-    now - SIX_MONTHS_IN_MS;
+    now - TWO_MONTHS_IN_MS;
 
 export const archiveClosedJobPosts =
     async (): Promise<ArchiveClosedJobPostsResult> => {
@@ -26,6 +27,7 @@ export const archiveClosedJobPosts =
                     jobPost,
                     closedBefore,
                 );
+                await deleteJobPostPageCache(jobPost.slug);
                 moved += 1;
             } catch (e) {
                 failed += 1;
