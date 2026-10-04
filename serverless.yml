@@ -16,6 +16,7 @@ params:
         generateJobPostOgImageQueueVisibilityTimeout: 90
         companyEndpointTimeout: 30
         newsletterEndpointTimeout: 30
+        archiveClosedJobPostsTimeout: 300
     dev:
         processCompanySchedule: cron(0 0 1 1 ? 1970) # never
         socialPostsSchedule: cron(0 0 1 1 ? 1970) # never
@@ -400,7 +401,7 @@ functions:
             - schedule: ${param:weeklyReportsSchedule}
     archiveClosedJobPosts:
         handler: src/jobPost/infrastructure/api/archive/handler.index
-        timeout: 30
+        timeout: ${param:archiveClosedJobPostsTimeout}
         events:
             - schedule: ${param:archiveClosedJobPostsSchedule}
     processPendingSubscriptions:
