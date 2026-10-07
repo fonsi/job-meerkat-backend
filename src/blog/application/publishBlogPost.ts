@@ -15,7 +15,6 @@ import {
     ensureGenericBlogOgImage,
     generateAndStoreBlogPostOgImage,
 } from './generateAndStoreBlogOgImages';
-import { publishBlogThreadsPromo } from 'blog/infrastructure/social/publishBlogThreadsPromo';
 import {
     buildCategoryPageUrl,
     buildNewsletterPageUrl,
@@ -23,19 +22,20 @@ import {
     UtmSource,
     withBlogUtm,
 } from 'shared/infrastructure/url/buildJobPostPageUrl';
+import { scheduleBlogSocialPromo } from './scheduleBlogSocialPromo';
 
 export const publishBlogPost = async ({
     snapshot,
     draft,
     type,
     now = Date.now(),
-    promoThreads = true,
+    schedulePromo = true,
 }: {
     snapshot: BlogMarketSnapshot;
     draft: BlogDraft;
     type: BlogPostKind;
     now?: number;
-    promoThreads?: boolean;
+    schedulePromo?: boolean;
 }): Promise<BlogPost> => {
     await ensureGenericBlogOgImage();
     const publishedAt = new Date(now).toISOString();
@@ -99,7 +99,7 @@ export const publishBlogPost = async ({
         putBlogIndexCache(index),
     ]);
 
-    if (promoThreads) await publishBlogThreadsPromo(post);
+    if (schedulePromo) await scheduleBlogSocialPromo(post, now);
 
     return post;
 };

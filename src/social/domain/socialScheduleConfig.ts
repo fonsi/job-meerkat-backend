@@ -32,6 +32,12 @@ export const WEEKLY_TOP_PAID_HOUR = 18;
 /** Newsletter subscribe publish hour in SOCIAL_SCHEDULE_TIME_ZONE. */
 export const NEWSLETTER_SUBSCRIBE_HOUR = 19;
 
+/**
+ * Preferred blog promo hour in SOCIAL_SCHEDULE_TIME_ZONE.
+ * Kept off daily analysis (17), Monday top-paid (18), and newsletter (19).
+ */
+export const BLOG_PROMO_HOUR = 16;
+
 /** Space between scheduled posts. */
 export const SOCIAL_POST_SLOT_MS = 30 * 60 * 1000;
 

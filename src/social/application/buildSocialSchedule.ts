@@ -271,6 +271,8 @@ export type BuildSocialScheduleParams = {
     openJobPosts?: JobPost[];
     now?: number;
     includeWeeklyTopPaid?: boolean;
+    /** Extra occupied times (e.g. pending blog promos) flowing posts must skip. */
+    extraReservedDates?: number[];
 };
 
 export const buildSocialSchedule = ({
@@ -280,6 +282,7 @@ export const buildSocialSchedule = ({
     openJobPosts = latestJobPosts,
     now = Date.now(),
     includeWeeklyTopPaid = new Date(now).getUTCDay() === 1,
+    extraReservedDates = [],
 }: BuildSocialScheduleParams): ScheduledSocialPost[] => {
     const dateKey = toDateKey(now);
     const pinned: ScheduledSocialPost[] = [];
@@ -393,11 +396,10 @@ export const buildSocialSchedule = ({
     }
 
     flowing.push(...interleaveEvenly(jobPromoDrafts, companyThreadDrafts));
-    const dates = gridDates(
-        now,
-        flowing.length,
-        pinned.map((post) => post.date),
-    );
+    const dates = gridDates(now, flowing.length, [
+        ...pinned.map((post) => post.date),
+        ...extraReservedDates,
+    ]);
     const flowingPosts = flowing.map((draft, index) => ({
         ...draft,
         date: dates[index],

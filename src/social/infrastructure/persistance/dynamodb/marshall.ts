@@ -4,7 +4,7 @@ import { ScheduledSocialPost } from 'social/domain/scheduledSocialPost';
 export const marshall = (
     scheduledSocialPost: ScheduledSocialPost,
 ): Record<string, AttributeValue> => {
-    const { id, date, type, platforms, jobPostId, companyId } =
+    const { id, date, type, platforms, jobPostId, companyId, blogSlug } =
         scheduledSocialPost;
 
     const item: Record<string, AttributeValue> = {
@@ -28,6 +28,10 @@ export const marshall = (
 
     if (companyId) {
         item['companyId'] = { S: companyId };
+    }
+
+    if (blogSlug) {
+        item['blogSlug'] = { S: blogSlug };
     }
 
     return item;

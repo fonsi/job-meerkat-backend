@@ -68,6 +68,9 @@ export const unmarshall = (
                       ] as ScheduledSocialPost['companyId'],
                   }
                 : {}),
+            ...(item['blogSlug']?.['S']
+                ? { blogSlug: item['blogSlug']['S'] }
+                : {}),
         };
     } catch (e) {
         throw new UnmarshallError(e.message, 'ScheduledSocialPost', item);

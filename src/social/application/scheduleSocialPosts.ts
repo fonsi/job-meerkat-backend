@@ -3,6 +3,7 @@ import { companyRepository } from 'company/infrastructure/persistance/dynamodb/d
 import { FROM_WHEN_WEEKLY } from 'jobPost/domain/jobPostRepository';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
 import { buildSocialSchedule } from 'social/application/buildSocialSchedule';
+import { SocialPostType } from 'social/domain/socialPostType';
 import { scheduledSocialPostRepository } from 'social/infrastructure/persistance/dynamodb/dynamodbScheduledSocialPostRepository';
 
 export const scheduleSocialPosts = async (): Promise<void> => {
@@ -22,9 +23,18 @@ export const scheduleSocialPosts = async (): Promise<void> => {
     );
 
     const existing = await scheduledSocialPostRepository.getAll();
+    // Blog promos are scheduled when a post is published; keep them across daily rebuilds.
+    const pendingBlogPromoDates = existing
+        .filter(
+            (post) => post.date > now && post.type === SocialPostType.BlogPromo,
+        )
+        .map((post) => post.date);
     await Promise.all(
         existing
-            .filter((post) => post.date > now)
+            .filter(
+                (post) =>
+                    post.date > now && post.type !== SocialPostType.BlogPromo,
+            )
             .map((post) => scheduledSocialPostRepository.remove(post)),
     );
 
@@ -34,6 +44,7 @@ export const scheduleSocialPosts = async (): Promise<void> => {
         openJobPosts,
         companiesById,
         now,
+        extraReservedDates: pendingBlogPromoDates,
     });
 
     console.log(

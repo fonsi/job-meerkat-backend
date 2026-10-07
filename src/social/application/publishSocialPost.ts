@@ -1,3 +1,4 @@
+import { getBlogPostCache } from 'blog/infrastructure/cache/s3/blogCache';
 import { companyRepository } from 'company/infrastructure/persistance/dynamodb/dynamodbCompanyRepository';
 import { isCompanyDisabled } from 'company/domain/company';
 import { FROM_WHEN_WEEKLY } from 'jobPost/domain/jobPostRepository';
@@ -11,8 +12,7 @@ import {
     buildJobPostPageUrl,
     UtmSource,
 } from 'shared/infrastructure/url/buildJobPostPageUrl';
-import { ScheduledSocialPost } from 'social/domain/scheduledSocialPost';
-import { SocialPostType } from 'social/domain/socialPostType';
+import { blogSocialPromoPosts } from 'social/application/blogPromoPost';
 import { newsletterSubscribeSocialPosts } from 'social/application/newsletterSubscribePost';
 import { publishToPlatforms } from 'social/application/publishToPlatforms';
 import {
@@ -23,6 +23,8 @@ import {
     median,
     toJobSummary,
 } from 'social/application/socialJobStats';
+import { ScheduledSocialPost } from 'social/domain/scheduledSocialPost';
+import { SocialPostType } from 'social/domain/socialPostType';
 
 const publishJobPromo = async (post: ScheduledSocialPost): Promise<void> => {
     if (!post.jobPostId || !post.companyId) {
@@ -266,6 +268,38 @@ const publishNewsletterSubscribe = async (
     });
 };
 
+const publishBlogPromo = async (post: ScheduledSocialPost): Promise<void> => {
+    if (!post.blogSlug) {
+        logger.error(new Error('Blog promo missing blogSlug'), { post });
+        return;
+    }
+
+    const blogPost = await getBlogPostCache(post.blogSlug);
+    if (!blogPost) {
+        logger.error(new Error('Blog post not found for social promo'), {
+            blogSlug: post.blogSlug,
+        });
+        return;
+    }
+
+    const posts = blogSocialPromoPosts({
+        title: blogPost.title,
+        excerpt: blogPost.excerpt,
+        slug: blogPost.slug,
+    });
+    if (!posts) {
+        console.log('[PUBLISH POST]: blog promo skipped (empty copy)', {
+            blogSlug: post.blogSlug,
+        });
+        return;
+    }
+
+    await publishToPlatforms({
+        platforms: post.platforms,
+        posts,
+    });
+};
+
 export const publishSocialPost = async (
     post: ScheduledSocialPost,
 ): Promise<void> => {
@@ -288,6 +322,9 @@ export const publishSocialPost = async (
             return;
         case SocialPostType.NewsletterSubscribe:
             await publishNewsletterSubscribe(post);
+            return;
+        case SocialPostType.BlogPromo:
+            await publishBlogPromo(post);
             return;
         default:
             logger.error(new Error('Unknown social post type'), { post });

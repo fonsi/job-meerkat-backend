@@ -12,6 +12,7 @@ export type ScheduledSocialPost = {
     platforms: SocialPlatform[];
     jobPostId?: JobPostId;
     companyId?: CompanyId;
+    blogSlug?: string;
 };
 
 type JobPromoIdData = {
@@ -41,12 +42,18 @@ type NewsletterSubscribeIdData = {
     dateKey: string;
 };
 
+type BlogPromoIdData = {
+    type: SocialPostType.BlogPromo;
+    blogSlug: string;
+};
+
 export type MakeScheduledSocialPostIdData =
     | JobPromoIdData
     | DailyAnalysisIdData
     | WeeklyTopPaidIdData
     | CompanyThreadIdData
-    | NewsletterSubscribeIdData;
+    | NewsletterSubscribeIdData
+    | BlogPromoIdData;
 
 export const makeScheduledSocialPostId = (
     data: MakeScheduledSocialPostIdData,
@@ -62,6 +69,8 @@ export const makeScheduledSocialPostId = (
             return `${SocialPostType.CompanyThread}_${data.companyId}_${data.dateKey}`;
         case SocialPostType.NewsletterSubscribe:
             return `${SocialPostType.NewsletterSubscribe}_${data.dateKey}`;
+        case SocialPostType.BlogPromo:
+            return `${SocialPostType.BlogPromo}_${data.blogSlug}`;
     }
 };
 

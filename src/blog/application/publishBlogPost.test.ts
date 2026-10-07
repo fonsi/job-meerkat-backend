@@ -6,8 +6,8 @@ import {
     putBlogPostCache,
     putBlogSnapshotCache,
 } from 'blog/infrastructure/cache/s3/blogCache';
-import { publishBlogThreadsPromo } from 'blog/infrastructure/social/publishBlogThreadsPromo';
 import { publishBlogPost } from './publishBlogPost';
+import { scheduleBlogSocialPromo } from './scheduleBlogSocialPromo';
 import {
     ensureGenericBlogOgImage,
     generateAndStoreBlogPostOgImage,
@@ -19,8 +19,8 @@ jest.mock('blog/infrastructure/cache/s3/blogCache', () => ({
     putBlogPostCache: jest.fn(),
     putBlogSnapshotCache: jest.fn(),
 }));
-jest.mock('blog/infrastructure/social/publishBlogThreadsPromo', () => ({
-    publishBlogThreadsPromo: jest.fn(),
+jest.mock('./scheduleBlogSocialPromo', () => ({
+    scheduleBlogSocialPromo: jest.fn(),
 }));
 jest.mock('./generateAndStoreBlogOgImages', () => ({
     ensureGenericBlogOgImage: jest.fn(),
@@ -38,7 +38,7 @@ describe('publishBlogPost', () => {
         );
     });
 
-    it('stores the post, snapshot, index, and Threads promo', async () => {
+    it('stores the post, snapshot, index, and schedules social promo', async () => {
         const snapshot = {
             kind: BlogPostType.CategoryAnalysis,
             slug: 'backend-jobs-2026-10-04',
@@ -57,6 +57,7 @@ describe('publishBlogPost', () => {
             listings: [],
             category: { name: Category.Backend, slug: 'backend' },
         };
+        const now = Date.UTC(2026, 9, 4);
         const post = await publishBlogPost({
             snapshot,
             draft: {
@@ -65,7 +66,7 @@ describe('publishBlogPost', () => {
                 paragraphs: ['Jobs are open.'],
             },
             type: BlogPostType.CategoryAnalysis,
-            now: Date.UTC(2026, 9, 4),
+            now,
         });
 
         expect(post.slug).toBe('backend-jobs-2026-10-04');
@@ -80,6 +81,6 @@ describe('publishBlogPost', () => {
                 posts: [expect.objectContaining({ slug: post.slug })],
             }),
         );
-        expect(publishBlogThreadsPromo).toHaveBeenCalledWith(post);
+        expect(scheduleBlogSocialPromo).toHaveBeenCalledWith(post, now);
     });
 });
