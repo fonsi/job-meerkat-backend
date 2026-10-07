@@ -6,6 +6,7 @@ export const PUBLIC_SITE_BASE_URL = 'https://jobmeerkat.com';
 /** Short values — Bluesky/Threads count the full URL toward the limit. */
 export const UtmSource = {
     Newsletter: 'newsletter',
+    Blog: 'blog',
     /**
      * Shared social copy placeholder; rewritten per platform at publish.
      * `_social` is 7 chars so it matches `bluesky` / `threads` and the URL
@@ -20,19 +21,24 @@ export type UtmSourceValue = (typeof UtmSource)[keyof typeof UtmSource];
 
 export const getPublicSiteBaseUrl = (): string => PUBLIC_SITE_BASE_URL;
 
+const setQueryParam = (url: string, key: string, value: string): string => {
+    const encoded = encodeURIComponent(value);
+    const pattern = new RegExp(`([?&]${key}=)[^&]*`);
+    if (pattern.test(url)) return url.replace(pattern, `$1${encoded}`);
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}${key}=${encoded}`;
+};
+
 export const appendUtmSource = (
     url: string,
     utmSource: UtmSourceValue | string,
-): string => {
-    if (/[?&]utm_source=/.test(url)) {
-        return url.replace(
-            /([?&]utm_source=)[^&]*/,
-            `$1${encodeURIComponent(utmSource)}`,
-        );
-    }
-    const sep = url.includes('?') ? '&' : '?';
-    return `${url}${sep}utm_source=${encodeURIComponent(utmSource)}`;
-};
+): string => setQueryParam(url, 'utm_source', utmSource);
+
+export const appendUtmCampaign = (url: string, campaign: string): string =>
+    setQueryParam(url, 'utm_campaign', campaign);
+
+export const withBlogUtm = (url: string, campaign: string): string =>
+    appendUtmCampaign(appendUtmSource(url, UtmSource.Blog), campaign);
 
 export const buildPublicSiteUrl = (
     utmSource?: UtmSourceValue | string,
@@ -60,6 +66,22 @@ export const buildNewsletterPageUrl = (
     utmSource?: UtmSourceValue | string,
 ): string => {
     const url = `${PUBLIC_SITE_BASE_URL}/newsletter`;
+    return utmSource ? appendUtmSource(url, utmSource) : url;
+};
+
+export const buildBlogPostPageUrl = (
+    slug: string,
+    utmSource?: UtmSourceValue | string,
+): string => {
+    const url = `${PUBLIC_SITE_BASE_URL}/blog/${encodeURIComponent(slug)}`;
+    return utmSource ? appendUtmSource(url, utmSource) : url;
+};
+
+export const buildCategoryPageUrl = (
+    categorySlug: string,
+    utmSource?: UtmSourceValue | string,
+): string => {
+    const url = `${PUBLIC_SITE_BASE_URL}/category/${encodeURIComponent(categorySlug)}`;
     return utmSource ? appendUtmSource(url, utmSource) : url;
 };
 

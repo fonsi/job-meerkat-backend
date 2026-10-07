@@ -17,6 +17,7 @@ params:
         companyEndpointTimeout: 30
         newsletterEndpointTimeout: 30
         archiveClosedJobPostsTimeout: 300
+        generateBlogPostTimeout: 180
     dev:
         processCompanySchedule: cron(0 0 1 1 ? 1970) # never
         socialPostsSchedule: cron(0 0 1 1 ? 1970) # never
@@ -25,6 +26,8 @@ params:
         socialPostsCheck: cron(0 0 1 1 ? 1970) # never
         archiveClosedJobPostsSchedule: cron(0 0 1 1 ? 1970) # never
         processPendingSubscriptionsSchedule: cron(0 0 1 1 ? 1970) # never
+        blogMonthlySchedule: cron(0 0 1 1 ? 1970) # never
+        blogCategorySchedule: cron(0 0 1 1 ? 1970) # never
     production:
         processCompanySchedule: cron(0 0 ? * * *) # every day at 0 am
         socialPostsSchedule: cron(0 7 ? * * *) # 07:00 UTC, after US west-coast night
@@ -33,6 +36,8 @@ params:
         weeklyReportsSchedule: cron(0 5 ? * MON *) # every Monday at 5 am
         archiveClosedJobPostsSchedule: cron(0 6 ? * SUN *) # every Sunday at 6 am
         processPendingSubscriptionsSchedule: cron(0 6 ? * * *) # every day at 6 am
+        blogMonthlySchedule: cron(0 8 1 * ? *) # 1st of month 08:00 UTC
+        blogCategorySchedule: cron(0 8 ? * MON *) # Monday 08:00 UTC
 
 package:
     patterns:
@@ -40,6 +45,7 @@ package:
         - src/jobPost/infrastructure/og/brand/**
         - src/jobPost/infrastructure/og/native/**
         - src/jobPost/infrastructure/queue/sqs/consumer/hb.wasm
+        - src/blog/infrastructure/api/schedule/hb.wasm
 
 provider:
     name: aws
@@ -67,6 +73,7 @@ provider:
         OPENAI_API_KEY: ${env:OPENAI_API_KEY}
         ASSETS_URL: ${env:ASSETS_URL}
         JOB_POST_CACHE_BUCKET: ${sls:stage}-job-post-cache
+        BLOG_CACHE_BUCKET: ${sls:stage}-blog-cache
         ROLLBAR_ACCESS_TOKEN: ${env:ROLLBAR_ACCESS_TOKEN}
         THREADS_API_TOKEN: ${env:THREADS_API_TOKEN}
         BLUESKY_USER: ${env:BLUESKY_USER}
@@ -112,12 +119,37 @@ provider:
               - s3:PutObject
           Resource:
               - arn:aws:s3:::${env:ASSETS_BUCKET}/company/*/jobpost/*/og.png
+              - arn:aws:s3:::${env:ASSETS_BUCKET}/blog/*
+        - Effect: Allow
+          Action:
+              - s3:GetObject
+              - s3:HeadObject
+          Resource:
+              - arn:aws:s3:::${env:ASSETS_BUCKET}/blog/*
+        # HeadObject on a missing key returns 403 without ListBucket; 404 with it.
+        - Effect: Allow
+          Action:
+              - s3:ListBucket
+          Resource:
+              - arn:aws:s3:::${env:ASSETS_BUCKET}
+          Condition:
+              StringLike:
+                  s3:prefix:
+                      - blog
+                      - blog/*
         - Effect: Allow
           Action:
               - s3:PutObject
               - s3:DeleteObject
+              - s3:GetObject
           Resource:
               - arn:aws:s3:::${sls:stage}-job-post-cache/jobpost/*
+              - arn:aws:s3:::${sls:stage}-blog-cache/*
+        - Effect: Allow
+          Action:
+              - s3:ListBucket
+          Resource:
+              - arn:aws:s3:::${sls:stage}-blog-cache
 
 resources:
     Resources:
@@ -125,6 +157,15 @@ resources:
             Type: AWS::S3::Bucket
             Properties:
                 BucketName: ${sls:stage}-job-post-cache
+                PublicAccessBlockConfiguration:
+                    BlockPublicAcls: true
+                    BlockPublicPolicy: true
+                    IgnorePublicAcls: true
+                    RestrictPublicBuckets: true
+        blogCacheBucket:
+            Type: AWS::S3::Bucket
+            Properties:
+                BucketName: ${sls:stage}-blog-cache
                 PublicAccessBlockConfiguration:
                     BlockPublicAcls: true
                     BlockPublicPolicy: true
@@ -409,6 +450,20 @@ functions:
         timeout: 30
         events:
             - schedule: ${param:processPendingSubscriptionsSchedule}
+    generateMonthlyBlogPost:
+        handler: src/blog/infrastructure/api/schedule/handler.index
+        timeout: ${param:generateBlogPostTimeout}
+        environment:
+            BLOG_POST_KIND: monthlyRecap
+        events:
+            - schedule: ${param:blogMonthlySchedule}
+    generateCategoryBlogPost:
+        handler: src/blog/infrastructure/api/schedule/handler.index
+        timeout: ${param:generateBlogPostTimeout}
+        environment:
+            BLOG_POST_KIND: categoryAnalysis
+        events:
+            - schedule: ${param:blogCategorySchedule}
     newsletter:
         handler: src/newsletter/infrastructure/api/handler.index
         timeout: ${param:newsletterEndpointTimeout}

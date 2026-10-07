@@ -1,6 +1,7 @@
 import {
     appendUtmSource,
     applyUtmSourceToJobmeerkatUrls,
+    buildBlogPostPageUrl,
     buildCompanyPageUrl,
     buildJobPostPageUrl,
     buildNewsletterPageUrl,
@@ -9,6 +10,7 @@ import {
     getPublicSiteBaseUrl,
     PUBLIC_SITE_BASE_URL,
     UtmSource,
+    withBlogUtm,
 } from './buildJobPostPageUrl';
 import { applyUtmSourcesToSocialPosts } from './applyUtmSourcesToSocialPosts';
 
@@ -16,6 +18,27 @@ describe('getPublicSiteBaseUrl', () => {
     it('returns the hardcoded production origin', () => {
         expect(getPublicSiteBaseUrl()).toBe(PUBLIC_SITE_BASE_URL);
         expect(PUBLIC_SITE_BASE_URL).toBe('https://jobmeerkat.com');
+    });
+});
+
+describe('withBlogUtm', () => {
+    it('adds utm_source=blog and utm_campaign', () => {
+        expect(
+            withBlogUtm('https://jobmeerkat.com/newsletter', 'market-2026-10'),
+        ).toBe(
+            'https://jobmeerkat.com/newsletter?utm_source=blog&utm_campaign=market-2026-10',
+        );
+    });
+});
+
+describe('buildBlogPostPageUrl', () => {
+    it('builds /blog/:slug with an optional utm', () => {
+        expect(buildBlogPostPageUrl('market-2026-10')).toBe(
+            'https://jobmeerkat.com/blog/market-2026-10',
+        );
+        expect(buildBlogPostPageUrl('market-2026-10', UtmSource.Threads)).toBe(
+            'https://jobmeerkat.com/blog/market-2026-10?utm_source=threads',
+        );
     });
 });
 

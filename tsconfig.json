@@ -19,7 +19,8 @@
             "social/*": ["social/*"],
             "shared/*": ["shared/*"],
             "magicLink/*": ["magicLink/*"],
-            "newsletter/*": ["newsletter/*"]
+            "newsletter/*": ["newsletter/*"],
+            "blog/*": ["blog/*"]
         }
     },
     "include": ["./**/*.ts", "./**/*.tsx"],

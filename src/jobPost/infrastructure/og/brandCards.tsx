@@ -201,3 +201,111 @@ export const SiteOgCard = ({
             </div>
         </div>,
     ]);
+
+export const BlogOgCard = ({
+    mark,
+    wordmark,
+}: {
+    mark: Buffer;
+    wordmark: Buffer;
+}) =>
+    frame('jobmeerkat-blog', [
+        <BrandLockup mark={mark} wordmark={wordmark} />,
+        <div
+            style={{
+                display: 'flex',
+                flexDirection: 'column',
+                flexGrow: 1,
+                justifyContent: 'center',
+            }}
+        >
+            <div
+                style={{
+                    display: 'flex',
+                    fontSize: 84,
+                    fontWeight: 700,
+                    color: LIME,
+                    letterSpacing: '-2px',
+                    lineHeight: 1,
+                }}
+            >
+                Jobmeerkat Blog
+            </div>
+            <div
+                style={{
+                    display: 'flex',
+                    width: OG_SAFE_WIDTH,
+                    marginTop: 16,
+                    fontSize: 40,
+                    fontWeight: 700,
+                    lineHeight: 1.15,
+                    color: '#F5F7F6',
+                    letterSpacing: '-1px',
+                }}
+            >
+                Remote job market, from live listings
+            </div>
+        </div>,
+    ]);
+
+export const BlogPostOgCard = ({
+    title,
+    kicker,
+    dateLabel,
+    mark,
+    wordmark,
+}: {
+    title: string;
+    kicker: string;
+    dateLabel: string;
+    mark: Buffer;
+    wordmark: Buffer;
+}) =>
+    frame(`blog:${title}`, [
+        <BrandLockup mark={mark} wordmark={wordmark} />,
+        <div
+            style={{
+                display: 'flex',
+                flexDirection: 'column',
+                flexGrow: 1,
+                justifyContent: 'center',
+            }}
+        >
+            <div
+                style={{
+                    display: 'flex',
+                    fontSize: 22,
+                    fontWeight: 700,
+                    color: LIME,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                }}
+            >
+                {kicker}
+            </div>
+            <div
+                style={{
+                    display: 'flex',
+                    width: OG_SAFE_WIDTH,
+                    marginTop: 16,
+                    fontSize: 52,
+                    fontWeight: 700,
+                    lineHeight: 1.1,
+                    color: '#F5F7F6',
+                    letterSpacing: '-1px',
+                }}
+            >
+                {title}
+            </div>
+            <div
+                style={{
+                    display: 'flex',
+                    marginTop: 20,
+                    fontSize: 24,
+                    color: '#9AA39C',
+                }}
+            >
+                {dateLabel}
+            </div>
+        </div>,
+    ]);
