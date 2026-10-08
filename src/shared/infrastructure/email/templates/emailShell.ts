@@ -1,8 +1,9 @@
 import { ASSETS_BASE_URL } from 'shared/infrastructure/assets/constants';
 
-const LOGO_SRC = `${ASSETS_BASE_URL}/jobmeerkat-logo-text-white.png`;
-const LOGO_WIDTH = 180;
-const LOGO_HEIGHT = 20;
+const LOGO_SRC = `${ASSETS_BASE_URL}/email-header-logo.png`;
+/** Display size; source asset is 480×68 (@2x). */
+const LOGO_WIDTH = 240;
+const LOGO_HEIGHT = 34;
 
 export const emailColors = {
     heroBg: '#111111',
