@@ -9,24 +9,26 @@ import {
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
 import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
+import { getAshbyJobPostContent } from '../ashbyGraphQLRequest';
 
 export const OUTSCHOOL_NAME = 'outschool';
-const INITIAL_URL =
-    'https://boards-api.greenhouse.io/v1/boards/outschool/jobs?content=true';
+const ASHBY_COMPANY_NAME = 'outschool';
+const INITIAL_URL = `https://api.ashbyhq.com/posting-api/job-board/${ASHBY_COMPANY_NAME}`;
 
 type ScrapJobPostData = {
     id: string;
-    title: string;
-    content: string;
 };
 
 const scrapJobPost = async ({
     id,
-    title,
-    content,
 }: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
-        return openaiJobPostAnalyzer(`${title}\n${content}`);
+        const jobsData = await getAshbyJobPostContent({
+            companyName: ASHBY_COMPANY_NAME,
+            jobPostId: id,
+        });
+
+        return openaiJobPostAnalyzer(JSON.stringify(jobsData));
     } catch (e) {
         const error = errorWithPrefix(
             e,
@@ -46,13 +48,14 @@ export const outschoolScrapper: NewCompanyScrapper = ({ companyId }) => {
             const jobPosts: ListedJobPostsData[] = [];
 
             jobsData.jobs.forEach((jobData) => {
-                jobPosts.push({
-                    id: jobData.id.toString(),
-                    url: jobData.absolute_url,
-                    title: jobData.title,
-                    createdAt: new Date(jobData.updated_at).getTime(),
-                    content: jobData.content,
-                });
+                if (jobData.isListed) {
+                    jobPosts.push({
+                        id: jobData.id,
+                        url: jobData.jobUrl,
+                        title: jobData.title,
+                        createdAt: new Date(jobData.publishedAt).getTime(),
+                    });
+                }
             });
 
             return jobPosts;
@@ -68,16 +71,13 @@ export const outschoolScrapper: NewCompanyScrapper = ({ companyId }) => {
                         `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
                     );
 
-                    const jobPostData = await scrapJobPost({
-                        id: jobPost.id,
-                        title: jobPost.title,
-                        content: jobPost.content,
-                    });
+                    const jobPostData = await scrapJobPost({ id: jobPost.id });
 
                     data.push({
                         ...jobPostData,
-                        originalId: jobPost.id.toString(),
+                        originalId: jobPost.id,
                         url: jobPost.url,
+                        title: jobPost.title,
                         companyId,
                         createdAt: jobPost.createdAt,
                     });

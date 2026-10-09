@@ -1,4 +1,3 @@
-import { fromURL } from '../fromUrl';
 import {
     ListedJobPostsData,
     NewCompanyScrapper,
@@ -12,29 +11,22 @@ import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
 
 export const HUMAN_SIGNAL_NAME = 'humansignal';
-const HUMAN_SIGNAL_INITIAL_URL = 'https://humansignal.com/careers/';
+const INITIAL_URL =
+    'https://boards-api.greenhouse.io/v1/boards/humansignal/jobs?content=true';
 
 type ScrapJobPostData = {
     id: string;
-    url: string;
+    title: string;
+    content: string;
 };
-
-const JOB_POST_SELECTOR = '.CareersListCardTitle';
-const JOB_HEADER_SELECTOR = '.job__header';
-const JOB_DESCRIPTION_SELECTOR = '.job__description';
 
 const scrapJobPost = async ({
     id,
-    url,
+    title,
+    content,
 }: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
-        const $ = await fromURL(url);
-
-        const tagsText = $(JOB_HEADER_SELECTOR).text();
-        const titleText = $(JOB_DESCRIPTION_SELECTOR).text();
-        const jobPostContent = `${tagsText} ${titleText}`;
-
-        return openaiJobPostAnalyzer(jobPostContent);
+        return openaiJobPostAnalyzer(`${title}\n${content}`);
     } catch (e) {
         const error = errorWithPrefix(
             e,
@@ -49,26 +41,26 @@ const scrapJobPost = async ({
 export const humanSignalScrapper: NewCompanyScrapper = ({ companyId }) => {
     return {
         getListedJobPostsData: async () => {
-            const $ = await fromURL(HUMAN_SIGNAL_INITIAL_URL);
-            const jobPostsElements = $(JOB_POST_SELECTOR);
+            const response = await fetch(INITIAL_URL);
+            const jobsData = await response.json();
+            const jobPosts: ListedJobPostsData[] = [];
 
-            const jobPosts: ListedJobPostsData[] = jobPostsElements
-                .toArray()
-                .map((jobPost) => {
-                    const url = $(jobPost).attr('href');
-
-                    return {
-                        id: url.split('/').filter(Boolean).pop(),
-                        url,
-                        title: $(jobPost).text(),
-                    };
+            jobsData.jobs.forEach((jobData) => {
+                jobPosts.push({
+                    id: jobData.id.toString(),
+                    url: jobData.absolute_url,
+                    title: jobData.title,
+                    createdAt: new Date(jobData.updated_at).getTime(),
+                    content: jobData.content,
                 });
+            });
 
             return jobPosts;
         },
 
         scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
             const data: ScrappedJobPost[] = [];
+
             for (let i = 0; i < jobPosts.length; i++) {
                 try {
                     const jobPost = jobPosts[i];
@@ -78,14 +70,16 @@ export const humanSignalScrapper: NewCompanyScrapper = ({ companyId }) => {
 
                     const jobPostData = await scrapJobPost({
                         id: jobPost.id,
-                        url: jobPost.url,
+                        title: jobPost.title,
+                        content: jobPost.content,
                     });
 
                     data.push({
                         ...jobPostData,
-                        originalId: jobPost.id,
+                        originalId: jobPost.id.toString(),
                         url: jobPost.url,
                         companyId,
+                        createdAt: jobPost.createdAt,
                     });
                 } catch (e) {
                     const error = errorWithPrefix(
