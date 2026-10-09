@@ -25,6 +25,28 @@ import { initializeLogger, logger } from 'shared/infrastructure/logger/logger';
 const pathEndsWith = (path: string, suffix: string) =>
     path.endsWith(suffix) || path.includes(suffix);
 
+const getRequestClientInfo = (event: {
+    headers?: Record<string, string | undefined>;
+    requestContext?: {
+        http?: { sourceIp?: string; userAgent?: string };
+        identity?: { sourceIp?: string };
+    };
+}) => {
+    const headers = event.headers ?? {};
+    const sourceIp =
+        event.requestContext?.http?.sourceIp ||
+        event.requestContext?.identity?.sourceIp;
+    const userAgent =
+        event.requestContext?.http?.userAgent ||
+        headers['user-agent'] ||
+        headers['User-Agent'];
+
+    return {
+        ...(sourceIp ? { sourceIp } : {}),
+        ...(userAgent ? { userAgent } : {}),
+    };
+};
+
 export const index = async (event) => {
     try {
         initializeLogger();
@@ -51,6 +73,10 @@ export const index = async (event) => {
             if (result.ok === false) {
                 logger.info('newsletter/confirm failed', {
                     reason: result.reason,
+                    hasToken: result.hasToken,
+                    tokenLength: result.tokenLength,
+                    ...(result.reportId ? { reportId: result.reportId } : {}),
+                    ...getRequestClientInfo(event),
                 });
                 await logger.wait();
                 return unauthorizedBody({ error: result.reason });

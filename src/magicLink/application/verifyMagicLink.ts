@@ -17,7 +17,12 @@ export type VerifyMagicLinkError = 'token_invalid' | 'token_expired';
 
 export type VerifyMagicLinkOutcome =
     | { ok: true; result: VerifyMagicLinkResult }
-    | { ok: false; reason: VerifyMagicLinkError };
+    | {
+          ok: false;
+          reason: VerifyMagicLinkError;
+          subject?: MagicLinkSubject;
+          email?: string;
+      };
 
 export const verifyMagicLink = async ({
     token,
@@ -46,7 +51,12 @@ export const verifyMagicLinkWithReason = async ({
     }
 
     if (row.expiresAt <= Date.now()) {
-        return { ok: false, reason: 'token_expired' };
+        return {
+            ok: false,
+            reason: 'token_expired',
+            subject: row.subject,
+            email: row.email,
+        };
     }
 
     return { ok: true, result: { subject: row.subject, email: row.email } };
