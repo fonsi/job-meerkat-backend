@@ -5,6 +5,7 @@ import {
     sendDailyReport,
     sendWeeklyReport,
 } from 'report/application/sendReport';
+import { isRetriableEmailError } from 'shared/infrastructure/notifications/email/mailgun/sendEmail';
 import { ReportEventData } from '../reportEvent';
 
 const getEventData = (record): ReportEventData => {
@@ -15,10 +16,13 @@ const getEventData = (record): ReportEventData => {
     }
 };
 
-export const index = async (event) => {
-    try {
-        initializeLogger();
+const toError = (reason: unknown): Error =>
+    reason instanceof Error ? reason : new Error(String(reason));
 
+export const index = async (event) => {
+    initializeLogger();
+
+    try {
         const reportsToSendBatch: Promise<void>[] = event.Records.map(
             async (record) => {
                 const { reportType, data } = getEventData(record);
@@ -37,26 +41,36 @@ export const index = async (event) => {
             },
         );
 
-        await Promise.allSettled(reportsToSendBatch).then((results) => {
-            results.forEach((result, index) => {
-                console.log(
-                    `[SEND REPORT RESULT] ${result.status}: ${JSON.stringify(result)}`,
-                );
-                if (result.status === 'rejected') {
-                    const { reportType, data } = getEventData(
-                        event.Records[index],
-                    );
-                    logger.error(
-                        errorWithPrefix(
-                            new Error(result.reason),
-                            `Error sendind report: ${reportType} - ${data.email}`,
-                        ),
-                    );
-                }
-            });
+        const results = await Promise.allSettled(reportsToSendBatch);
+        let retriableFailure: Error | undefined;
+
+        results.forEach((result, index) => {
+            console.log(
+                `[SEND REPORT RESULT] ${result.status}: ${JSON.stringify(result)}`,
+            );
+            if (result.status !== 'rejected') return;
+
+            const { reportType, data } = getEventData(event.Records[index]);
+            const error = toError(result.reason);
+            logger.error(
+                errorWithPrefix(
+                    error,
+                    `Error sending report: ${reportType} - ${data.email}`,
+                ),
+            );
+
+            if (!retriableFailure && isRetriableEmailError(result.reason)) {
+                retriableFailure = error;
+            }
         });
+
+        if (retriableFailure) throw retriableFailure;
     } catch (error) {
-        logger.error(errorWithPrefix(error, 'Error processing SQS event'));
+        if (isRetriableEmailError(error)) throw error;
+
+        logger.error(
+            errorWithPrefix(toError(error), 'Error processing SQS event'),
+        );
     } finally {
         await logger.wait();
     }

@@ -428,6 +428,7 @@ functions:
                           - sendReportQueue
                           - Arn
                   batchSize: 1
+                  maximumConcurrency: 5
     scheduleReports:
         handler: src/report/infrastructure/api/schedule/handler.index
         environment:
