@@ -9,7 +9,7 @@ export default [
     ...tseslint.configs.recommended,
     {
         rules: {
-            quotes: ['warn', 'single'],
+            quotes: ['warn', 'single', { avoidEscape: true }],
             '@typescript-eslint/no-unused-vars': 'warn',
             'no-async-promise-executor': 'off',
         },
