@@ -60,10 +60,13 @@ import { LIGHTDASH_NAME, lightdashScrapper } from './lightdash';
 import { POSTSCRIPT_NAME, postscriptScrapper } from './postscript';
 import { SOURCEGRAPH_NAME, sourcegraphScrapper } from './sourcegraph';
 import { DOCKER_NAME, dockerScrapper } from './docker';
+import { DUST_NAME, dustScrapper } from './dust';
 import { DUOLINGO_NAME, duolingoScrapper } from './duolingo';
 import { ONE_PASSWORD_NAME, onePasswordScrapper } from './1password';
+import { LIFEN_NAME, lifenScrapper } from './lifen';
 import { LIMITLESS_NAME, limitlessScrapper } from './limitless';
 import { LINEAR_NAME, linearScrapper } from './linear';
+import { LIVEKIT_NAME, livekitScrapper } from './livekit';
 import { REPLIT_NAME, replitScrapper } from './replit';
 import { RETOOL_NAME, retoolScrapper } from './retool';
 import { STRAVA_NAME, stravaScrapper } from './strava';
@@ -104,7 +107,9 @@ import { LAUNCHDARKLY_NAME, launchDarklyScrapper } from './launchDarkly';
 import { MERCURY_NAME, mercuryScrapper } from './mercury';
 import { MYSTEN_LABS_NAME, mystenLabsScrapper } from './mystenLabs';
 import { NANGO_NAME, nangoScrapper } from './nango';
+import { NEO4J_NAME, neo4jScrapper } from './neo4j';
 import { NOTION_NAME, notionScrapper } from './notion';
+import { OSCILAR_NAME, oscilarScrapper } from './oscilar';
 import { PARAGON_NAME, paragonScrapper } from './paragon';
 import { POSTHOG_NAME, posthogScrapper } from './posthog';
 import { PREFECT_NAME, prefectScrapper } from './prefect';
@@ -173,6 +178,7 @@ import { RAILWAY_NAME, railwayScrapper } from './railway';
 import { RESTATE_NAME, restateScrapper } from './restate';
 import { STORYBLOK_NAME, storyblokScrapper } from './storyblok';
 import { TRIGGER_DEV_NAME, triggerDevScrapper } from './triggerDev';
+import { TRUSTLY_NAME, trustlyScrapper } from './trustly';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -261,6 +267,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return discordScrapper;
         case DOCKER_NAME:
             return dockerScrapper;
+        case DUST_NAME:
+            return dustScrapper;
         case DUOLINGO_NAME:
             return duolingoScrapper;
         case DUCK_DUCK_GO_NAME:
@@ -307,10 +315,14 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return krakenScrapper;
         case LAUNCHDARKLY_NAME:
             return launchDarklyScrapper;
+        case LIFEN_NAME:
+            return lifenScrapper;
         case LIMITLESS_NAME:
             return limitlessScrapper;
         case LINEAR_NAME:
             return linearScrapper;
+        case LIVEKIT_NAME:
+            return livekitScrapper;
         case LATTICE_NAME:
             return latticeScrapper;
         case MAGIC_SCHOOL_NAME:
@@ -331,10 +343,14 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return modashScrapper;
         case NANGO_NAME:
             return nangoScrapper;
+        case NEO4J_NAME:
+            return neo4jScrapper;
         case NETLIFY_NAME:
             return netlifyScrapper;
         case NOTION_NAME:
             return notionScrapper;
+        case OSCILAR_NAME:
+            return oscilarScrapper;
         case ONE_PASSWORD_NAME:
             return onePasswordScrapper;
         case PARAGON_NAME:
@@ -557,6 +573,8 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return storyblokScrapper;
         case TRIGGER_DEV_NAME:
             return triggerDevScrapper;
+        case TRUSTLY_NAME:
+            return trustlyScrapper;
     }
 
     return null;
