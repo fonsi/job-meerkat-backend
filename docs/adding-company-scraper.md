@@ -69,17 +69,7 @@ aws dynamodb update-item \
   --expression-attribute-values '{":d":{"S":"<description>"}}'
 ```
 
-## 3. Generate the Open Graph image
-
-The company page uses `https://assets.jobmeerkat.com/company/{companyId}/og.png`. The logo must already be at `company/{companyId}/logo.png`. The card is the Jobmeerkat lockup plus “Jobs at {name}” with that logo.
-
-After the logo is in the assets bucket, from the repo root:
-
-```bash
-npx tsx src/company/infrastructure/dev/generateCompanyOgImages.ts --stage dev <companyId>
-```
-
-## 4. Create the scraper
+## 3. Create the scraper
 
 1. Add `src/company/infrastructure/scrapping/{folder}/index.ts`.
 2. Copy the closest existing scraper for that ATS (good references):
@@ -104,7 +94,7 @@ In `getListedJobPostsData`, filter out talent-pool / catch-all posts when presen
 - `intern` / internship (astronomer, 1password, super)
 - `future openings` / `talent pool` / `future opportunities` when they are waitlists, not real roles
 
-After listing works, **scan all titles** before enabling full scrapes (see §6).
+After listing works, **scan all titles** before enabling full scrapes (see §5).
 
 ### Special cases
 
@@ -112,7 +102,7 @@ After listing works, **scan all titles** before enabling full scrapes (see §6).
 - **Regrello-style Lever**: HTML scrape fails → use Lever `descriptionPlain` (or equivalent API field).
 - Ashby: only include jobs with `jobData.isListed`.
 
-## 5. Register the scraper
+## 4. Register the scraper
 
 In `src/company/infrastructure/scrapping/companyScrapper.ts`:
 
@@ -121,9 +111,9 @@ In `src/company/infrastructure/scrapping/companyScrapper.ts`:
 
 The switch matches `company.name?.toLowerCase()`, so DB name lowercased must equal `COMPANY_NAME`.
 
-## 6. Validate (list titles first, then sample scrape)
+## 5. Validate (list titles first, then sample scrape)
 
-### 6a. List-only check for skippable titles
+### 5a. List-only check for skippable titles
 
 Temporarily in `getListedJobPostsData`, after building the list:
 
@@ -148,13 +138,30 @@ npm run scrap-company
 
 Review titles for open/general/spontaneous applications, internships, talent pools. Add filters, then remove the temporary early return / log-only hack.
 
-### 6b. Sample scrape validation
+### 5b. Sample scrape validation
 
-- Temporarily slice listed jobs to ~5 in `getListedJobPostsData` (or in `devScrapCompany` before `scrapJobPost`).
+- Put `limit: 5` in `src/company/infrastructure/dev/scrapCompany.event.json` (alongside `body`).
 - Run `npm run scrap-company`.
 - Confirm each sample has a non-empty analyzed title (and sensible fields).
-- Revert the slice so production-like listing returns all jobs again.
-- Leave `devScrapCompany.ts` clean (no permanent list-only / slice helpers unless the user asks to keep them).
+- Samples are written to `.local/pending/{companyId}/sample-jobs.json` for the local admin.
+
+## 6. Generate logo + OG and review in admin
+
+```bash
+npx playwright install chromium
+npm run generate-logo -- --companyId=<companyId>
+# or all pending:
+npm run generate-logo
+npm run admin
+```
+
+Logo generation opens the homepage in Chromium, uses vision to pick the header logo, then an image model to produce a white 100px PNG. It also renders the company OG card into `.local/pending/{companyId}/og.png`.
+
+In the admin, check sample jobs, the logo, and the OG preview. Replace/regenerate the logo (OG regenerates with it) if needed.
+
+**Promote only after human validation.** Agents must stop once pending artifacts are ready and `npm run admin` is available — do **not** click **Add** or call `/api/pending/:id/promote` unless the user explicitly asks. The user hits **Add** to copy the company to `production-company` and upload both `logo.png` and `og.png` to S3.
+
+Scrapers must already be deployed to production (`npm run deploy:prod`) before nightly processing will pick the company up.
 
 ## 7. Track status
 
@@ -169,13 +176,13 @@ Statuses used previously: pending, validated, validated (API content), no openin
 
 - [ ] ATS + slug confirmed; job count acceptable
 - [ ] Company created in DB **with `description`**; `companyId` saved
-- [ ] Logo is on S3 and the company OG image was generated
 - [ ] Scraper folder + `*_NAME` + list/detail logic
 - [ ] Registered in `companyScrapper.ts`
 - [ ] Title skip filters for open application / internship / talent community as needed
 - [ ] List titles reviewed
-- [ ] ~5 sample job posts scrape with titles
-- [ ] Temporary list/slice hacks reverted
+- [ ] ~5 sample job posts scrape with titles (saved under `.local/pending/{id}/`)
+- [ ] Logo + OG generated (`npm run generate-logo`) and ready in `npm run admin`
+- [ ] User reviewed and promoted (admin **Add**) — agents wait for explicit ask before promote
 - [ ] Tracking note updated in `.local/company-scraper-tracking.md`
 
 ## Batching tips

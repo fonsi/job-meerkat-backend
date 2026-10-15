@@ -1,7 +1,8 @@
 import { createRequire } from 'module';
 import { join } from 'path';
 
-const nodeRequire = createRequire(__filename);
+// Anchor on package.json so this works under CJS (tsc) and Vite SSR (no __filename).
+const nodeRequire = createRequire(join(process.cwd(), 'package.json'));
 
 type ResvgOptions = {
     font?: { loadSystemFonts: boolean };

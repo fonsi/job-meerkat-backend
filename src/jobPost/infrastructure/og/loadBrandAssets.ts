@@ -1,6 +1,5 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { ASSETS_BASE_URL } from 'shared/infrastructure/assets/constants';
 import { loadResvg } from './resvgBinding';
 
 const WORDMARK_PATH = 'jobmeerkat-logo-text-white.png';
@@ -8,6 +7,13 @@ const WORDMARK_PATH = 'jobmeerkat-logo-text-white.png';
 export type BrandAssets = {
     mark: Buffer;
     wordmark: Buffer;
+};
+
+const assetsBaseUrl = (): string => {
+    const url = process.env.ASSETS_URL;
+    if (!url) throw new Error('ASSETS_URL is not set');
+
+    return url;
 };
 
 const svgToPng = (svg: string, width: number): Buffer => {
@@ -33,8 +39,7 @@ export const loadBrandMark = (): Buffer =>
     );
 
 export const loadBrandWordmark = async (): Promise<Buffer> => {
-    if (!ASSETS_BASE_URL) throw new Error('ASSETS_URL is not set');
-    const response = await fetch(`${ASSETS_BASE_URL}/${WORDMARK_PATH}`);
+    const response = await fetch(`${assetsBaseUrl()}/${WORDMARK_PATH}`);
     if (!response.ok) {
         throw new Error(`Brand wordmark request failed (${response.status})`);
     }

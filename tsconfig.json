@@ -28,6 +28,7 @@
         "node_modules/**/*",
         ".serverless/**/*",
         ".webpack/**/*",
-        ".vscode/**/*"
+        ".vscode/**/*",
+        "admin/**/*"
     ]
 }

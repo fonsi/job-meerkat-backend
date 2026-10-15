@@ -1,0 +1,174 @@
+:root {
+    color-scheme: dark;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: #111;
+    color: #fefefe;
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    line-height: 1.4;
+}
+
+#root {
+    margin: 0 auto;
+    max-width: 960px;
+    padding: 32px 16px 80px;
+}
+
+h1 {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.lede {
+    color: #999;
+    margin-bottom: 32px;
+}
+
+.status {
+    color: #999;
+    margin-bottom: 24px;
+}
+
+.error {
+    color: #f33;
+    margin-bottom: 16px;
+}
+
+.card {
+    border: 1px solid #222;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    padding: 20px;
+}
+
+.card-header {
+    align-items: flex-start;
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.logo-box {
+    align-items: center;
+    background: #111;
+    border: 1px dashed #444;
+    display: flex;
+    flex-shrink: 0;
+    height: 72px;
+    justify-content: center;
+    width: 120px;
+}
+
+.logo-box img {
+    max-height: 64px;
+    max-width: 100px;
+    object-fit: contain;
+}
+
+.logo-missing {
+    color: #666;
+    font-size: 12px;
+}
+
+.og-preview {
+    margin: 0 0 8px;
+}
+
+.og-preview h3 {
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.og-image {
+    background: #000;
+    border: 1px solid #333;
+    border-radius: 4px;
+    display: block;
+    max-width: 100%;
+    width: 480px;
+}
+
+.meta h2 {
+    font-size: 18px;
+    margin-bottom: 4px;
+}
+
+.meta a {
+    color: #ddd;
+}
+
+.meta p {
+    color: #bbb;
+    font-size: 14px;
+    margin-top: 8px;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0;
+}
+
+button,
+.file-btn {
+    background: #222;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: #fefefe;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 8px 12px;
+}
+
+button.primary {
+    background: #fefefe;
+    color: #111;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.file-btn input {
+    display: none;
+}
+
+.jobs h3 {
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.jobs ul {
+    display: grid;
+    gap: 8px;
+    list-style: none;
+}
+
+.jobs li {
+    background: #1a1a1a;
+    border-radius: 4px;
+    font-size: 13px;
+    padding: 10px 12px;
+}
+
+.jobs a {
+    color: #fefefe;
+}
+
+.job-meta {
+    color: #999;
+    margin-top: 4px;
+}
+
+.empty {
+    color: #666;
+}
