@@ -11,6 +11,7 @@ import { DISCORD_NAME, discordScrapper } from './discord';
 import { PLANET_SCALE_NAME, planetScaleScrapper } from './planetScale';
 import { STREAK_NAME, streakScrapper } from './streak';
 import { MIMO_NAME, mimoScrapper } from './mimo';
+import { MODASH_NAME, modashScrapper } from './modash';
 import { FEELD_NAME, feeldScrapper } from './feeld';
 import { SUPER_NAME, superScrapper } from './super';
 import { REVENUE_CAT_NAME, revenueCatScrapper } from './revenueCat';
@@ -102,6 +103,7 @@ import { KALEPA_NAME, kalepaScrapper } from './kalepa';
 import { LAUNCHDARKLY_NAME, launchDarklyScrapper } from './launchDarkly';
 import { MERCURY_NAME, mercuryScrapper } from './mercury';
 import { MYSTEN_LABS_NAME, mystenLabsScrapper } from './mystenLabs';
+import { NANGO_NAME, nangoScrapper } from './nango';
 import { NOTION_NAME, notionScrapper } from './notion';
 import { PARAGON_NAME, paragonScrapper } from './paragon';
 import { POSTHOG_NAME, posthogScrapper } from './posthog';
@@ -325,6 +327,10 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return mercuryScrapper;
         case MIMO_NAME:
             return mimoScrapper;
+        case MODASH_NAME:
+            return modashScrapper;
+        case NANGO_NAME:
+            return nangoScrapper;
         case NETLIFY_NAME:
             return netlifyScrapper;
         case NOTION_NAME:
