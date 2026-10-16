@@ -46,14 +46,13 @@ export default defineConfig({
     ssr: {
         external: [
             'sharp',
-            'playwright',
             '@aws-sdk/client-s3',
             '@aws-sdk/client-dynamodb',
             '@resvg/resvg-js',
         ],
     },
     optimizeDeps: {
-        exclude: ['sharp', 'playwright', '@resvg/resvg-js'],
+        exclude: ['sharp', '@resvg/resvg-js'],
     },
     server: {
         port: 5173,

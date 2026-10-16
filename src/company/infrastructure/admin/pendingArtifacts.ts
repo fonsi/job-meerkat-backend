@@ -1,4 +1,10 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import {
+    existsSync,
+    mkdirSync,
+    readFileSync,
+    statSync,
+    writeFileSync,
+} from 'fs';
 import { join } from 'path';
 import { CompanyId } from 'company/domain/company';
 import { ScrappedJobPost } from 'company/infrastructure/scrapping/companyScrapper';
@@ -58,8 +64,14 @@ export const readLogo = (companyId: CompanyId): Buffer | null => {
     return readFileSync(path);
 };
 
+const hasNonEmptyFile = (path: string): boolean => {
+    if (!existsSync(path)) return false;
+
+    return statSync(path).size > 0;
+};
+
 export const hasLogo = (companyId: CompanyId): boolean =>
-    existsSync(getLogoPath(companyId));
+    hasNonEmptyFile(getLogoPath(companyId));
 
 export const writeOg = (companyId: CompanyId, png: Buffer): void => {
     ensurePendingDir(companyId);
@@ -74,4 +86,4 @@ export const readOg = (companyId: CompanyId): Buffer | null => {
 };
 
 export const hasOg = (companyId: CompanyId): boolean =>
-    existsSync(getOgPath(companyId));
+    hasNonEmptyFile(getOgPath(companyId));

@@ -145,21 +145,15 @@ Review titles for open/general/spontaneous applications, internships, talent poo
 - Confirm each sample has a non-empty analyzed title (and sensible fields).
 - Samples are written to `.local/pending/{companyId}/sample-jobs.json` for the local admin.
 
-## 6. Generate logo + OG and review in admin
+## 6. Upload logo + review OG in admin
 
 ```bash
-npx playwright install chromium
-npm run generate-logo -- --companyId=<companyId>
-# or all pending:
-npm run generate-logo
 npm run admin
 ```
 
-Logo generation opens the homepage in Chromium, uses vision to pick the header logo, then an image model to produce a white 100px PNG. It also renders the company OG card into `.local/pending/{companyId}/og.png`.
+Open the local admin, upload the company logo as-is (PNG preferred; stored without retouching), and confirm the auto-generated OG preview. Uploading a logo writes `.local/pending/{companyId}/logo.png` and regenerates `og.png`.
 
-In the admin, check sample jobs, the logo, and the OG preview. Replace/regenerate the logo (OG regenerates with it) if needed.
-
-**Promote only after human validation.** Agents must stop once pending artifacts are ready and `npm run admin` is available — do **not** click **Add** or call `/api/pending/:id/promote` unless the user explicitly asks. The user hits **Add** to copy the company to `production-company` and upload both `logo.png` and `og.png` to S3.
+**Promote only after human validation.** Agents must stop once sample jobs are ready and `npm run admin` is available — do **not** upload logos, click **Add**, or call `/api/pending/:id/promote` unless the user explicitly asks. The user uploads the logo and hits **Add** to copy the company to `production-company` and upload both `logo.png` and `og.png` to S3.
 
 Scrapers must already be deployed to production (`npm run deploy:prod`) before nightly processing will pick the company up.
 
@@ -181,7 +175,7 @@ Statuses used previously: pending, validated, validated (API content), no openin
 - [ ] Title skip filters for open application / internship / talent community as needed
 - [ ] List titles reviewed
 - [ ] ~5 sample job posts scrape with titles (saved under `.local/pending/{id}/`)
-- [ ] Logo + OG generated (`npm run generate-logo`) and ready in `npm run admin`
+- [ ] Sample jobs ready in `npm run admin`; user uploads logo (OG auto-builds)
 - [ ] User reviewed and promoted (admin **Add**) — agents wait for explicit ask before promote
 - [ ] Tracking note updated in `.local/company-scraper-tracking.md`
 

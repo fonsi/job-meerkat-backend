@@ -34,7 +34,7 @@ type PendingCompany = {
     sampleJobs: SampleJobs | null;
 };
 
-type BusyAction = 'generate' | 'replace' | 'generate-og' | 'promote' | null;
+type BusyAction = 'replace' | 'generate-og' | 'promote' | null;
 
 const formatSalary = (range: SalaryRange | null): string => {
     if (!range) return 'no salary';
@@ -103,16 +103,6 @@ export const App = () => {
         }
     };
 
-    const generateLogo = (companyId: string) =>
-        runAction(companyId, 'generate', async () => {
-            const response = await fetch(
-                `/api/pending/${companyId}/generate-logo`,
-                { method: 'POST' },
-            );
-            const body = await response.json();
-            if (!response.ok) throw new Error(body.error || 'Generate failed');
-        });
-
     const generateOg = (companyId: string) =>
         runAction(companyId, 'generate-og', async () => {
             const response = await fetch(
@@ -124,7 +114,7 @@ export const App = () => {
                 throw new Error(body.error || 'OG generate failed');
         });
 
-    const replaceLogo = (companyId: string, file: File) =>
+    const uploadLogo = (companyId: string, file: File) =>
         runAction(companyId, 'replace', async () => {
             const response = await fetch(`/api/pending/${companyId}/logo`, {
                 method: 'POST',
@@ -159,8 +149,8 @@ export const App = () => {
         <>
             <h1>Pending companies</h1>
             <p className="lede">
-                In dev, not in production. Review sample jobs, logo, and OG
-                image, then Add.
+                In dev, not in production. Upload a logo, review sample jobs and
+                OG image, then Add.
             </p>
             {loading ? <p className="status">Loading…</p> : null}
             {error ? <p className="error">{error}</p> : null}
@@ -211,43 +201,37 @@ export const App = () => {
                                 />
                             ) : (
                                 <p className="empty">
-                                    No OG yet. Generate or replace the logo
-                                    first.
+                                    No OG yet. Upload a logo first.
                                 </p>
                             )}
                         </div>
                         <div className="actions">
-                            <button
-                                disabled={busy}
-                                onClick={() => generateLogo(company.id)}
-                                type="button"
-                            >
-                                {busy && busyAction === 'generate'
-                                    ? 'Generating…'
-                                    : 'Regenerate logo'}
-                            </button>
                             <label className="file-btn">
-                                Replace logo
+                                {company.hasLogo
+                                    ? 'Replace logo'
+                                    : 'Upload logo'}
                                 <input
                                     accept="image/*,.svg"
                                     disabled={busy}
                                     onChange={(event) => {
                                         const file = event.target.files?.[0];
                                         event.target.value = '';
-                                        if (file) replaceLogo(company.id, file);
+                                        if (file) uploadLogo(company.id, file);
                                     }}
                                     type="file"
                                 />
                             </label>
-                            <button
-                                disabled={busy || !company.hasLogo}
-                                onClick={() => generateOg(company.id)}
-                                type="button"
-                            >
-                                {busy && busyAction === 'generate-og'
-                                    ? 'Generating OG…'
-                                    : 'Regenerate OG'}
-                            </button>
+                            {company.hasLogo ? (
+                                <button
+                                    disabled={busy}
+                                    onClick={() => generateOg(company.id)}
+                                    type="button"
+                                >
+                                    {busy && busyAction === 'generate-og'
+                                        ? 'Generating OG…'
+                                        : 'Regenerate OG'}
+                                </button>
+                            ) : null}
                             <button
                                 className="primary"
                                 disabled={busy || !canAdd}

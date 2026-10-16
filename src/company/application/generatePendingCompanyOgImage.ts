@@ -2,6 +2,7 @@ import { CompanyId } from 'company/domain/company';
 import { DEV_COMPANY_TABLE } from 'company/infrastructure/admin/constants';
 import { getByIdFromTable } from 'company/infrastructure/admin/companyTables';
 import {
+    hasLogo,
     readLogo,
     writeOg,
 } from 'company/infrastructure/admin/pendingArtifacts';
@@ -17,6 +18,12 @@ export const generatePendingCompanyOgImage = async ({
     companyId,
 }: GeneratePendingCompanyOgImageCommand): Promise<Buffer> => {
     loadLocalAwsEnv();
+    if (!hasLogo(companyId)) {
+        throw new Error(
+            `Upload a logo before generating the OG image (.local/pending/${companyId}/logo.png)`,
+        );
+    }
+
     const company = await getByIdFromTable(DEV_COMPANY_TABLE, companyId);
     if (!company) {
         throw new Error(

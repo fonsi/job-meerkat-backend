@@ -85,7 +85,9 @@ import { CAMUNDA_NAME, camundaScrapper } from './camunda';
 import { CALENDLY_NAME, calendlyScrapper } from './calendly';
 import { CHECKLY_NAME, checklyScrapper } from './checkly';
 import { CHROMATIC_NAME, chromaticScrapper } from './chromatic';
+import { CLICKHOUSE_NAME, clickhouseScrapper } from './clickhouse';
 import { CLICKUP_NAME, clickUpScrapper } from './clickUp';
+import { CODAT_NAME, codatScrapper } from './codat';
 import { CONSENSYS_NAME, consensysScrapper } from './consensys';
 import { CURSOR_NAME, cursorScrapper } from './cursor';
 import { CYBERHAVEN_NAME, cyberhavenScrapper } from './cyberhaven';
@@ -106,6 +108,9 @@ import { KALEPA_NAME, kalepaScrapper } from './kalepa';
 import { LAUNCHDARKLY_NAME, launchDarklyScrapper } from './launchDarkly';
 import { MERCURY_NAME, mercuryScrapper } from './mercury';
 import { MYSTEN_LABS_NAME, mystenLabsScrapper } from './mystenLabs';
+import { MOZILLA_NAME, mozillaScrapper } from './mozilla';
+import { MURAL_NAME, muralScrapper } from './mural';
+import { N8N_NAME, n8nScrapper } from './n8n';
 import { NANGO_NAME, nangoScrapper } from './nango';
 import { NEO4J_NAME, neo4jScrapper } from './neo4j';
 import { NOTION_NAME, notionScrapper } from './notion';
@@ -341,6 +346,12 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return mimoScrapper;
         case MODASH_NAME:
             return modashScrapper;
+        case MOZILLA_NAME:
+            return mozillaScrapper;
+        case MURAL_NAME:
+            return muralScrapper;
+        case N8N_NAME:
+            return n8nScrapper;
         case NANGO_NAME:
             return nangoScrapper;
         case NEO4J_NAME:
@@ -425,8 +436,12 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return checklyScrapper;
         case CHROMATIC_NAME:
             return chromaticScrapper;
+        case CLICKHOUSE_NAME:
+            return clickhouseScrapper;
         case CLICKUP_NAME:
             return clickUpScrapper;
+        case CODAT_NAME:
+            return codatScrapper;
         case CONSENSYS_NAME:
             return consensysScrapper;
         case CYBERHAVEN_NAME:

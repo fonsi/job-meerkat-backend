@@ -1,11 +1,10 @@
 import { IncomingMessage, ServerResponse } from 'node:http';
 import { CompanyId } from 'company/domain/company';
-import { generateCompanyLogo } from 'company/application/generateCompanyLogo';
 import { generatePendingCompanyOgImage } from 'company/application/generatePendingCompanyOgImage';
 import { getPendingCompanies } from 'company/application/getPendingCompanies';
 import { promoteCompany } from 'company/application/promoteCompany';
 import { replaceCompanyLogo } from 'company/application/replaceCompanyLogo';
-import { readLogo, readOg } from './pendingArtifacts';
+import { hasLogo, readLogo, readOg } from './pendingArtifacts';
 
 const json = (res: ServerResponse, status: number, body: unknown): void => {
     res.statusCode = status;
@@ -23,7 +22,7 @@ const readBody = (req: IncomingMessage): Promise<Buffer> =>
 
 const pendingListPattern = /^\/api\/pending\/?$/;
 const pendingActionPattern =
-    /^\/api\/pending\/([^/]+)\/(logo|og|generate-logo|generate-og|promote)\/?$/;
+    /^\/api\/pending\/([^/]+)\/(logo|og|generate-og|promote)\/?$/;
 
 const statusForError = (error: Error): number => {
     const message = error.message;
@@ -31,8 +30,8 @@ const statusForError = (error: Error): number => {
     if (message.includes('already exists')) return 409;
     if (
         message.includes('Missing logo') ||
-        message.includes('no homePage') ||
-        message.includes('Missing logo at')
+        message.includes('Missing logo at') ||
+        message.includes('Upload a logo')
     ) {
         return 400;
     }
@@ -79,7 +78,7 @@ export const handleAdminApi = async (
         const action = actionMatch[2];
 
         if (method === 'GET' && action === 'logo') {
-            sendPng(res, readLogo(companyId), 'Logo not generated yet');
+            sendPng(res, readLogo(companyId), 'Logo not uploaded yet');
             return;
         }
 
@@ -88,13 +87,13 @@ export const handleAdminApi = async (
             return;
         }
 
-        if (method === 'POST' && action === 'generate-logo') {
-            await generateCompanyLogo({ companyId });
-            json(res, 200, { ok: true });
-            return;
-        }
-
         if (method === 'POST' && action === 'generate-og') {
+            if (!hasLogo(companyId)) {
+                json(res, 400, {
+                    error: 'Upload a logo before generating the OG image',
+                });
+                return;
+            }
             await generatePendingCompanyOgImage({ companyId });
             json(res, 200, { ok: true });
             return;
