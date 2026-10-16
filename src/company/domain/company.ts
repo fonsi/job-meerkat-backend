@@ -21,6 +21,8 @@ export type Company = {
     status?: CompanyStatus;
     statusMessage?: string;
     disabledAt?: number;
+    /** ms epoch — when the company was added to Jobmeerkat. */
+    createdAt?: number;
 };
 
 export const isCompanyDisabled = (company: Company): boolean =>
@@ -37,6 +39,7 @@ export const createCompany = ({
     name,
     homePage,
     description,
+    createdAt,
 }: CreateCompanyData): Company => {
     const id = randomUUID();
     const logo = {
@@ -48,6 +51,7 @@ export const createCompany = ({
         name,
         homePage,
         logo,
+        createdAt: createdAt ?? Date.now(),
         ...(description ? { description } : {}),
     };
 };

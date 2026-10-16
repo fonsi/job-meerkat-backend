@@ -110,6 +110,27 @@ describe('DynamoDB company unmarshall', () => {
         expect(unmarshall(item)).toEqual(company);
     });
 
+    it('should return a Company with createdAt', () => {
+        const createdAt = 1730845948000;
+        const item = {
+            ...baseItem,
+            createdAt: {
+                N: createdAt.toString(),
+            },
+        };
+        const company: Company = {
+            id: companyId,
+            name: companyName,
+            homePage,
+            logo: {
+                url: logoUrl,
+            },
+            createdAt,
+        };
+
+        expect(unmarshall(item)).toEqual(company);
+    });
+
     it('should throw UnmarshallError if something goes wrong', () => {
         const item = {
             id: {

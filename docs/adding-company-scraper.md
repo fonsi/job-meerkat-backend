@@ -37,7 +37,7 @@ Skip or defer if: dead link, aggregator-only page, blocked custom ATS, or too ma
 
 ## 2. Create the company in the DB
 
-**Required fields:** `name`, `homePage`, and `description`. Never create a company without a description — it is used for social post generation.
+**Required fields:** `name`, `homePage`, and `description`. Never create a company without a description — it is used for social post generation. `createdAt` is set automatically on create (used for sorting on `/companies`).
 
 1. Edit `src/company/infrastructure/api/companyPost.event.json` body:
 

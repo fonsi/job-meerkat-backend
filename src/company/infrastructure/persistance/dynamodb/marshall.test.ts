@@ -107,4 +107,24 @@ describe('DynamoDB company marshall', () => {
             },
         });
     });
+
+    it('should return an Item with createdAt', () => {
+        const createdAt = 1730845948000;
+        const company: Company = {
+            id: companyId,
+            name: companyName,
+            homePage,
+            logo: {
+                url: logoUrl,
+            },
+            createdAt,
+        };
+
+        expect(marshall(company)).toEqual({
+            ...baseItem,
+            createdAt: {
+                N: createdAt.toString(),
+            },
+        });
+    });
 });

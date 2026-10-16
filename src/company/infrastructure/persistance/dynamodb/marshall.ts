@@ -11,6 +11,7 @@ export const marshall = (company: Company): Record<string, AttributeValue> => {
         status,
         statusMessage,
         disabledAt,
+        createdAt,
     } = company;
 
     const item: Record<string, AttributeValue> = {
@@ -52,6 +53,12 @@ export const marshall = (company: Company): Record<string, AttributeValue> => {
     if (disabledAt !== undefined) {
         item['disabledAt'] = {
             N: disabledAt.toString(),
+        };
+    }
+
+    if (createdAt !== undefined) {
+        item['createdAt'] = {
+            N: createdAt.toString(),
         };
     }
 

@@ -27,6 +27,9 @@ export const unmarshall = (item: Record<string, AttributeValue>): Company => {
             ...(item['disabledAt']?.['N']
                 ? { disabledAt: Number(item['disabledAt']['N']) }
                 : {}),
+            ...(item['createdAt']?.['N']
+                ? { createdAt: Number(item['createdAt']['N']) }
+                : {}),
         };
     } catch (e) {
         throw new UnmarshallError(e.message, 'Company', item);
