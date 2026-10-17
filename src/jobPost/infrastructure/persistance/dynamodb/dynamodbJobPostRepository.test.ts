@@ -1,5 +1,7 @@
 import {
     putItem,
+    query,
+    scan,
     transactWriteItems,
     updateItem,
 } from 'shared/infrastructure/persistance/dynamodb';
@@ -136,5 +138,41 @@ describe('dynamodbJobPostRepository details writes', () => {
         await jobPostRepository.update(jobPost);
 
         expect(putItem).not.toHaveBeenCalled();
+    });
+
+    it('queries companyId-index for getAllByCompanyId', async () => {
+        (query as jest.Mock).mockResolvedValue({ Items: [jobPostAttributes] });
+
+        const result = await jobPostRepository.getAllByCompanyId(
+            jobPost.companyId,
+        );
+
+        expect(query).toHaveBeenCalledWith(undefined, {
+            IndexName: 'companyId-index',
+            KeyConditionExpression: 'companyId = :companyId',
+            ExpressionAttributeValues: {
+                ':companyId': { S: jobPost.companyId },
+            },
+        });
+        expect(scan).not.toHaveBeenCalled();
+        expect(result).toHaveLength(1);
+        expect(result[0].id).toBe(jobPost.id);
+    });
+
+    it('scans closed posts with a projection for getAllClosedBefore', async () => {
+        (scan as jest.Mock).mockResolvedValue({
+            Items: [{ ...jobPostAttributes, closedAt: { N: '1' } }],
+        });
+
+        await jobPostRepository.getAllClosedBefore(2);
+
+        expect(scan).toHaveBeenCalledWith(
+            undefined,
+            expect.objectContaining({
+                FilterExpression:
+                    'attribute_exists(closedAt) AND closedAt <= :closedBefore',
+                ProjectionExpression: expect.stringContaining('closedAt'),
+            }),
+        );
     });
 });

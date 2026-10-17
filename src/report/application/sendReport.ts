@@ -17,6 +17,8 @@ import { filterJobPostsForNewsletter } from './filterJobPostsForNewsletter';
 type SendReportData = {
     email: string;
     frequency: ReportFrequency;
+    latestJobPosts?: JobPost[];
+    companies?: Company[];
 };
 
 export type JobPostsByCompanyType = {
@@ -26,7 +28,7 @@ export type JobPostsByCompanyType = {
     };
 };
 
-const sinceMsForFrequency = (frequency: ReportFrequency): number =>
+export const sinceMsForFrequency = (frequency: ReportFrequency): number =>
     frequency === 'weekly' ? FROM_WHEN_WEEKLY : FROM_WHEN;
 
 const subjectForFrequency = (
@@ -40,7 +42,12 @@ const subjectForFrequency = (
     return `🚀 Daily Job Report - ${totalJobPosts} new jobs`;
 };
 
-export const sendReport = async ({ email, frequency }: SendReportData) => {
+export const sendReport = async ({
+    email,
+    frequency,
+    latestJobPosts,
+    companies: preloadedCompanies,
+}: SendReportData) => {
     const report = await reportRepository.getByEmailNormalized(
         normalizeEmail(email),
     );
@@ -59,11 +66,13 @@ export const sendReport = async ({ email, frequency }: SendReportData) => {
         return;
     }
 
-    const latest = await jobPostRepository.getLatestSince(
-        sinceMsForFrequency(frequency),
-    );
+    const latest =
+        latestJobPosts ??
+        (await jobPostRepository.getLatestSince(
+            sinceMsForFrequency(frequency),
+        ));
     const jobPosts = filterJobPostsForNewsletter(latest, report.preferences);
-    const companies = await companyRepository.getAll();
+    const companies = preloadedCompanies ?? (await companyRepository.getAll());
     const jobPostsByCompany: JobPostsByCompanyType = jobPosts.reduce(
         (acc, jobPost) => {
             const companyId = jobPost.companyId;
@@ -119,8 +128,22 @@ export const sendReport = async ({ email, frequency }: SendReportData) => {
     });
 };
 
-export const sendDailyReport = async ({ email }: { email: string }) =>
-    sendReport({ email, frequency: 'daily' });
+export const sendDailyReport = async ({
+    email,
+    latestJobPosts,
+    companies,
+}: {
+    email: string;
+    latestJobPosts?: JobPost[];
+    companies?: Company[];
+}) => sendReport({ email, frequency: 'daily', latestJobPosts, companies });
 
-export const sendWeeklyReport = async ({ email }: { email: string }) =>
-    sendReport({ email, frequency: 'weekly' });
+export const sendWeeklyReport = async ({
+    email,
+    latestJobPosts,
+    companies,
+}: {
+    email: string;
+    latestJobPosts?: JobPost[];
+    companies?: Company[];
+}) => sendReport({ email, frequency: 'weekly', latestJobPosts, companies });

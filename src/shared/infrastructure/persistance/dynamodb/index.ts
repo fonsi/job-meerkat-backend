@@ -155,24 +155,44 @@ export const batchWriteItems = (
         });
     });
 
-export const query = (
+export const query = async (
     table: string,
-    query: Omit<QueryInput, 'TableName'>,
+    queryInput: Omit<QueryInput, 'TableName'>,
 ): Promise<QueryOutput> => {
-    return new Promise((resolve, reject) => {
+    const allItems: Record<string, AttributeValue>[] = [];
+    let lastEvaluatedKey: Record<string, AttributeValue> | undefined =
+        undefined;
+
+    do {
         const input: QueryInput = {
             TableName: table,
-            ...query,
+            ...queryInput,
+            ExclusiveStartKey: lastEvaluatedKey,
         };
 
-        dynamodb.query(input, (err, data) => {
-            if (err) {
-                reject(err);
-            }
+        const data = await new Promise<QueryOutput>((resolve, reject) => {
+            dynamodb.query(input, (err, data) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
 
-            resolve(data);
+                resolve(data);
+            });
         });
-    });
+
+        if (data.Items) {
+            allItems.push(...data.Items);
+        }
+
+        lastEvaluatedKey = data.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    return {
+        Items: allItems,
+        Count: allItems.length,
+        ScannedCount: allItems.length,
+    };
 };
 
 export const scan = async (

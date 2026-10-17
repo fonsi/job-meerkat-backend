@@ -1,6 +1,6 @@
 import { isCompanyDisabled } from 'company/domain/company';
 import { companyRepository } from 'company/infrastructure/persistance/dynamodb/dynamodbCompanyRepository';
-import { FROM_WHEN_WEEKLY } from 'jobPost/domain/jobPostRepository';
+import { FROM_WHEN, FROM_WHEN_WEEKLY } from 'jobPost/domain/jobPostRepository';
 import { jobPostRepository } from 'jobPost/infrastructure/persistance/dynamodb/dynamodbJobPostRepository';
 import { buildSocialSchedule } from 'social/application/buildSocialSchedule';
 import { SocialPostType } from 'social/domain/socialPostType';
@@ -8,13 +8,18 @@ import { scheduledSocialPostRepository } from 'social/infrastructure/persistance
 
 export const scheduleSocialPosts = async (): Promise<void> => {
     const now = Date.now();
-    const [latestJobPosts, weekJobPosts, openJobPosts, companies] =
-        await Promise.all([
-            jobPostRepository.getLatest(),
-            jobPostRepository.getLatestSince(FROM_WHEN_WEEKLY),
-            jobPostRepository.getAllOpen(),
-            companyRepository.getAll(),
-        ]);
+    const [openJobPosts, companies] = await Promise.all([
+        jobPostRepository.getAllOpen(),
+        companyRepository.getAll(),
+    ]);
+    const dailyCutoff = now - FROM_WHEN;
+    const weeklyCutoff = now - FROM_WHEN_WEEKLY;
+    const latestJobPosts = openJobPosts
+        .filter((jobPost) => jobPost.createdAt > dailyCutoff)
+        .sort((a, b) => b.createdAt - a.createdAt);
+    const weekJobPosts = openJobPosts
+        .filter((jobPost) => jobPost.createdAt > weeklyCutoff)
+        .sort((a, b) => b.createdAt - a.createdAt);
 
     const companiesById = new Map(
         companies

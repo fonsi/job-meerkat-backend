@@ -27,17 +27,23 @@ export const getAllCompanies = async ({
         return companies;
     }
 
-    for (let i = 0; i < companies.length; i++) {
-        const company = companies[i];
-        if (isCompanyDisabled(company)) {
-            (company as CompanyWithJobPostsCount).jobPostsCount = 0;
-            continue;
-        }
-        const openJobPost = await jobPostRepository.getAllOpenByCompanyId(
-            company.id,
+    const openJobPosts = await jobPostRepository.getAllOpen();
+    const jobPostsCountByCompanyId = new Map<string, number>();
+
+    for (const jobPost of openJobPosts) {
+        if (!wasPublishedLessThanSixMonthsAgo(jobPost)) continue;
+        jobPostsCountByCompanyId.set(
+            jobPost.companyId,
+            (jobPostsCountByCompanyId.get(jobPost.companyId) ?? 0) + 1,
         );
-        (company as CompanyWithJobPostsCount).jobPostsCount =
-            openJobPost.filter(wasPublishedLessThanSixMonthsAgo).length;
+    }
+
+    for (const company of companies) {
+        (company as CompanyWithJobPostsCount).jobPostsCount = isCompanyDisabled(
+            company,
+        )
+            ? 0
+            : (jobPostsCountByCompanyId.get(company.id) ?? 0);
     }
 
     return companies;

@@ -148,6 +148,24 @@ describe('sendReport settings', () => {
                 subject: '🚀 Daily Job Report - 3 new jobs',
             }),
         );
+        expect(jobPostRepository.getLatestSince).toHaveBeenCalledTimes(1);
+        expect(companyRepository.getAll).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses preloaded latest posts and companies without extra reads', async () => {
+        (reportRepository.getByEmailNormalized as jest.Mock).mockResolvedValue(
+            activeReport(),
+        );
+
+        await sendDailyReport({
+            email: EMAIL,
+            latestJobPosts: catalog,
+            companies,
+        });
+
+        expect(jobPostRepository.getLatestSince).not.toHaveBeenCalled();
+        expect(companyRepository.getAll).not.toHaveBeenCalled();
+        expect(sendEmail).toHaveBeenCalledTimes(1);
     });
 
     it('sends a weekly subject when frequency is weekly', async () => {

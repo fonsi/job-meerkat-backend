@@ -81,12 +81,8 @@ const allOpenJobPosts: JobPost[] = [
 describe('getAllCompanies', () => {
     beforeEach(() => {
         (companyRepository.getAll as jest.Mock).mockResolvedValue(allCompanies);
-        (
-            jobPostRepository.getAllOpenByCompanyId as jest.Mock
-        ).mockImplementation((companyId: CompanyId) =>
-            allOpenJobPosts.filter(
-                (jobPost) => jobPost.companyId === companyId,
-            ),
+        (jobPostRepository.getAllOpen as jest.Mock).mockResolvedValue(
+            allOpenJobPosts,
         );
     });
 
@@ -98,14 +94,14 @@ describe('getAllCompanies', () => {
         const companies = await getAllCompanies({ countJobPosts: false });
 
         expect(companies).toEqual(allCompaniesActiveFirst);
+        expect(jobPostRepository.getAllOpen).not.toHaveBeenCalled();
     });
 
     test('should return all companies with job posts count newer than six months', async () => {
         const companies = await getAllCompanies({ countJobPosts: true });
 
         expect(companies).toEqual(allCompaniesWithJobPostsCount);
-        expect(
-            jobPostRepository.getAllOpenByCompanyId,
-        ).not.toHaveBeenCalledWith(companyId2);
+        expect(jobPostRepository.getAllOpen).toHaveBeenCalledTimes(1);
+        expect(jobPostRepository.getAllOpenByCompanyId).not.toHaveBeenCalled();
     });
 });

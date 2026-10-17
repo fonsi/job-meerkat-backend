@@ -95,8 +95,9 @@ const getAllOpen: GetAllOpen = async () => {
 
 const getAllByCompanyId: GetAllByCompanyId = async (companyId) => {
     try {
-        const results = await scan(JOB_POST_TABLE, {
-            FilterExpression: 'companyId = :companyId',
+        const results = await query(JOB_POST_TABLE, {
+            IndexName: 'companyId-index',
+            KeyConditionExpression: 'companyId = :companyId',
             ExpressionAttributeValues: {
                 ':companyId': {
                     S: companyId,
@@ -313,6 +314,14 @@ const getAllClosedBefore: GetAllClosedBefore = async (closedBefore) => {
         const results = await scan(JOB_POST_TABLE, {
             FilterExpression:
                 'attribute_exists(closedAt) AND closedAt <= :closedBefore',
+            ProjectionExpression:
+                'id, originalId, companyId, #type, #title, #url, category, workplace, #location, createdAt, closedAt, slug, salaryCurrency, salaryMin, salaryMax, salaryPeriod',
+            ExpressionAttributeNames: {
+                '#type': 'type',
+                '#title': 'title',
+                '#url': 'url',
+                '#location': 'location',
+            },
             ExpressionAttributeValues: {
                 ':closedBefore': {
                     N: closedBefore.toString(),

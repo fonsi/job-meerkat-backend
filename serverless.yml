@@ -206,6 +206,39 @@ resources:
                             KeyType: HASH
                       Projection:
                           ProjectionType: ALL
+                    - IndexName: companyId-index
+                      KeySchema:
+                          - AttributeName: companyId
+                            KeyType: HASH
+                      Projection:
+                          ProjectionType: ALL
+        jobPostAlarmTopic:
+            Type: AWS::SNS::Topic
+            Properties:
+                TopicName: ${sls:stage}-job-post-alarms
+                Subscription:
+                    - Protocol: email
+                      Endpoint: ${env:ALARM_EMAIL}
+        jobPostTableHighReadAlarm:
+            Type: AWS::CloudWatch::Alarm
+            Properties:
+                AlarmName: ${sls:stage}-job-post-high-read-capacity
+                AlarmDescription: Daily consumed read capacity on job-post exceeds 1M RCU
+                Namespace: AWS/DynamoDB
+                MetricName: ConsumedReadCapacityUnits
+                Dimensions:
+                    - Name: TableName
+                      Value: ${self:provider.environment.DYNAMODB_JOB_POST_TABLE_NAME}
+                Statistic: Sum
+                Period: 86400
+                EvaluationPeriods: 1
+                Threshold: 1000000
+                ComparisonOperator: GreaterThanThreshold
+                TreatMissingData: notBreaching
+                AlarmActions:
+                    - Ref: jobPostAlarmTopic
+                OKActions:
+                    - Ref: jobPostAlarmTopic
         jobPostDetailTable:
             Type: AWS::DynamoDB::Table
             Properties:
