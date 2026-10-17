@@ -8,10 +8,11 @@ import {
 } from 'shared/infrastructure/url/buildJobPostPageUrl';
 import { SOCIAL_POST_CONTENT_RULES } from 'social/domain/socialPostContentRules';
 import { parseSocialMediaPosts, SocialMediaPosts } from './socialMediaPosts';
+import { LUNA_REASONING_EFFORT } from './openaiLunaOptions';
 
 export type { SocialMediaPosts };
 
-const OPENAI_MODEL = 'gpt-4o-mini';
+const OPENAI_MODEL = 'gpt-6-luna';
 const openai = new OpenAI();
 
 const socialMediaPostsExample: SocialMediaPosts = {
@@ -53,6 +54,7 @@ export const openaiSocialMediaPostsCreator = async ({
 
     const completion = await openai.chat.completions.create({
         model: OPENAI_MODEL,
+        reasoning_effort: LUNA_REASONING_EFFORT,
         response_format: {
             type: 'json_object',
         },

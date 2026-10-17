@@ -1,8 +1,9 @@
 import OpenAI from 'openai';
 import { BlogMarketSnapshot } from 'blog/domain/blogSnapshot';
 import { BlogPostType } from 'blog/domain/blogPost';
+import { LUNA_REASONING_EFFORT } from 'shared/infrastructure/ai/openai/openaiLunaOptions';
 
-const OPENAI_MODEL = 'gpt-4o-mini';
+const OPENAI_MODEL = 'gpt-6-luna';
 const openai = new OpenAI();
 
 export type BlogDraft = {
@@ -52,6 +53,7 @@ export const openaiDraftBlogPost = async (
 
     const completion = await openai.chat.completions.create({
         model: OPENAI_MODEL,
+        reasoning_effort: LUNA_REASONING_EFFORT,
         response_format: { type: 'json_object' },
         messages: [
             {

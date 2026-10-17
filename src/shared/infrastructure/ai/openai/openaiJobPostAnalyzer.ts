@@ -8,12 +8,15 @@ import {
 } from 'jobPost/domain/jobPost';
 import OpenAI from 'openai';
 import { OpenaiJobPost, parseOpenaiJobPost } from './parseOpenaiJobPost';
+import { LUNA_REASONING_EFFORT } from './openaiLunaOptions';
 
 export type { OpenaiJobPost } from './parseOpenaiJobPost';
 
-const OPENAI_MODEL = 'gpt-4o-mini';
+export const OPENAI_JOB_POST_ANALYZER_MODEL = 'gpt-6-luna';
+export const OPENAI_JOB_POST_ANALYZER_BASELINE_MODEL = 'gpt-4o-mini';
 
-const openai = new OpenAI();
+let openai: OpenAI | undefined;
+const getOpenAI = (): OpenAI => (openai ??= new OpenAI());
 
 const jobOfferDetailsExample: JobPostDetails = {
     summary:
@@ -53,22 +56,16 @@ const jobOfferExample: OpenaiJobPost = {
     details: jobOfferDetailsExample,
 };
 
-export const openaiJobPostAnalyzer = async (
+const buildAnalyzerMessages = (
     jobPostContent: string,
-): Promise<OpenaiJobPost> => {
-    const completion = await openai.chat.completions.create({
-        model: OPENAI_MODEL,
-        response_format: {
-            type: 'json_object',
-        },
-        messages: [
-            { role: 'system', content: 'You are a job post analyzer.' },
+): OpenAI.Chat.Completions.ChatCompletionMessageParam[] => [
+    { role: 'system', content: 'You are a job post analyzer.' },
+    {
+        role: 'user',
+        content: [
             {
-                role: 'user',
-                content: [
-                    {
-                        type: 'text',
-                        text: `
+                type: 'text',
+                text: `
                         Analyze the following job offer "${jobPostContent}".
                         You have to extract the main data and return it.
                         The output format must be a JSON following this example: ${JSON.stringify(jobOfferExample)}.
@@ -92,11 +89,30 @@ export const openaiJobPostAnalyzer = async (
                         Omit any details key that is not clearly present. Do not invent facts. Do not copy example values.
                         Skip legal text, equal-opportunity / EEO statements, privacy / CCPA / GDPR notices, recruitment-fraud warnings, AI-hiring disclosures, country hiring guidelines, and application-form instructions.
                     `,
-                    },
-                ],
             },
         ],
+    },
+];
+
+export const analyzeJobPostWithModel = async (
+    jobPostContent: string,
+    model: string,
+): Promise<OpenaiJobPost> => {
+    const completion = await getOpenAI().chat.completions.create({
+        model,
+        ...(model === OPENAI_JOB_POST_ANALYZER_MODEL
+            ? { reasoning_effort: LUNA_REASONING_EFFORT }
+            : {}),
+        response_format: {
+            type: 'json_object',
+        },
+        messages: buildAnalyzerMessages(jobPostContent),
     });
 
     return parseOpenaiJobPost(completion.choices[0].message.content);
 };
+
+export const openaiJobPostAnalyzer = async (
+    jobPostContent: string,
+): Promise<OpenaiJobPost> =>
+    analyzeJobPostWithModel(jobPostContent, OPENAI_JOB_POST_ANALYZER_MODEL);
