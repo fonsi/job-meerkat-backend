@@ -184,6 +184,19 @@ import { RESTATE_NAME, restateScrapper } from './restate';
 import { STORYBLOK_NAME, storyblokScrapper } from './storyblok';
 import { TRIGGER_DEV_NAME, triggerDevScrapper } from './triggerDev';
 import { TRUSTLY_NAME, trustlyScrapper } from './trustly';
+import { DUVO_NAME, duvoScrapper } from './duvo';
+import { WUNDER_GRAPH_NAME, wunderGraphScrapper } from './wunderGraph';
+import { CODER_NAME, coderScrapper } from './coder';
+import { TREMENDOUS_NAME, tremendousScrapper } from './tremendous';
+import { SARDINE_NAME, sardineScrapper } from './sardine';
+import { LOCAL_STACK_NAME, localStackScrapper } from './localStack';
+import { SWORD_HEALTH_NAME, swordHealthScrapper } from './swordHealth';
+import { FINN_NAME, finnScrapper } from './finn';
+import {
+    CENTRE_FOR_EFFECTIVE_ALTRUISM_NAME,
+    centreForEffectiveAltruismScrapper,
+} from './centreForEffectiveAltruism';
+import { XBOW_NAME, xbowScrapper } from './xbow';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -590,6 +603,26 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return triggerDevScrapper;
         case TRUSTLY_NAME:
             return trustlyScrapper;
+        case DUVO_NAME:
+            return duvoScrapper;
+        case WUNDER_GRAPH_NAME:
+            return wunderGraphScrapper;
+        case CODER_NAME:
+            return coderScrapper;
+        case TREMENDOUS_NAME:
+            return tremendousScrapper;
+        case SARDINE_NAME:
+            return sardineScrapper;
+        case LOCAL_STACK_NAME:
+            return localStackScrapper;
+        case SWORD_HEALTH_NAME:
+            return swordHealthScrapper;
+        case FINN_NAME:
+            return finnScrapper;
+        case CENTRE_FOR_EFFECTIVE_ALTRUISM_NAME:
+            return centreForEffectiveAltruismScrapper;
+        case XBOW_NAME:
+            return xbowScrapper;
     }
 
     return null;
