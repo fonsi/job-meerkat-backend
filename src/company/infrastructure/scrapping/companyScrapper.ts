@@ -197,6 +197,9 @@ import {
     centreForEffectiveAltruismScrapper,
 } from './centreForEffectiveAltruism';
 import { XBOW_NAME, xbowScrapper } from './xbow';
+import { PROTON_NAME, protonScrapper } from './proton';
+import { MEWS_NAME, mewsScrapper } from './mews';
+import { DEVELOCITY_NAME, develocityScrapper } from './develocity';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -623,6 +626,12 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return centreForEffectiveAltruismScrapper;
         case XBOW_NAME:
             return xbowScrapper;
+        case PROTON_NAME:
+            return protonScrapper;
+        case MEWS_NAME:
+            return mewsScrapper;
+        case DEVELOCITY_NAME:
+            return develocityScrapper;
     }
 
     return null;
