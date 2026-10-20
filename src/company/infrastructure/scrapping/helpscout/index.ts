@@ -1,4 +1,3 @@
-import { fromURL } from '../fromUrl';
 import {
     ListedJobPostsData,
     NewCompanyScrapper,
@@ -10,27 +9,33 @@ import {
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
 import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
+import { getAshbyJobPostContent } from '../ashbyGraphQLRequest';
 
 export const HELPSCOUT_NAME = 'helpscout';
-const HELPSCOUT_INITIAL_URL = 'https://www.helpscout.com/company/careers/';
+const HELPSCOUT_INITIAL_URL =
+    'https://api.ashbyhq.com/posting-api/job-board/helpscout';
 
 type ScrapJobPostData = {
     id: string;
-    url: string;
 };
 
-const JOB_POST_SELECTOR = '.items a[href*="helpscout.com/company/careers"]';
-const JOB_CONTENT_SELECTOR = '#Content';
+type JobPostsListItem = {
+    id: string;
+    url: string;
+    title: string;
+    createdAt: number;
+};
 
 const scrapJobPost = async ({
     id,
-    url,
 }: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
-        const $ = await fromURL(url);
-        const jobPostContent = $(JOB_CONTENT_SELECTOR).text();
+        const jobsData = await getAshbyJobPostContent({
+            companyName: HELPSCOUT_NAME,
+            jobPostId: id,
+        });
 
-        return openaiJobPostAnalyzer(jobPostContent);
+        return openaiJobPostAnalyzer(JSON.stringify(jobsData));
     } catch (e) {
         const error = errorWithPrefix(
             e,
@@ -45,40 +50,44 @@ const scrapJobPost = async ({
 export const helpscoutScrapper: NewCompanyScrapper = ({ companyId }) => {
     return {
         getListedJobPostsData: async () => {
-            const $ = await fromURL(HELPSCOUT_INITIAL_URL);
-            const jobPostsElements = $(JOB_POST_SELECTOR);
+            const response = await fetch(HELPSCOUT_INITIAL_URL);
+            const jobsData = await response.json();
 
-            const jobPosts: ListedJobPostsData[] = jobPostsElements
-                .toArray()
-                .map((jobPost) => {
-                    const url = $(jobPost).attr('href');
-                    const urlObject = new URL(url);
+            const jobPosts: JobPostsListItem[] = [];
 
-                    return {
-                        id: urlObject.pathname.split('/').filter(Boolean).pop(),
-                        url,
-                        title: $('h6', jobPost).text(),
-                    };
-                })
-                .filter(
-                    (jobPost) => !jobPost.title.includes('Future openings'),
-                );
+            jobsData.jobs.forEach((jobData) => {
+                const title = jobData.title;
+                const titleLower = title.toLowerCase();
+
+                if (
+                    jobData.isListed &&
+                    !titleLower.includes('future openings')
+                ) {
+                    jobPosts.push({
+                        id: jobData.id,
+                        url: jobData.jobUrl,
+                        title,
+                        createdAt: new Date(jobData.publishedAt).getTime(),
+                    });
+                }
+            });
 
             return jobPosts;
         },
 
         scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
             const data: ScrappedJobPost[] = [];
+
             for (let i = 0; i < jobPosts.length; i++) {
                 try {
                     const jobPost = jobPosts[i];
+
                     console.log(
                         `Analyzing: "${jobPost.title}" (${i + 1} / ${jobPosts.length})`,
                     );
 
                     const jobPostData = await scrapJobPost({
                         id: jobPost.id,
-                        url: jobPost.url,
                     });
 
                     data.push({
@@ -87,11 +96,12 @@ export const helpscoutScrapper: NewCompanyScrapper = ({ companyId }) => {
                         url: jobPost.url,
                         title: jobPost.title,
                         companyId,
+                        createdAt: jobPost.createdAt,
                     });
                 } catch (e) {
                     const error = errorWithPrefix(
                         e,
-                        `[Error processing ${HELPSCOUT_NAME}]`,
+                        `Error processing ${HELPSCOUT_NAME}`,
                     );
 
                     console.log(error);
