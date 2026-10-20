@@ -58,4 +58,13 @@ describe('DynamoDB job post marshall', () => {
             }),
         ).toEqual(baseItem);
     });
+
+    it('throws a clear error when location is not a string', () => {
+        expect(() =>
+            marshall({
+                ...baseJobPost,
+                location: ['Geneva', 'Paris'] as unknown as string,
+            }),
+        ).toThrow('Job post location must be a string, got object');
+    });
 });

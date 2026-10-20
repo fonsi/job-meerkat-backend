@@ -68,4 +68,37 @@ describe('parseOpenaiJobPost', () => {
             'Invalid OpenAI job post response',
         );
     });
+
+    it('joins location arrays into a single string', () => {
+        const parsed = parseOpenaiJobPost(
+            JSON.stringify({
+                ...analyzedCore,
+                location: ['Geneva', 'Paris'],
+            }),
+        );
+
+        expect(parsed.location).toBe('Geneva, Paris');
+    });
+
+    it('clears empty location arrays so incomplete posts are skipped', () => {
+        const parsed = parseOpenaiJobPost(
+            JSON.stringify({
+                ...analyzedCore,
+                location: [],
+            }),
+        );
+
+        expect(parsed.location).toBeUndefined();
+    });
+
+    it('normalizes title arrays the same way', () => {
+        const parsed = parseOpenaiJobPost(
+            JSON.stringify({
+                ...analyzedCore,
+                title: ['Backend', 'Engineer'],
+            }),
+        );
+
+        expect(parsed.title).toBe('Backend, Engineer');
+    });
 });

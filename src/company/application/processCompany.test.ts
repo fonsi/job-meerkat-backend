@@ -57,9 +57,29 @@ jest.mock('shared/infrastructure/logger/logger', () => ({
     },
 }));
 
+const completeScrapedPost = (
+    companyId: CompanyId,
+    originalId: string,
+    title: string,
+) => ({
+    originalId,
+    companyId,
+    type: JobType.FullTime,
+    title,
+    url: `https://jobs.example.com/${originalId}`,
+    category: Category.Backend,
+    salaryRange: null,
+    workplace: Workplace.Remote,
+    location: 'worldwide',
+});
+
 describe('processCompany', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        (createJobPost as jest.Mock).mockImplementation(async (command) => ({
+            id: '123e4567-e89b-12d3-a456-426614174222',
+            companyId: command.company.id,
+        }));
     });
 
     it('reopens an existing closed job post instead of creating a duplicate', async () => {
@@ -291,5 +311,64 @@ describe('processCompany', () => {
 
         expect(jobPostRepository.update).not.toHaveBeenCalled();
         expect(createJobPost).not.toHaveBeenCalled();
+    });
+
+    it('creates other job posts when one create fails', async () => {
+        const companyId = '123e4567-e89b-12d3-a456-426614174000' as CompanyId;
+        const company = {
+            id: companyId,
+            name: 'test-company',
+            homePage: 'https://example.com',
+            logo: {
+                url: 'https://assets.example.com/company.png',
+            },
+        } as unknown as Company;
+
+        (companyRepository.getById as jest.Mock).mockResolvedValue(company);
+        (jobPostRepository.getAllByCompanyId as jest.Mock).mockResolvedValue(
+            [],
+        );
+        (createJobPost as jest.Mock)
+            .mockRejectedValueOnce(new Error('dynamodb write failed'))
+            .mockResolvedValueOnce({
+                id: '123e4567-e89b-12d3-a456-426614174222',
+                companyId,
+            });
+        (getNewCompanyScrapper as jest.Mock).mockReturnValue(() => ({
+            getListedJobPostsData: jest.fn().mockResolvedValue([
+                {
+                    id: 'external-1',
+                    url: 'https://jobs.example.com/1',
+                    title: 'Backend Engineer',
+                },
+                {
+                    id: 'external-2',
+                    url: 'https://jobs.example.com/2',
+                    title: 'Frontend Engineer',
+                },
+            ]),
+            scrapJobPost: jest.fn().mockResolvedValue([
+                completeScrapedPost(
+                    companyId,
+                    'external-1',
+                    'Backend Engineer',
+                ),
+                {
+                    ...completeScrapedPost(
+                        companyId,
+                        'external-2',
+                        'Frontend Engineer',
+                    ),
+                    category: Category.Frontend,
+                },
+            ]),
+        }));
+
+        await expect(processCompany({ companyId })).rejects.toThrow(
+            'Failed to persist 1 job post(s) for test-company',
+        );
+
+        expect(createJobPost).toHaveBeenCalledTimes(2);
+        expect(enqueueJobPostOgImage).toHaveBeenCalledTimes(1);
     });
 });

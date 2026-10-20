@@ -27,12 +27,16 @@ export const index = async (event): Promise<void> => {
 
         await Promise.all(processCompaniesBatch);
     } catch (e) {
-        const error = errorWithPrefix(e, 'Process companies consumer error');
+        const error = errorWithPrefix(
+            e instanceof Error ? e : new Error(String(e)),
+            'Process companies consumer error',
+        );
 
         logger.error(error, {
             companiesToProcess,
         });
 
         await logger.wait();
+        throw error;
     }
 };

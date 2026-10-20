@@ -331,7 +331,8 @@ export const hasAnalyzedJobPostFields = (
             jobPost.category &&
             jobPost.type &&
             jobPost.workplace &&
-            jobPost.location != null,
+            typeof jobPost.location === 'string' &&
+            jobPost.location.trim(),
     );
 
 const SIX_MONTHS = 1000 * 60 * 60 * 24 * 30 * 6;

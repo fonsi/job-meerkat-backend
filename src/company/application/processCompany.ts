@@ -20,6 +20,7 @@ import { storeJobPostPageCache } from 'jobPost/application/storeJobPostPageCache
 import { companyRepository } from 'company/infrastructure/persistance/dynamodb/dynamodbCompanyRepository';
 import { logger } from 'shared/infrastructure/logger/logger';
 import { isJobListingUnavailableError } from 'company/infrastructure/scrapping/jobListingUnavailableError';
+import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 
 type ProcessCompanyCommand = {
     companyId: CompanyId;
@@ -56,6 +57,13 @@ type OldScrapperData = {
     company: Company;
 };
 
+type PersistOperation = {
+    label: string;
+    title?: string;
+    url?: string;
+    run: () => Promise<void>;
+};
+
 const MAX_JOB_POSTS_TO_SCRAP = 50;
 
 const enqueueOgImage = (jobPost: JobPost): Promise<void> =>
@@ -63,6 +71,48 @@ const enqueueOgImage = (jobPost: JobPost): Promise<void> =>
         companyId: jobPost.companyId,
         jobPostId: jobPost.id,
     });
+
+const toError = (reason: unknown): Error =>
+    reason instanceof Error ? reason : new Error(String(reason));
+
+const runPersistOperations = async (
+    company: Company,
+    operations: PersistOperation[],
+): Promise<{ fulfilled: number; failed: number }> => {
+    const results = await Promise.allSettled(
+        operations.map((operation) => operation.run()),
+    );
+
+    let fulfilled = 0;
+    let failed = 0;
+
+    results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+            fulfilled += 1;
+            return;
+        }
+
+        failed += 1;
+        const operation = operations[index];
+        const error = errorWithPrefix(
+            toError(result.reason),
+            `Failed to ${operation.label} job post for ${company.name}`,
+        );
+
+        console.error(error.message, {
+            companyId: company.id,
+            title: operation.title,
+            url: operation.url,
+        });
+        logger.error(error, {
+            companyId: company.id,
+            title: operation.title,
+            url: operation.url,
+        });
+    });
+
+    return { fulfilled, failed };
+};
 
 const getNewAndClosedJobPosts = ({
     scrappedJobPosts,
@@ -102,22 +152,42 @@ const scrapUsingOldScrapper = async ({
         openJobPosts,
     });
 
-    console.log(
-        `[SCRAPPED: ${scrappedJobPosts.length}] [OPEN: ${openJobPosts.length}] [NEW: ${newJobPosts.length}] [CLOSED: ${closedJobPosts.length}]`,
+    const createJobPosts = newJobPosts.filter(hasAnalyzedJobPostFields);
+
+    const createOperations: PersistOperation[] = createJobPosts.map(
+        (jobPost) => ({
+            label: 'create',
+            title: jobPost.title,
+            url: jobPost.url,
+            run: () =>
+                createJobPost({
+                    ...jobPost,
+                    company,
+                }).then(enqueueOgImage),
+        }),
+    );
+    const closeOperations: PersistOperation[] = closedJobPosts.map(
+        (jobPost) => ({
+            label: 'close',
+            title: jobPost.title,
+            url: jobPost.url,
+            run: () => closeJobPost(jobPost),
+        }),
     );
 
-    const createJobPostsPromises: Promise<void>[] = newJobPosts
-        .filter(hasAnalyzedJobPostFields)
-        .map((jobPost) =>
-            createJobPost({
-                ...jobPost,
-                company,
-            }).then(enqueueOgImage),
-        );
-    const closeJobPostsPromises: Promise<void>[] =
-        closedJobPosts.map(closeJobPost);
+    const createResults = await runPersistOperations(company, createOperations);
+    const closeResults = await runPersistOperations(company, closeOperations);
+    const failed = createResults.failed + closeResults.failed;
 
-    await Promise.all([...createJobPostsPromises, ...closeJobPostsPromises]);
+    console.log(
+        `[SCRAPPED: ${scrappedJobPosts.length}] [OPEN: ${openJobPosts.length}] [NEW: ${newJobPosts.length}] [CREATED: ${createResults.fulfilled}] [CLOSED: ${closeResults.fulfilled}] [FAILED: ${failed}]`,
+    );
+
+    if (failed > 0) {
+        throw new Error(
+            `Failed to persist ${failed} job post(s) for ${company.name}`,
+        );
+    }
 };
 
 const newGetNewAndClosedJobPosts = ({
@@ -195,9 +265,9 @@ const scrapUsingNewScrapper = async ({
     });
 
     if (newJobPosts.length > MAX_JOB_POSTS_TO_SCRAP) {
-        logger.info(
-            `Too many new job posts to scrap for ${company.name}, scraping only ${MAX_JOB_POSTS_TO_SCRAP} of ${newJobPosts.length}`,
-        );
+        const message = `Too many new job posts to scrap for ${company.name}, scraping only ${MAX_JOB_POSTS_TO_SCRAP} of ${newJobPosts.length}`;
+        console.warn(message);
+        logger.info(message);
     }
 
     const newJobPostsToScrap = newJobPosts.slice(0, MAX_JOB_POSTS_TO_SCRAP);
@@ -243,33 +313,56 @@ const scrapUsingNewScrapper = async ({
         });
     });
 
+    const createOperations: PersistOperation[] = createJobPosts.map(
+        (jobPost) => ({
+            label: 'create',
+            title: jobPost.title,
+            url: jobPost.url,
+            run: () =>
+                createJobPost({
+                    ...jobPost,
+                    company,
+                }).then(enqueueOgImage),
+        }),
+    );
+    const reopenOperations: PersistOperation[] = reopenJobPosts.map(
+        (jobPost) => ({
+            label: 'reopen',
+            title: jobPost.title,
+            url: jobPost.url,
+            run: () =>
+                jobPostRepository.update(jobPost).then(async (saved) => {
+                    const pageJob = saved ?? jobPost;
+                    await storeJobPostPageCache(pageJob, company);
+                    await enqueueOgImage(pageJob);
+                }),
+        }),
+    );
+    const closeOperations: PersistOperation[] = closedJobPosts.map(
+        (jobPost) => ({
+            label: 'close',
+            title: jobPost.title,
+            url: jobPost.url,
+            run: () => closeJobPost(jobPost),
+        }),
+    );
+
+    const createResults = await runPersistOperations(company, createOperations);
+    const reopenResults = await runPersistOperations(company, reopenOperations);
+    const closeResults = await runPersistOperations(company, closeOperations);
+
+    const failed =
+        createResults.failed + reopenResults.failed + closeResults.failed;
+
     console.log(
-        `[LISTED: ${listedJobPostsData.length}] [OPEN: ${openJobPosts.length}] [NEW: ${newJobPosts.length}] [REOPENED: ${reopenJobPosts.length}] [CREATED: ${createJobPosts.length}] [CLOSED: ${closedJobPosts.length}]`,
+        `[LISTED: ${listedJobPostsData.length}] [OPEN: ${openJobPosts.length}] [NEW: ${newJobPosts.length}] [REOPENED: ${reopenResults.fulfilled}] [CREATED: ${createResults.fulfilled}] [CLOSED: ${closeResults.fulfilled}] [FAILED: ${failed}]`,
     );
 
-    const createJobPostsPromises: Promise<void>[] = createJobPosts.map(
-        (jobPost) =>
-            createJobPost({
-                ...jobPost,
-                company,
-            }).then(enqueueOgImage),
-    );
-    const reopenJobPostsPromises: Promise<void>[] = reopenJobPosts.map(
-        (jobPost) =>
-            jobPostRepository.update(jobPost).then(async (saved) => {
-                const pageJob = saved ?? jobPost;
-                await storeJobPostPageCache(pageJob, company);
-                await enqueueOgImage(pageJob);
-            }),
-    );
-    const closeJobPostsPromises: Promise<void>[] =
-        closedJobPosts.map(closeJobPost);
-
-    await Promise.all([
-        ...createJobPostsPromises,
-        ...reopenJobPostsPromises,
-        ...closeJobPostsPromises,
-    ]);
+    if (failed > 0) {
+        throw new Error(
+            `Failed to persist ${failed} job post(s) for ${company.name}`,
+        );
+    }
 };
 
 export const processCompany = async ({

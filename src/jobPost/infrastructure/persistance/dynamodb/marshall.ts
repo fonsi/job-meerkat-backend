@@ -18,6 +18,12 @@ export const marshall = (jobPost: JobPost): Record<string, AttributeValue> => {
     } = jobPost;
     const salaryRange = normalizeSalaryRange(jobPost.salaryRange);
 
+    if (typeof location !== 'string') {
+        throw new Error(
+            `Job post location must be a string, got ${typeof location}`,
+        );
+    }
+
     const item: Record<string, AttributeValue> = {
         id: {
             S: id,

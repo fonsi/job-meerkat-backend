@@ -39,4 +39,13 @@ describe('hasAnalyzedJobPostFields', () => {
             }),
         ).toBe(false);
     });
+
+    it('rejects a location array', () => {
+        expect(
+            hasAnalyzedJobPostFields({
+                ...complete,
+                location: ['Geneva', 'Paris'] as unknown as string,
+            }),
+        ).toBe(false);
+    });
 });
