@@ -4,7 +4,7 @@ Step-by-step process to add a scrapeable company in the **development** environm
 
 ## Prerequisites
 
-- Company has an ATS we already support: **Greenhouse**, **Ashby**, **Lever**, **Gem GraphQL**, or **Workable** (or a custom HTML pattern that already exists in `src/company/infrastructure/scrapping/`).
+- Company has an ATS we already support: **Greenhouse**, **Ashby**, **Lever**, **Gem GraphQL**, **Workable**, or **Pinpoint** (or a custom HTML pattern that already exists in `src/company/infrastructure/scrapping/`).
 - Prefer companies with **&lt; 100 open jobs** unless explicitly asked otherwise.
 - `homePage` is the company marketing homepage, **not** the careers page.
 
@@ -19,6 +19,7 @@ From the careers URL (or by probing the page HTML), determine platform + board s
 | Lever      | `https://api.lever.co/v0/postings/{slug}?mode=json`                   | HTML `.content`, or `descriptionPlain` from API if HTML fails                           |
 | Gem        | boardId in Gem GraphQL (`jobs.gem.com/{boardId}`)                     | `getGemJobPosts` / `getGemJobPostContent`                                               |
 | Workable   | `apply.workable.com/api/v3/accounts/{slug}/jobs`                      | existing Workable scrapers as reference                                                 |
+| Pinpoint   | `https://{subdomain}.pinpointhq.com/postings.json`                    | `getPinpointJobPosts` (content included in list response)                               |
 
 Quick checks:
 
@@ -31,6 +32,9 @@ curl -s "https://api.ashbyhq.com/posting-api/job-board/{slug}" | head -c 200
 
 # Lever
 curl -s "https://api.lever.co/v0/postings/{slug}?mode=json" | head -c 200
+
+# Pinpoint
+curl -s "https://{subdomain}.pinpointhq.com/postings.json" | head -c 200
 ```
 
 Skip or defer if: dead link, aggregator-only page, blocked custom ATS, or too many jobs.
@@ -77,6 +81,7 @@ aws dynamodb update-item \
     - Ashby: `astronomer`, `limitless`
     - Lever: `supermove` (HTML) or `regrello` (API content fallback)
     - Gem: `gem`
+    - Pinpoint: `float` (`getPinpointJobPosts` helper)
 3. Export `COMPANY_NAME` and `companyScrapper`.
 4. Implement:
     - `getListedJobPostsData` — list open roles (`id`, `url`, `title`, `createdAt`)

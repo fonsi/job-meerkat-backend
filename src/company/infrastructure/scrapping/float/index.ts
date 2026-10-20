@@ -9,32 +9,24 @@ import {
 } from 'shared/infrastructure/ai/openai/openaiJobPostAnalyzer';
 import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
+import { getPinpointJobPosts } from '../pinpointPostings';
 
 export const FLOAT_NAME = 'float';
-const FLOAT_INITIAL_URL =
-    'https://apply.workable.com/api/v3/accounts/floatjobs/jobs';
+const FLOAT_PINPOINT_SUBDOMAIN = 'float';
 
 type ScrapJobPostData = {
     id: string;
+    title: string;
+    content: string;
 };
 
 const scrapJobPost = async ({
     id,
+    title,
+    content,
 }: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
-        const url = `https://apply.workable.com/api/v2/accounts/floatjobs/jobs/${id}`;
-        const response = await fetch(url);
-        const jobData = await response.json();
-        const publishedDate = jobData.published;
-        const descriptionText = jobData.description;
-
-        const openaiJobPost = await openaiJobPostAnalyzer(descriptionText);
-
-        if (publishedDate) {
-            openaiJobPost.createdAt = new Date(publishedDate).getTime();
-        }
-
-        return openaiJobPost;
+        return openaiJobPostAnalyzer(`${title}\n${content}`);
     } catch (e) {
         const error = errorWithPrefix(
             e,
@@ -48,26 +40,11 @@ const scrapJobPost = async ({
 
 export const floatScrapper: NewCompanyScrapper = ({ companyId }) => {
     return {
-        getListedJobPostsData: async () => {
-            const url = FLOAT_INITIAL_URL;
-            const response = await fetch(url, {
-                method: 'POST',
-            });
-            const jobsData = (await response.json()).results;
-
-            const jobPosts: ListedJobPostsData[] = jobsData.map((jobData) => {
-                const id = jobData.shortcode;
-                const url = `https://apply.workable.com/floatjobs/j/${id}`;
-
-                return {
-                    id,
-                    url,
-                    title: jobData.title,
-                };
-            });
-
-            return jobPosts;
-        },
+        getListedJobPostsData: async () =>
+            getPinpointJobPosts({
+                companyName: FLOAT_NAME,
+                subdomain: FLOAT_PINPOINT_SUBDOMAIN,
+            }),
 
         scrapJobPost: async (jobPosts: ListedJobPostsData[]) => {
             const data: ScrappedJobPost[] = [];
@@ -80,12 +57,15 @@ export const floatScrapper: NewCompanyScrapper = ({ companyId }) => {
 
                     const jobPostData = await scrapJobPost({
                         id: jobPost.id,
+                        title: jobPost.title,
+                        content: jobPost.content,
                     });
 
                     data.push({
                         ...jobPostData,
                         originalId: jobPost.id,
                         url: jobPost.url,
+                        title: jobPost.title,
                         companyId,
                     });
                 } catch (e) {
