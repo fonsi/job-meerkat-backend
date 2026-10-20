@@ -200,6 +200,18 @@ import { XBOW_NAME, xbowScrapper } from './xbow';
 import { PROTON_NAME, protonScrapper } from './proton';
 import { MEWS_NAME, mewsScrapper } from './mews';
 import { DEVELOCITY_NAME, develocityScrapper } from './develocity';
+import { SQUADS_NAME, squadsScrapper } from './squads';
+import { BASETEN_NAME, basetenScrapper } from './baseten';
+import { AG1_NAME, ag1Scrapper } from './ag1';
+import { HOSPITABLE_NAME, hospitableScrapper } from './hospitable';
+import {
+    ROOM_PRICE_GENIE_NAME,
+    roomPriceGenieScrapper,
+} from './roomPriceGenie';
+import { WORK_MOTION_NAME, workMotionScrapper } from './workMotion';
+import { METABASE_NAME, metabaseScrapper } from './metabase';
+import { SEEQ_NAME, seeqScrapper } from './seeq';
+import { EDPUZZLE_NAME, edpuzzleScrapper } from './edpuzzle';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -632,6 +644,24 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return mewsScrapper;
         case DEVELOCITY_NAME:
             return develocityScrapper;
+        case SQUADS_NAME:
+            return squadsScrapper;
+        case BASETEN_NAME:
+            return basetenScrapper;
+        case AG1_NAME:
+            return ag1Scrapper;
+        case HOSPITABLE_NAME:
+            return hospitableScrapper;
+        case ROOM_PRICE_GENIE_NAME:
+            return roomPriceGenieScrapper;
+        case WORK_MOTION_NAME:
+            return workMotionScrapper;
+        case METABASE_NAME:
+            return metabaseScrapper;
+        case SEEQ_NAME:
+            return seeqScrapper;
+        case EDPUZZLE_NAME:
+            return edpuzzleScrapper;
     }
 
     return null;
