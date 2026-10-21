@@ -15,7 +15,7 @@ const REC_ROOM_INITIAL_URL =
     'https://boards-api.greenhouse.io/v1/boards/recroom/jobs?content=true';
 
 type ScrapJobPostData = {
-    id: string | number;
+    id: string;
     content: string;
 };
 
@@ -48,10 +48,12 @@ export const recRoomScrapper: NewCompanyScrapper = ({ companyId }) => {
             const jobPosts: ListedJobPostsData[] = [];
 
             listedJobs.forEach((jobData) => {
+                if (jobData.id === null || jobData.id === undefined) return;
+
                 const url = jobData.absolute_url;
 
                 jobPosts.push({
-                    id: jobData.internal_job_id,
+                    id: String(jobData.id),
                     url,
                     title: jobData.title,
                     createdAt: new Date(jobData.updated_at).getTime(),

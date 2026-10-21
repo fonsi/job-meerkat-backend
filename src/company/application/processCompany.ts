@@ -66,6 +66,12 @@ type PersistOperation = {
 
 const MAX_JOB_POSTS_TO_SCRAP = 50;
 
+const toJobPostKey = (id: unknown): string | null => {
+    if (id === null || id === undefined) return null;
+    const key = String(id).trim();
+    return key.length ? key : null;
+};
+
 const enqueueOgImage = (jobPost: JobPost): Promise<void> =>
     enqueueJobPostOgImage({
         companyId: jobPost.companyId,
@@ -118,20 +124,25 @@ const getNewAndClosedJobPosts = ({
     scrappedJobPosts,
     openJobPosts,
 }: GetNewAndClosedJobPostsData): NewAndClosedJobPosts => {
-    const newJobPosts = scrappedJobPosts.filter(
-        (scrappedJobPost) =>
-            !openJobPosts.find(
-                (openJobPosts) =>
-                    openJobPosts.originalId === scrappedJobPost.originalId,
-            ),
+    const openIds = new Set(
+        openJobPosts
+            .map((p) => toJobPostKey(p.originalId))
+            .filter((key): key is string => key !== null),
     );
-    const closedJobPosts = openJobPosts.filter(
-        (openJobPost) =>
-            !scrappedJobPosts.find(
-                (scrappedJobPost) =>
-                    scrappedJobPost.originalId === openJobPost.originalId,
-            ),
+    const scrappedIds = new Set(
+        scrappedJobPosts
+            .map((p) => toJobPostKey(p.originalId))
+            .filter((key): key is string => key !== null),
     );
+
+    const newJobPosts = scrappedJobPosts.filter((scrappedJobPost) => {
+        const key = toJobPostKey(scrappedJobPost.originalId);
+        return key !== null && !openIds.has(key);
+    });
+    const closedJobPosts = openJobPosts.filter((openJobPost) => {
+        const key = toJobPostKey(openJobPost.originalId);
+        return key === null || !scrappedIds.has(key);
+    });
 
     return {
         newJobPosts,
@@ -194,25 +205,56 @@ const newGetNewAndClosedJobPosts = ({
     listedJobPostsData,
     openJobPosts,
 }: NewGetNewAndClosedJobPostsData): NewNewAndClosedJobPosts => {
-    const newJobPosts = listedJobPostsData.filter(
-        (listedJobPostsData) =>
-            !openJobPosts.find(
-                (openJobPosts) =>
-                    openJobPosts.originalId === listedJobPostsData.id,
-            ),
+    const openIds = new Set(
+        openJobPosts
+            .map((p) => toJobPostKey(p.originalId))
+            .filter((key): key is string => key !== null),
     );
-    const closedJobPosts = openJobPosts.filter(
-        (openJobPost) =>
-            !listedJobPostsData.find(
-                (listedJobPostsData) =>
-                    listedJobPostsData.id === openJobPost.originalId,
-            ),
+    const listedIds = new Set(
+        listedJobPostsData
+            .map((l) => toJobPostKey(l.id))
+            .filter((key): key is string => key !== null),
     );
+
+    const newJobPosts = listedJobPostsData.filter((listed) => {
+        const key = toJobPostKey(listed.id);
+        return key !== null && !openIds.has(key);
+    });
+    const closedJobPosts = openJobPosts.filter((openJobPost) => {
+        const key = toJobPostKey(openJobPost.originalId);
+        return key === null || !listedIds.has(key);
+    });
 
     return {
         newJobPosts,
         closedJobPosts,
     };
+};
+
+const normalizeListedJobPostsData = (
+    listedJobPostsData: ListedJobPostsData[],
+    company: Company,
+): ListedJobPostsData[] => {
+    const normalized: ListedJobPostsData[] = [];
+
+    for (const listed of listedJobPostsData) {
+        const key = toJobPostKey(listed.id);
+        if (key === null) {
+            logger.info(
+                `Skipping listed job post with missing id for ${company.name}`,
+                {
+                    companyId: company.id,
+                    title: listed.title,
+                    url: listed.url,
+                },
+            );
+            continue;
+        }
+
+        normalized.push({ ...listed, id: key });
+    }
+
+    return normalized;
 };
 
 const scrapUsingNewScrapper = async ({
@@ -224,7 +266,10 @@ const scrapUsingNewScrapper = async ({
     let listedJobPostsData: ListedJobPostsData[];
 
     try {
-        listedJobPostsData = await builtScrapper.getListedJobPostsData();
+        listedJobPostsData = normalizeListedJobPostsData(
+            await builtScrapper.getListedJobPostsData(),
+            company,
+        );
     } catch (e) {
         if (isJobListingUnavailableError(e)) {
             logger.info(`Skipping ${company.name}: job listing unavailable`, {
@@ -243,13 +288,16 @@ const scrapUsingNewScrapper = async ({
     const closedJobPostByOriginalId = companyJobPosts
         .filter((jobPost) => !isOpen(jobPost))
         .reduce((currentMap, jobPost) => {
-            const existing = currentMap.get(jobPost.originalId);
+            const key = toJobPostKey(jobPost.originalId);
+            if (key === null) return currentMap;
+
+            const existing = currentMap.get(key);
 
             if (
                 !existing ||
                 (existing.closedAt || 0) < (jobPost.closedAt || 0)
             ) {
-                currentMap.set(jobPost.originalId, jobPost);
+                currentMap.set(key, jobPost);
             }
 
             return currentMap;
@@ -290,9 +338,10 @@ const scrapUsingNewScrapper = async ({
             return;
         }
 
-        const closedJobPost = closedJobPostByOriginalId.get(
-            scrappedJobPost.originalId,
-        );
+        const closedJobPostKey = toJobPostKey(scrappedJobPost.originalId);
+        const closedJobPost = closedJobPostKey
+            ? closedJobPostByOriginalId.get(closedJobPostKey)
+            : undefined;
         const salaryRange = normalizeSalaryRange(scrappedJobPost.salaryRange);
 
         if (!closedJobPost) {

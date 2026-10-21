@@ -7,6 +7,7 @@ import { getNewCompanyScrapper } from 'company/infrastructure/scrapping/companyS
 import { createJobPost } from 'jobPost/application/createJobPost';
 import { enqueueJobPostOgImage } from 'jobPost/infrastructure/queue/sqs/enqueue';
 import { closeJobPost } from 'jobPost/application/closeJobPost';
+import { logger } from 'shared/infrastructure/logger/logger';
 
 jest.mock(
     'company/infrastructure/persistance/dynamodb/dynamodbCompanyRepository',
@@ -370,5 +371,212 @@ describe('processCompany', () => {
 
         expect(createJobPost).toHaveBeenCalledTimes(2);
         expect(enqueueJobPostOgImage).toHaveBeenCalledTimes(1);
+    });
+
+    it('matches numeric listed ids to stored string originalIds without create or close', async () => {
+        const companyId = '123e4567-e89b-12d3-a456-426614174000' as CompanyId;
+        const company = {
+            id: companyId,
+            name: 'test-company',
+            homePage: 'https://example.com',
+            logo: {
+                url: 'https://assets.example.com/company.png',
+            },
+        } as unknown as Company;
+
+        const openJobPost = {
+            id: '123e4567-e89b-12d3-a456-426614174111',
+            companyId,
+            originalId: '8855945002',
+            type: JobType.FullTime,
+            title: 'Lead Product Manager',
+            url: 'https://lattice.com/job?gh_jid=8855945002',
+            category: Category.Product,
+            salaryRange: null,
+            workplace: Workplace.Remote,
+            location: 'worldwide',
+            createdAt: 1700000000000,
+            closedAt: null,
+            slug: 'lead-product-manager-at-test-company-post1',
+        } as unknown as JobPost;
+
+        const scrapJobPost = jest.fn().mockResolvedValue([]);
+
+        (companyRepository.getById as jest.Mock).mockResolvedValue(company);
+        (jobPostRepository.getAllByCompanyId as jest.Mock).mockResolvedValue([
+            openJobPost,
+        ]);
+        (getNewCompanyScrapper as jest.Mock).mockReturnValue(() => ({
+            getListedJobPostsData: jest.fn().mockResolvedValue([
+                {
+                    id: 8855945002 as unknown as string,
+                    url: 'https://lattice.com/job?gh_jid=8855945002',
+                    title: 'Lead Product Manager',
+                },
+            ]),
+            scrapJobPost,
+        }));
+
+        await processCompany({ companyId });
+
+        expect(createJobPost).not.toHaveBeenCalled();
+        expect(closeJobPost).not.toHaveBeenCalled();
+        expect(jobPostRepository.update).not.toHaveBeenCalled();
+        expect(scrapJobPost).toHaveBeenCalledWith([]);
+    });
+
+    it('does not reopen or duplicate when open and closed twins share an originalId', async () => {
+        const companyId = '123e4567-e89b-12d3-a456-426614174000' as CompanyId;
+        const company = {
+            id: companyId,
+            name: 'test-company',
+            homePage: 'https://example.com',
+            logo: {
+                url: 'https://assets.example.com/company.png',
+            },
+        } as unknown as Company;
+
+        const openJobPost = {
+            id: '123e4567-e89b-12d3-a456-426614174111',
+            companyId,
+            originalId: '8855945002',
+            type: JobType.FullTime,
+            title: 'Lead Product Manager',
+            url: 'https://lattice.com/job?gh_jid=8855945002',
+            category: Category.Product,
+            salaryRange: null,
+            workplace: Workplace.Remote,
+            location: 'worldwide',
+            createdAt: 1700000000000,
+            closedAt: null,
+            slug: 'lead-product-manager-at-test-company-open',
+        } as unknown as JobPost;
+
+        const closedJobPost = {
+            id: '123e4567-e89b-12d3-a456-426614174222',
+            companyId,
+            originalId: '8855945002',
+            type: JobType.FullTime,
+            title: 'Lead Product Manager',
+            url: 'https://lattice.com/job?gh_jid=8855945002',
+            category: Category.Product,
+            salaryRange: null,
+            workplace: Workplace.Remote,
+            location: 'worldwide',
+            createdAt: 1690000000000,
+            closedAt: 1701000000000,
+            slug: 'lead-product-manager-at-test-company-closed',
+        } as unknown as JobPost;
+
+        const scrapJobPost = jest.fn().mockResolvedValue([]);
+
+        (companyRepository.getById as jest.Mock).mockResolvedValue(company);
+        (jobPostRepository.getAllByCompanyId as jest.Mock).mockResolvedValue([
+            openJobPost,
+            closedJobPost,
+        ]);
+        (getNewCompanyScrapper as jest.Mock).mockReturnValue(() => ({
+            getListedJobPostsData: jest.fn().mockResolvedValue([
+                {
+                    id: 8855945002 as unknown as string,
+                    url: 'https://lattice.com/job?gh_jid=8855945002',
+                    title: 'Lead Product Manager',
+                },
+            ]),
+            scrapJobPost,
+        }));
+
+        await processCompany({ companyId });
+
+        expect(createJobPost).not.toHaveBeenCalled();
+        expect(closeJobPost).not.toHaveBeenCalled();
+        expect(jobPostRepository.update).not.toHaveBeenCalled();
+        expect(scrapJobPost).toHaveBeenCalledWith([]);
+    });
+
+    it('creates a genuinely new job once when listed id is numeric', async () => {
+        const companyId = '123e4567-e89b-12d3-a456-426614174000' as CompanyId;
+        const company = {
+            id: companyId,
+            name: 'test-company',
+            homePage: 'https://example.com',
+            logo: {
+                url: 'https://assets.example.com/company.png',
+            },
+        } as unknown as Company;
+
+        (companyRepository.getById as jest.Mock).mockResolvedValue(company);
+        (jobPostRepository.getAllByCompanyId as jest.Mock).mockResolvedValue(
+            [],
+        );
+        (getNewCompanyScrapper as jest.Mock).mockReturnValue(() => ({
+            getListedJobPostsData: jest.fn().mockResolvedValue([
+                {
+                    id: 8855945002 as unknown as string,
+                    url: 'https://lattice.com/job?gh_jid=8855945002',
+                    title: 'Lead Product Manager',
+                },
+            ]),
+            scrapJobPost: jest
+                .fn()
+                .mockResolvedValue([
+                    completeScrapedPost(
+                        companyId,
+                        '8855945002',
+                        'Lead Product Manager',
+                    ),
+                ]),
+        }));
+
+        await processCompany({ companyId });
+
+        expect(createJobPost).toHaveBeenCalledTimes(1);
+        expect(createJobPost).toHaveBeenCalledWith(
+            expect.objectContaining({ originalId: '8855945002' }),
+        );
+        expect(closeJobPost).not.toHaveBeenCalled();
+        expect(jobPostRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('skips listed job posts with a missing id instead of treating them as new', async () => {
+        const companyId = '123e4567-e89b-12d3-a456-426614174000' as CompanyId;
+        const company = {
+            id: companyId,
+            name: 'test-company',
+            homePage: 'https://example.com',
+            logo: {
+                url: 'https://assets.example.com/company.png',
+            },
+        } as unknown as Company;
+
+        const scrapJobPost = jest.fn().mockResolvedValue([]);
+
+        (companyRepository.getById as jest.Mock).mockResolvedValue(company);
+        (jobPostRepository.getAllByCompanyId as jest.Mock).mockResolvedValue(
+            [],
+        );
+        (getNewCompanyScrapper as jest.Mock).mockReturnValue(() => ({
+            getListedJobPostsData: jest.fn().mockResolvedValue([
+                {
+                    id: null as unknown as string,
+                    url: 'https://jobs.example.com/missing',
+                    title: 'Missing Id Role',
+                },
+            ]),
+            scrapJobPost,
+        }));
+
+        await processCompany({ companyId });
+
+        expect(logger.info).toHaveBeenCalledWith(
+            'Skipping listed job post with missing id for test-company',
+            expect.objectContaining({
+                companyId,
+                title: 'Missing Id Role',
+            }),
+        );
+        expect(createJobPost).not.toHaveBeenCalled();
+        expect(closeJobPost).not.toHaveBeenCalled();
+        expect(scrapJobPost).toHaveBeenCalledWith([]);
     });
 });

@@ -16,7 +16,7 @@ const HAPPY_MONEY_INITIAL_URL =
     'https://boards-api.greenhouse.io/v1/boards/happymoney/departments';
 
 type ScrapJobPostData = {
-    id: string | number;
+    id: string;
     url: string;
 };
 
@@ -63,7 +63,7 @@ export const happyMoneyScrapper: NewCompanyScrapper = ({ companyId }) => {
                     }
 
                     jobPosts.push({
-                        id: jobData.id,
+                        id: String(jobData.id),
                         url,
                         title,
                         createdAt: new Date(jobData.updated_at).getTime(),

@@ -15,7 +15,7 @@ export const CHORUS_ONE_NAME = 'chorus one';
 const CHORUS_ONE_INITIAL_URL = 'https://careers.chorus.one/api/offers';
 
 type ScrapJobPostData = {
-    id: string | number;
+    id: string;
     url: string;
 };
 
@@ -52,7 +52,7 @@ export const chorusOneScrapper: NewCompanyScrapper = ({ companyId }) => {
                     const url = jobData.careers_url;
 
                     return {
-                        id: jobData.id,
+                        id: String(jobData.id),
                         url,
                         title: jobData.title,
                         createdAt: new Date(jobData.created_at).getTime(),

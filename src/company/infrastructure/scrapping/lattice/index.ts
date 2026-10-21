@@ -16,7 +16,7 @@ const LATTICE_INITIAL_URL =
     'https://boards-api.greenhouse.io/v1/boards/lattice/jobs';
 
 type ScrapJobPostData = {
-    id: string | number;
+    id: string;
 };
 
 const JOB_HEADER_SELECTOR = '.job__header';
@@ -60,7 +60,7 @@ export const latticeScrapper: NewCompanyScrapper = ({ companyId }) => {
                     const url = jobData.absolute_url;
 
                     return {
-                        id: jobData.id,
+                        id: String(jobData.id),
                         url,
                         title: jobData.title,
                         createdAt: new Date(jobData.updated_at).getTime(),
