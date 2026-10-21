@@ -212,6 +212,20 @@ import { WORK_MOTION_NAME, workMotionScrapper } from './workMotion';
 import { METABASE_NAME, metabaseScrapper } from './metabase';
 import { SEEQ_NAME, seeqScrapper } from './seeq';
 import { EDPUZZLE_NAME, edpuzzleScrapper } from './edpuzzle';
+import { HI_RASMUS_NAME, hiRasmusScrapper } from './hiRasmus';
+import {
+    CLIMATE_BONDS_INITIATIVE_NAME,
+    climateBondsInitiativeScrapper,
+} from './climateBondsInitiative';
+import { OPENROUTER_NAME, openRouterScrapper } from './openRouter';
+import { SOLACE_HEALTH_NAME, solaceHealthScrapper } from './solaceHealth';
+import {
+    TURQUOISE_HEALTH_NAME,
+    turquoiseHealthScrapper,
+} from './turquoiseHealth';
+import { CHARIOT_CLAIMS_NAME, chariotClaimsScrapper } from './chariotClaims';
+import { MUCK_RACK_NAME, muckRackScrapper } from './muckRack';
+import { FOCAL_SYSTEMS_NAME, focalSystemsScrapper } from './focalSystems';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -662,6 +676,22 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return seeqScrapper;
         case EDPUZZLE_NAME:
             return edpuzzleScrapper;
+        case HI_RASMUS_NAME:
+            return hiRasmusScrapper;
+        case CLIMATE_BONDS_INITIATIVE_NAME:
+            return climateBondsInitiativeScrapper;
+        case OPENROUTER_NAME:
+            return openRouterScrapper;
+        case SOLACE_HEALTH_NAME:
+            return solaceHealthScrapper;
+        case TURQUOISE_HEALTH_NAME:
+            return turquoiseHealthScrapper;
+        case CHARIOT_CLAIMS_NAME:
+            return chariotClaimsScrapper;
+        case MUCK_RACK_NAME:
+            return muckRackScrapper;
+        case FOCAL_SYSTEMS_NAME:
+            return focalSystemsScrapper;
     }
 
     return null;
