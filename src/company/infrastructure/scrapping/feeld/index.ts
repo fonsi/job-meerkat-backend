@@ -1,4 +1,3 @@
-import { fromURL } from '../fromUrl';
 import {
     ListedJobPostsData,
     NewCompanyScrapper,
@@ -12,34 +11,70 @@ import { errorWithPrefix } from 'shared/infrastructure/logger/errorWithPrefix';
 import { logger } from 'shared/infrastructure/logger/logger';
 
 export const FEELD_NAME = 'feeld';
-const FEELD_INITIAL_URL = 'https://feeld.co/careers';
+const WORKABLE_ACCOUNT = 'feeldco';
+const FEELD_JOBS_URL = `https://apply.workable.com/api/v3/accounts/${WORKABLE_ACCOUNT}/jobs`;
+// Safety net so a misbehaving nextPage token can never loop forever.
+const MAX_PAGES = 20;
+
+type WorkableListedJob = {
+    shortcode?: string;
+    title?: string;
+    state?: string;
+};
+
+type WorkableJobsResponse = {
+    results?: WorkableListedJob[];
+    nextPage?: string;
+};
 
 type ScrapJobPostData = {
     id: string;
-    url: string;
 };
 
-type ScrappedJobPostResponse = {
-    openaiJobPost: OpenaiJobPost;
-    id: string;
-    url: string;
-};
+export const buildFeeldJobUrl = (shortcode: string): string =>
+    `https://apply.workable.com/${WORKABLE_ACCOUNT}/j/${shortcode}`;
 
-const JOB_POST_SELECTOR = '#jobs-list article';
+const fetchListedJobs = async (): Promise<WorkableListedJob[]> => {
+    const jobs: WorkableListedJob[] = [];
+    let token: string | undefined;
+
+    for (let page = 0; page < MAX_PAGES; page++) {
+        const response = await fetch(FEELD_JOBS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(token ? { token } : {}),
+        });
+
+        if (!response.ok) {
+            throw new Error(
+                `Workable jobs request for ${WORKABLE_ACCOUNT} failed with status ${response.status}`,
+            );
+        }
+
+        const data = (await response.json()) as WorkableJobsResponse;
+        const results = data.results ?? [];
+        jobs.push(...results);
+
+        if (!data.nextPage || results.length === 0) {
+            break;
+        }
+
+        token = data.nextPage;
+    }
+
+    return jobs;
+};
 
 const scrapJobPost = async ({
     id,
-    url,
-}: ScrapJobPostData): Promise<ScrappedJobPostResponse> => {
+}: ScrapJobPostData): Promise<OpenaiJobPost> => {
     try {
-        const $ = await fromURL(url);
-        const realUrl = $('link[rel="alternate"]').attr('href');
-        const realId = realUrl.split('/').pop();
-        const jsonUrl = `https://apply.workable.com/api/v2/accounts/feeldco/jobs/${realId}`;
-        const response = await fetch(jsonUrl);
+        const url = `https://apply.workable.com/api/v2/accounts/${WORKABLE_ACCOUNT}/jobs/${id}`;
+        const response = await fetch(url);
         const jobData = (await response.json()) as Record<string, unknown>;
         const publishedDate = jobData.published as string;
 
+        // Pass full Workable payload — salary/workplace/locations live outside description HTML.
         const openaiJobPost = await openaiJobPostAnalyzer(
             JSON.stringify(jobData),
         );
@@ -48,11 +83,7 @@ const scrapJobPost = async ({
             openaiJobPost.createdAt = new Date(publishedDate).getTime();
         }
 
-        return {
-            openaiJobPost,
-            id: realId,
-            url: realUrl,
-        };
+        return openaiJobPost;
     } catch (e) {
         const error = errorWithPrefix(
             e,
@@ -66,21 +97,30 @@ const scrapJobPost = async ({
 
 export const feeldScrapper: NewCompanyScrapper = ({ companyId }) => {
     return {
+        // Workable shortcode (e.g. 24D9AA3784) is used as the id everywhere so
+        // that listed ids always match the stored originalId. The numeric
+        // Workable id shown on feeld.co/careers must not be used.
         getListedJobPostsData: async () => {
-            const $ = await fromURL(FEELD_INITIAL_URL);
-            const jobPostsElements = $(JOB_POST_SELECTOR);
+            const jobsData = await fetchListedJobs();
+            const seen = new Set<string>();
+            const jobPosts: ListedJobPostsData[] = [];
 
-            const jobPosts: ListedJobPostsData[] = jobPostsElements
-                .toArray()
-                .map((jobPost) => {
-                    const url = $('a', jobPost).attr('href');
+            jobsData.forEach((jobData) => {
+                const id = jobData.shortcode;
+                if (!id || seen.has(id)) {
+                    return;
+                }
+                if (jobData.state && jobData.state !== 'published') {
+                    return;
+                }
+                seen.add(id);
 
-                    return {
-                        id: url.split('/').pop(),
-                        url,
-                        title: $('p', jobPost).first().text(),
-                    };
+                jobPosts.push({
+                    id,
+                    url: buildFeeldJobUrl(id),
+                    title: jobData.title,
                 });
+            });
 
             return jobPosts;
         },
@@ -96,14 +136,13 @@ export const feeldScrapper: NewCompanyScrapper = ({ companyId }) => {
 
                     const jobPostData = await scrapJobPost({
                         id: jobPost.id,
-                        url: jobPost.url,
                     });
 
                     data.push({
-                        ...jobPostData.openaiJobPost,
+                        ...jobPostData,
                         title: jobPost.title,
-                        originalId: jobPostData.id,
-                        url: jobPostData.url,
+                        originalId: jobPost.id,
+                        url: jobPost.url,
                         companyId,
                     });
                 } catch (e) {
