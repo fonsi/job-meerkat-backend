@@ -226,6 +226,16 @@ import {
 import { CHARIOT_CLAIMS_NAME, chariotClaimsScrapper } from './chariotClaims';
 import { MUCK_RACK_NAME, muckRackScrapper } from './muckRack';
 import { FOCAL_SYSTEMS_NAME, focalSystemsScrapper } from './focalSystems';
+import { LI_FI_NAME, liFiScrapper } from './liFi';
+import { SLASH_DATA_NAME, slashDataScrapper } from './slashData';
+import { DATABENTO_NAME, databentoScrapper } from './databento';
+import { CONSTRUCTOR_NAME, constructorScrapper } from './constructor';
+import { AUTOMATTIC_NAME, automatticScrapper } from './automattic';
+import { MINDVALLEY_NAME, mindvalleyScrapper } from './mindvalley';
+import { JOKO_NAME, jokoScrapper } from './joko';
+import { OYSTER_NAME, oysterScrapper } from './oyster';
+import { FINOM_NAME, finomScrapper } from './finom';
+import { TRADEIFY_NAME, tradeifyScrapper } from './tradeify';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -692,6 +702,26 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return muckRackScrapper;
         case FOCAL_SYSTEMS_NAME:
             return focalSystemsScrapper;
+        case LI_FI_NAME:
+            return liFiScrapper;
+        case SLASH_DATA_NAME:
+            return slashDataScrapper;
+        case DATABENTO_NAME:
+            return databentoScrapper;
+        case CONSTRUCTOR_NAME:
+            return constructorScrapper;
+        case AUTOMATTIC_NAME:
+            return automatticScrapper;
+        case MINDVALLEY_NAME:
+            return mindvalleyScrapper;
+        case JOKO_NAME:
+            return jokoScrapper;
+        case OYSTER_NAME:
+            return oysterScrapper;
+        case FINOM_NAME:
+            return finomScrapper;
+        case TRADEIFY_NAME:
+            return tradeifyScrapper;
     }
 
     return null;
