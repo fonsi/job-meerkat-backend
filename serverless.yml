@@ -62,6 +62,7 @@ provider:
         DYNAMODB_FOLLOWER_GROWTH_CONTENT_TABLE_NAME: ${sls:stage}-follower-growth-content
         DYNAMODB_REPORT_TABLE_NAME: ${sls:stage}-report
         DYNAMODB_MAGIC_LINK_TABLE_NAME: ${sls:stage}-magic-link
+        DYNAMODB_RATE_LIMIT_TABLE_NAME: ${sls:stage}-rate-limit
         PROCESS_COMPANY_QUEUE_NAME: ${sls:stage}-process-company-sqs-queue.fifo
         PUBLISH_SOCIAL_POST_QUEUE_NAME: ${sls:stage}-publish-social-post-sqs-queue
         SEND_REPORT_QUEUE_NAME: ${sls:stage}-send-report-sqs-queue
@@ -337,6 +338,20 @@ resources:
                             KeyType: HASH
                       Projection:
                           ProjectionType: ALL
+        rateLimitTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+                TableName: ${self:provider.environment.DYNAMODB_RATE_LIMIT_TABLE_NAME}
+                AttributeDefinitions:
+                    - AttributeName: pk
+                      AttributeType: S
+                KeySchema:
+                    - AttributeName: pk
+                      KeyType: HASH
+                BillingMode: PAY_PER_REQUEST
+                TimeToLiveSpecification:
+                    AttributeName: expiresAt
+                    Enabled: true
         processCompanyDeadLetterQueue:
             Type: 'AWS::SQS::Queue'
             Properties:
