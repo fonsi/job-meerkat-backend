@@ -579,4 +579,53 @@ describe('processCompany', () => {
         expect(closeJobPost).not.toHaveBeenCalled();
         expect(scrapJobPost).toHaveBeenCalledWith([]);
     });
+    it('warns when a scraped originalId does not match the listed id', async () => {
+        const companyId = '123e4567-e89b-12d3-a456-426614174000' as CompanyId;
+        const company = {
+            id: companyId,
+            name: 'test-company',
+            homePage: 'https://example.com',
+            logo: {
+                url: 'https://assets.example.com/company.png',
+            },
+        } as unknown as Company;
+        const warnSpy = jest
+            .spyOn(console, 'warn')
+            .mockImplementation(() => undefined);
+
+        (companyRepository.getById as jest.Mock).mockResolvedValue(company);
+        (jobPostRepository.getAllByCompanyId as jest.Mock).mockResolvedValue(
+            [],
+        );
+        (getNewCompanyScrapper as jest.Mock).mockReturnValue(() => ({
+            getListedJobPostsData: jest.fn().mockResolvedValue([
+                {
+                    id: '5797272',
+                    url: 'https://feeldco.workable.com/jobs/5797272',
+                    title: 'Director of Global Markets',
+                },
+            ]),
+            scrapJobPost: jest
+                .fn()
+                .mockResolvedValue([
+                    completeScrapedPost(
+                        companyId,
+                        '24D9AA3784',
+                        'Director of Global Markets',
+                    ),
+                ]),
+        }));
+
+        await processCompany({ companyId });
+
+        expect(warnSpy).toHaveBeenCalledWith(
+            'Scraped originalId does not match any listed id for test-company',
+            expect.objectContaining({ originalId: '24D9AA3784' }),
+        );
+        expect(logger.info).toHaveBeenCalledWith(
+            'Scraped originalId does not match any listed id for test-company',
+            expect.objectContaining({ companyId, originalId: '24D9AA3784' }),
+        );
+        warnSpy.mockRestore();
+    });
 });
