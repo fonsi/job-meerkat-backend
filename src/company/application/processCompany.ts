@@ -72,6 +72,36 @@ const toJobPostKey = (id: unknown): string | null => {
     return key.length ? key : null;
 };
 
+// A scraped originalId that is not one of the listed ids means the scrapper
+// uses two different id formats; that post will be closed and recreated on
+// every run, creating duplicates. Only logs, never changes behaviour.
+const warnOnOriginalIdMismatch = (
+    company: Company,
+    listedJobPostsData: ListedJobPostsData[],
+    scrappedJobPosts: ScrappedJobPost[],
+): void => {
+    const listedIds = new Set(
+        listedJobPostsData
+            .map((listed) => toJobPostKey(listed.id))
+            .filter((key): key is string => key !== null),
+    );
+
+    for (const scrappedJobPost of scrappedJobPosts ?? []) {
+        const key = toJobPostKey(scrappedJobPost?.originalId);
+        if (key === null || listedIds.has(key)) continue;
+
+        const message = `Scraped originalId does not match any listed id for ${company.name}`;
+        const data = {
+            companyId: company.id,
+            originalId: key,
+            title: scrappedJobPost.title,
+            url: scrappedJobPost.url,
+        };
+        console.warn(message, data);
+        logger.info(message, data);
+    }
+};
+
 const enqueueOgImage = (jobPost: JobPost): Promise<void> =>
     enqueueJobPostOgImage({
         companyId: jobPost.companyId,
@@ -322,6 +352,8 @@ const scrapUsingNewScrapper = async ({
 
     const scrappedJobPosts =
         await builtScrapper.scrapJobPost(newJobPostsToScrap);
+
+    warnOnOriginalIdMismatch(company, newJobPostsToScrap, scrappedJobPosts);
 
     const createJobPosts: ScrappedJobPost[] = [];
     const reopenJobPosts: JobPost[] = [];
