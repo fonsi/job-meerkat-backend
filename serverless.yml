@@ -152,6 +152,11 @@ provider:
               - arn:aws:s3:::${sls:stage}-blog-cache
 
 resources:
+    Conditions:
+        IsProduction:
+            Fn::Equals:
+                - ${sls:stage}
+                - production
     Resources:
         jobPostCacheBucket:
             Type: AWS::S3::Bucket
@@ -214,6 +219,7 @@ resources:
                           ProjectionType: ALL
         jobPostAlarmTopic:
             Type: AWS::SNS::Topic
+            Condition: IsProduction
             Properties:
                 TopicName: ${sls:stage}-job-post-alarms
                 Subscription:
@@ -221,6 +227,7 @@ resources:
                       Endpoint: ${env:ALARM_EMAIL}
         jobPostTableHighReadAlarm:
             Type: AWS::CloudWatch::Alarm
+            Condition: IsProduction
             Properties:
                 AlarmName: ${sls:stage}-job-post-high-read-capacity
                 AlarmDescription: Daily consumed read capacity on job-post exceeds 1M RCU
