@@ -236,6 +236,19 @@ import { JOKO_NAME, jokoScrapper } from './joko';
 import { OYSTER_NAME, oysterScrapper } from './oyster';
 import { FINOM_NAME, finomScrapper } from './finom';
 import { TRADEIFY_NAME, tradeifyScrapper } from './tradeify';
+import { SONA_NAME, sonaScrapper } from './sona';
+import { FINARY_NAME, finaryScrapper } from './finary';
+import { CERTIK_NAME, certikScrapper } from './certik';
+import { FOXELLI_GROUP_NAME, foxelliGroupScrapper } from './foxelliGroup';
+import { QUANTUM_METRIC_NAME, quantumMetricScrapper } from './quantumMetric';
+import {
+    CANARY_TECHNOLOGIES_NAME,
+    canaryTechnologiesScrapper,
+} from './canaryTechnologies';
+import { WE_TRAVEL_NAME, weTravelScrapper } from './weTravel';
+import { SCARLET_NAME, scarletScrapper } from './scarlet';
+import { STICKER_MULE_NAME, stickerMuleScrapper } from './stickerMule';
+import { LIFTED_NAME, liftedScrapper } from './lifted';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -722,6 +735,26 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return finomScrapper;
         case TRADEIFY_NAME:
             return tradeifyScrapper;
+        case SONA_NAME:
+            return sonaScrapper;
+        case FINARY_NAME:
+            return finaryScrapper;
+        case CERTIK_NAME:
+            return certikScrapper;
+        case FOXELLI_GROUP_NAME:
+            return foxelliGroupScrapper;
+        case QUANTUM_METRIC_NAME:
+            return quantumMetricScrapper;
+        case CANARY_TECHNOLOGIES_NAME:
+            return canaryTechnologiesScrapper;
+        case WE_TRAVEL_NAME:
+            return weTravelScrapper;
+        case SCARLET_NAME:
+            return scarletScrapper;
+        case STICKER_MULE_NAME:
+            return stickerMuleScrapper;
+        case LIFTED_NAME:
+            return liftedScrapper;
     }
 
     return null;
