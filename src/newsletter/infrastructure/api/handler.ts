@@ -61,7 +61,15 @@ export const index = async (event) => {
             method === HTTP_METHOD.POST &&
             pathEndsWith(path, '/newsletter/subscribe')
         ) {
-            await subscribeNewsletter(event);
+            const result = await subscribeNewsletter(event);
+            if (result.outcome !== 'sent') {
+                // CloudWatch only (no Rollbar): bot traffic would flood it.
+                console.log(
+                    `[NEWSLETTER SUBSCRIBE] skipped: ${result.outcome}`,
+                );
+            }
+            // Flushes a rate-limit store error to Rollbar, no-op otherwise.
+            await logger.wait();
             return success({ ok: true });
         }
 

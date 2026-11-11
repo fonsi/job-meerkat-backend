@@ -71,14 +71,18 @@ export const batchGetItems = (
     });
 };
 
+export type PutItemOptions = Omit<PutItemInput, 'TableName' | 'Item'>;
+
 export const putItem = (
     table: string,
     item: Record<string, AttributeValue>,
+    options: PutItemOptions = {},
 ): Promise<PutItemOutput> => {
     return new Promise((resolve, reject) => {
         const input: PutItemInput = {
             TableName: table,
             Item: item,
+            ...options,
         };
 
         dynamodb.putItem(input, (err, data) => {
