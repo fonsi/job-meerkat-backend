@@ -249,6 +249,15 @@ import { WE_TRAVEL_NAME, weTravelScrapper } from './weTravel';
 import { SCARLET_NAME, scarletScrapper } from './scarlet';
 import { STICKER_MULE_NAME, stickerMuleScrapper } from './stickerMule';
 import { LIFTED_NAME, liftedScrapper } from './lifted';
+import { CONTROL_PLANE_NAME, controlPlaneScrapper } from './controlPlane';
+import { PRICE_LABS_NAME, priceLabsScrapper } from './priceLabs';
+import { FLY_IO_NAME, flyIoScrapper } from './flyIo';
+import { COLLECTLY_NAME, collectlyScrapper } from './collectly';
+import { FUTURE_SEARCH_NAME, futureSearchScrapper } from './futureSearch';
+import { SYNDIGO_NAME, syndigoScrapper } from './syndigo';
+import { COSUNO_NAME, cosunoScrapper } from './cosuno';
+import { CREATIVE_X_NAME, creativeXScrapper } from './creativeX';
+import { TOWN_WEB_NAME, townWebScrapper } from './townWeb';
 
 type CompanyScrapperData = {
     companyId: CompanyId;
@@ -755,6 +764,24 @@ export const getNewCompanyScrapper = (company: Company): NewCompanyScrapper => {
             return stickerMuleScrapper;
         case LIFTED_NAME:
             return liftedScrapper;
+        case CONTROL_PLANE_NAME:
+            return controlPlaneScrapper;
+        case PRICE_LABS_NAME:
+            return priceLabsScrapper;
+        case FLY_IO_NAME:
+            return flyIoScrapper;
+        case COLLECTLY_NAME:
+            return collectlyScrapper;
+        case FUTURE_SEARCH_NAME:
+            return futureSearchScrapper;
+        case SYNDIGO_NAME:
+            return syndigoScrapper;
+        case COSUNO_NAME:
+            return cosunoScrapper;
+        case CREATIVE_X_NAME:
+            return creativeXScrapper;
+        case TOWN_WEB_NAME:
+            return townWebScrapper;
     }
 
     return null;
